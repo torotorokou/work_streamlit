@@ -2,18 +2,79 @@ import streamlit as st
 import time
 import pandas as pd
 from io import BytesIO
+from pages.top_page import show_top_page
+from components.update_log import show_update_log
+from components.manual_links import show_manual_links
 
 st.set_page_config(page_title="web版 参謀くん", layout="centered")
 # スタイル
 
-st.title('WEB版 参謀くん')
 
 # サイドバーでカテゴリ選択
-menu = st.sidebar.selectbox("📂 機能を選択", ["管理業務", "機能１", "機能２"])
+menu = st.sidebar.selectbox("📂 機能を選択", ["トップページ","管理業務", "機能１", "機能２"])
 
+if menu == "トップページ":
+    st.title("📘 WEB版 参謀くん")
+else:
+    st.title(f"📂 {menu}")
+
+
+if menu == "トップページ":
+    show_top_page()
+    st.markdown("---")
+    show_update_log()
+    st.markdown("---")
+    show_manual_links()
 
 # メインコンテンツ
-if menu == "管理業務":
+elif menu == "管理業務":
+    # サイドバーにテンプレートメニュー（選択形式）
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("🛠 管理業務メニュー")
+
+    template_option = st.sidebar.radio(
+        "出力したい項目を選択して下さい",
+        ["工場日報", "工場搬出収支表","集計項目平均表","管理業務"]
+    )
+
+    # メイン画面の表示内容を切り替え
+    st.header("📊 管理業務")
+
+    if template_option == "工場日報":
+        st.subheader("📝 工場日報の入力")
+        # 補足説明（シンプルな段落）
+        st.markdown("""
+        <div style="margin-left: 2em;">
+        この項目では、受入データをもとにABC分類ごとの平均値を計算し、  
+        所定のExcelフォーマットにて自動で出力します。
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.write("ここに工場日報の機能を実装します。")
+
+    elif template_option == "工場搬出収支表":
+        st.subheader("📈 工場搬出収支表の集計")
+        st.write("ここに収支表のアップロードや集計処理を入れます。")
+
+    elif template_option == "集計項目平均表":
+        st.subheader("📤 ABC集計項目平均表の出力")
+        st.write("ここで管理票を生成・ダウンロードできます。")
+
+
+    elif template_option == "管理票":
+        st.subheader("📤 管理票の出力")
+        st.write("ここで管理票を生成・ダウンロードできます。")
+
+    else:
+        st.subheader("📄 項目を選択して下さい")
+
+
+
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("🛠 管理業務メニュー")
+    st.sidebar.checkbox("工場日報")
+    st.sidebar.checkbox("収支表の集計")
+    st.sidebar.checkbox("管理票の出力")
     st.header("📊 管理業務")
     st.subheader("📄 テンプレート選択")
 
