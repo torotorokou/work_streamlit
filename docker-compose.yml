@@ -1,23 +1,14 @@
+version: '3.8'
+
 services:
-    yolo_sam:
-        image: work_yolo:latest # Dockerfileでビルドしたイメージ名
-        build:
-            context: . # Dockerfileが存在するディレクトリ
-        deploy:
-            resources:
-                reservations:
-                    devices:
-                        - driver: nvidia
-                          count: all # 全てのGPUを利用
-                          capabilities: [gpu]
+    streamlit-app:
+        build: . # Dockerfileからビルド
+        container_name: streamlit-container # コンテナ名
+        stdin_open: true
+        tty: true
         volumes:
-            - 'C:\Users\synth\Desktop\works_env\:/work'
-            - 'D:\02.Work_Data\:/work/Data'
-        environment:
-            - NVIDIA_VISIBLE_DEVICES=all # 全てのGPUを使用
-            - NVIDIA_DRIVER_CAPABILITIES=compute,utility # 必要なドライバ機能
-        stdin_open: true # 必要ならコンテナの標準入力を開く
-        tty: true # コンテナを対話モードで起動
+            - '.:/work' # カレントディレクトリをマウント
+        working_dir: /work
         ports:
-            - '8888:8888' # JupyterLabを利用するためのポート公開
-        shm_size: '30G' # 🔵 追加: `/dev/shm` を 8GB に拡張
+            - '8501:8501' # ホスト:コンテナのポート
+        command: bash # コンテナ起動後にbashに入る（login.pyは手動実行）
