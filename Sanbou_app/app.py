@@ -1,14 +1,19 @@
 import streamlit as st
-import time
 import pandas as pd
+import time
 from io import BytesIO
-from pages.top_page import show_top_page
+
+from app_pages.top_page import show_top_page
 from components.update_log import show_update_log
 from components.manual_links import show_manual_links
+from components.notice import show_notice
+from components.version_info import show_version_info
+from components.ui_style import apply_global_style
 
+# ✅ 初期設定
 st.set_page_config(page_title="web版 参謀くん", layout="centered")
-# スタイル
-
+apply_global_style()  # ← フォント適用
+st.query_params["dev_mode"] = "true"  # ← 任意のクエリ活用
 
 # サイドバーでカテゴリ選択
 menu = st.sidebar.selectbox("📂 機能を選択", ["トップページ","管理業務", "機能１", "機能２"])
@@ -21,10 +26,16 @@ else:
 
 if menu == "トップページ":
     show_top_page()
-    st.markdown("---")
-    show_update_log()
-    st.markdown("---")
-    show_manual_links()
+    # サイドバーにお知らせ
+    with st.sidebar:
+        st.markdown("---")
+        show_notice()
+        st.markdown("---")
+        show_manual_links()
+        st.markdown("---")
+        show_update_log()
+        st.markdown("---")
+        show_version_info()
 
 # メインコンテンツ
 elif menu == "管理業務":
