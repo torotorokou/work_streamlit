@@ -3,77 +3,75 @@ import time
 
 st.set_page_config(page_title="web版 参謀くん", layout="wide")
 # スタイル
-st.markdown("""
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
-    <style>
-    html, body, [class*="css"] {
-        font-family: 'Noto Sans JP', sans-serif;
-    }
-    </style>
-""", unsafe_allow_html=True)
 
 
-st.title('web版 参謀くん')
+st.title('WEB版 参謀くん')
 
 # サイドバーでカテゴリ選択
 menu = st.sidebar.selectbox("📂 機能を選択", ["管理業務", "機能１", "機能２"])
 
+
+# メインコンテンツ
 if menu == "管理業務":
     st.header("📊 管理業務")
-
     st.subheader("📄 テンプレート選択")
-    template = st.selectbox("テンプレートを選んでください", ["工場日報", "工場搬出入収支表", "集計項目平均表", "管理票"])
+
+    # 辞書で必要ファイルを定義
+    template_dict = {
+        "工場日報":"factory_report",
+        "工場搬出入収支表": "balance_sheet",
+        "集計項目平均表": "average_sheet",
+        "管理票":"management_sheet"
+    }
+
+
+    template_label = st.selectbox(
+        "テンプレートを選んでください",
+        ["選択してください"] + list(template_dict.keys())
+    )
+
+    # 内部処理用テンプレートキーを取得
+    selected_template = template_dict.get(template_label, None)
 
     # アップロードされたファイルを辞書で管理
     uploaded_files = {}
 
-    if template == "工場日報":
-        with st.container():
-            st.markdown("### 📂 CSVファイルのアップロード")
-            st.info("以下のファイルをアップロードしてください。")
-            uploaded_files["yard"] = st.file_uploader("ヤード一覧", type="csv", key="yard日報")
-            uploaded_files["shipping"] = st.file_uploader("出荷一覧", type="csv", key="ship日報")
 
-    elif template == "工場搬出入収支表":
-        with st.container():
-            st.markdown("### 📂 CSVファイルのアップロード")
-            st.info("以下のファイルをアップロードしてください。")
-
-            uploaded_files["accept"] = st.file_uploader("受入一覧", type="csv", key="accept収支")
-            uploaded_files["yard"] = st.file_uploader("ヤード一覧", type="csv", key="yard収支")
-            uploaded_files["shipping"] = st.file_uploader("出荷一覧", type="csv", key="ship収支")
-
-
-
-    elif template == "集計項目平均表":
-        with st.container():
-            st.markdown("### 📂 CSVファイルのアップロード")
-            st.info("以下のファイルをアップロードしてください。")
-
-            uploaded_files["accept"] = st.file_uploader("受入一覧", type="csv", key="accept平均")
-
-    elif template == "管理票":
-        with st.container():
-            st.markdown("### 📂 CSVファイルのアップロード")
-            st.info("以下のファイルをアップロードしてください。")
-
-            uploaded_files["accept"] = st.file_uploader("受入一覧", type="csv", key="accept管理")
-            uploaded_files["yard"] = st.file_uploader("ヤード一覧", type="csv", key="yard管理")
-            uploaded_files["shipping"] = st.file_uploader("出荷一覧", type="csv", key="ship管理")
-
-    # 必要ファイルがすべてアップロードされたかチェック
+    # 必要ファイルチェック
     required_files = {
-        "工場日報": ["yard", "shipping"],
-        "工場搬出入収支表": ["accept", "yard", "shipping"],
-        "集計項目平均表": ["accept"],
-        "管理票": ["accept", "yard", "shipping"]
+        "factory_report": ["yard", "shipping"],
+        "balance_sheet": ["receive", "yard", "shipping"],
+        "average_sheet": ["receive"],
+        "management_sheet": ["receive", "yard", "shipping"]
     }
 
-    all_uploaded = all(uploaded_files.get(k) is not None for k in required_files[template])
+    # ファイルのアップロード欄表示（後から）
+    if selected_template:
+        with st.container():
+            st.markdown("### 📂 CSVファイルのアップロード")
+            st.info("以下のファイルをアップロードしてください。")
 
-    if all_uploaded:
-        st.success("✅ 必要なファイルがすべてアップロードされました！")
-        if st.button("📥 Excel出力"):
-            st.info("※ ここで出力処理を実装します")
-    else:
-        st.warning("⚠️ すべての必要なCSVをアップロードしてください。")
+            #　表示用ラベル
+            label_map = {
+                "yard": "ヤード一覧",
+                "shipping": "出荷一覧",
+                "receive": "受入一覧"
+            }
+
+            #選択テンプレート毎のCSV表示
+            for file_key in required_files[selected_template]:
+                label = label_map.get(file_key, file_key)
+                uploaded_files[file_key] = st.file_uploader(
+                    f"{label}", type="csv", key = file_key + selected_template
+                )
+
+        #ファイルチェック
+        all_uploaded = all(uploaded_files.get(k) is not None for k in required_files[selected_template])
+
+        if all_uploaded:
+            st.success("✅ 必要なファイルがすべてアップロードされました！")
+            if st.button("📥 Excel出力"):
+                st.info("※ ここで出力処理を実装します")
+        else:
+            st.warning("⚠️ すべての必要なCSVをアップロードしてください。")
+
