@@ -1,9 +1,10 @@
 import streamlit as st
 import time
+import pandas as pd
+from io import BytesIO
 
-st.set_page_config(page_title="web版 参謀くん", layout="wide")
+st.set_page_config(page_title="web版 参謀くん", layout="centered")
 # スタイル
-
 
 st.title('WEB版 参謀くん')
 
@@ -70,8 +71,47 @@ if menu == "管理業務":
 
         if all_uploaded:
             st.success("✅ 必要なファイルがすべてアップロードされました！")
-            if st.button("📥 Excel出力"):
-                st.info("※ ここで出力処理を実装します")
+
+            if st.button("📊 計算開始"):
+                with st.spinner("計算中..."):
+
+                    # 🟩 プログレスバー開始
+                    latest_iteration = st.empty()
+                    bar = st.progress(0)
+
+                    dfs = {}
+                    total_files = len(uploaded_files)
+
+                    for i, (k, file) in enumerate(uploaded_files.items()):
+                        latest_iteration.text(f"{label_map.get(k, k)} を処理中... ({i+1}/{total_files})")
+                        df = pd.read_csv(file)
+
+                        # 👇 仮処理：ファイル種別列を追加
+                        df["ファイル種別"] = label_map.get(k, k)
+                        dfs[k] = df
+
+                    for i in range(100):
+                        progress = int(i + 1)
+                        bar.progress(progress)
+                        time.sleep(0.2)  # 実処理に合わせて削除OK
+
+                    # 🧾 Excel出力
+                    output = BytesIO()
+                    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+                        for k, df in dfs.items():
+                            df.to_excel(writer, index=False, sheet_name=label_map.get(k, k))
+
+                    bar.empty()
+                    latest_iteration.text("✅ 計算完了！")
+
+                    # 💾 ダウンロード
+                    st.download_button(
+                        label="📥 Excelファイルをダウンロード",
+                        data=output.getvalue(),
+                        file_name="出力結果.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                    # ↑↑↑ 処理ここまで ↑↑↑
         else:
             st.warning("⚠️ すべての必要なCSVをアップロードしてください。")
 
