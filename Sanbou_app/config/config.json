@@ -1,0 +1,13 @@
+{
+    "paths": {
+        "check_header_csv": "config/input_header_info.csv",
+        "output_folder": "data/output",
+        "log_file": "logs/app.log",
+        "master_data_folder": "data/master"
+    },
+    "app": {
+        "title": "WEB版 参謀くん",
+        "version": "1.0.0",
+        "dev_mode": true
+    }
+}
