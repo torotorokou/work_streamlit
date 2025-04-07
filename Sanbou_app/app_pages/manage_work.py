@@ -7,6 +7,7 @@ from logic.detect_csv import detect_csv_type
 from utils.config_loader import load_config
 from components.ui_message import show_warning_bubble
 from logic.eigyo_management import template_processors
+from components.custom_button import centered_button
 
 
 def show_manage_work():
@@ -79,7 +80,11 @@ def show_manage_work():
     if not missing_keys:
         st.success("✅ 必要なファイルがすべてアップロードされました！")
 
-        if st.button("📊 書類作成"):
+        if centered_button("📊 書類作成"):
+            st.success("📄 書類を作成中です...")
+            st.success("📄 CSVの日付を確認中です...")
+            # 日付チェック（オプション）
+            
             with st.spinner("計算中..."):
                 latest_iteration = st.empty()
                 bar = st.progress(0)
