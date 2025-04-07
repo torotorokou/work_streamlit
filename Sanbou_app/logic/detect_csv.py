@@ -1,5 +1,5 @@
 # logic/detect_csv.py
-
+from utils.file_loader import read_csv
 import pandas as pd
 
 def load_template_signatures(header_csv_path: str) -> dict:
@@ -18,17 +18,12 @@ def load_template_signatures(header_csv_path: str) -> dict:
 
 
 def detect_csv_type(file, header_csv_path: str) -> str:
-    """
-    CSVファイルを読み取り、テンプレートを判別する。
-    - file: アップロードされたCSV
-    - header_csv_path: 判別ルールCSVのパス
-    """
     try:
         # 判別ルール読み込み
         signatures = load_template_signatures(header_csv_path)
 
-        # CSV読み込み（1行だけ）
-        df = pd.read_csv(file, nrows=1)
+        # ✅ キャッシュ付き読み込み（1行だけ）
+        df = read_csv(file, nrows=1)
         cols = list(df.columns)[:5]
 
         for name, expected in signatures.items():

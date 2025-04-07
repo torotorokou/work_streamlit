@@ -1,10 +1,13 @@
 version: '3'
 services:
-    sambou_streamlit_app:
-        build: .
-        ports:
-            - '8501:8501'
-        volumes:
-            - C:\Users\synth\Desktop\works_env\21.Work_Streamlit\Sanbou_app:/work
-        environment:
-            - PYTHONUNBUFFERED=1
+  sambou_streamlit_app:
+    build: .
+    ports:
+      - '8501:8501'
+    volumes:
+      - C:\Users\synth\Desktop\works_env\21.Work_Streamlit\Sanbou_app:/work
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/work
+    working_dir: /work
+    command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0

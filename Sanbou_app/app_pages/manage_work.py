@@ -8,6 +8,9 @@ from utils.config_loader import load_config
 from components.ui_message import show_warning_bubble
 from logic.eigyo_management import template_processors
 from components.custom_button import centered_button
+from utils.file_loader import load_uploaded_csv_files
+from utils.preprocessor import process_csv_by_date
+from utils.file_loader import read_csv
 
 
 def show_manage_work():
@@ -40,6 +43,13 @@ def show_manage_work():
         "receive": "受入一覧"
     }
 
+        # 各ファイルに対応する日付カラム名を設定（変更可能）
+    date_columns = {
+        "receive": "伝票日付",
+        "yard": "伝票日付",
+        "shipping": "伝票日付"
+    }
+
     # --- UI ---
     st.sidebar.markdown("---")
     st.sidebar.subheader("🛠 管理業務メニュー")
@@ -55,6 +65,7 @@ def show_manage_work():
     config = load_config()
     header_csv_path = config["paths"]["check_header_csv"]
 
+    # --- ヘッダーCSVのアップロード ---
     with st.container():
         st.markdown("### 📂 CSVファイルのアップロード")
         st.info("以下のファイルをアップロードしてください。")
@@ -77,13 +88,34 @@ def show_manage_work():
     required_keys = required_files[selected_template]
     missing_keys = [k for k in required_keys if uploaded_files.get(k) is None]
 
+    # --- ステータス表示 ---
     if not missing_keys:
         st.success("✅ 必要なファイルがすべてアップロードされました！")
 
+        # --- 書類作成ボタン ---
+        st.markdown("---")
         if centered_button("📊 書類作成"):
-            st.success("📄 書類を作成中です...")
+            
+            # --- 書類作成の前処理---
+            st.success("📄 これから書類を作成します...")
+            dfs = load_uploaded_csv_files(uploaded_files)
+            st.write("データフレーム一覧:", dfs)
+
             st.success("📄 CSVの日付を確認中です...")
-            # 日付チェック（オプション）
+
+
+            if date_col not in df.columns:
+                st.warning(f"⚠️ {key} のCSVに「{date_col}」列が見つかりませんでした。")
+                st.stop()  # ← これでも可（処理を即停止）
+
+            for key, df in dfs.items():
+                date_col = date_columns.get(key)
+                if date_col and date_col in df.columns:
+                    dfs[key] = process_csv_by_date(df, date_col)
+
+
+
+
             
             with st.spinner("計算中..."):
                 latest_iteration = st.empty()
