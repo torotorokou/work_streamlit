@@ -24,6 +24,31 @@ else:
     st.title(f"📂 {menu}")
 
 
+# 辞書で必要ファイルを定義
+template_dict = {
+    "工場日報":"factory_report",
+    "工場搬出入収支表": "balance_sheet",
+    "集計項目平均表": "average_sheet",
+    "管理票":"management_sheet"
+}
+
+
+# 必要ファイルチェック
+required_files = {
+    "factory_report": ["yard", "shipping"],
+    "balance_sheet": ["receive", "yard", "shipping"],
+    "average_sheet": ["receive"],
+    "management_sheet": ["receive", "yard", "shipping"]
+}
+
+# 必要ファイルチェック
+required_files = {
+    "factory_report": ["yard", "shipping"],
+    "balance_sheet": ["receive", "yard", "shipping"],
+    "average_sheet": ["receive"],
+    "management_sheet": ["receive", "yard", "shipping"]
+}
+
 if menu == "トップページ":
     show_top_page()
     # サイドバーにお知らせ
@@ -48,20 +73,26 @@ elif menu == "管理業務":
         ["工場日報", "工場搬出収支表","集計項目平均表","管理業務"]
     )
 
-    # メイン画面の表示内容を切り替え
-    st.header("📊 管理業務")
-
     if template_option == "工場日報":
         st.subheader("📝 工場日報の入力")
         # 補足説明（シンプルな段落）
         st.markdown("""
         <div style="margin-left: 2em;">
-        この項目では、受入データをもとにABC分類ごとの平均値を計算し、  
+        この項目では、受入データをもとにABC分類ごとの平均値を計算し、
         所定のExcelフォーマットにて自動で出力します。
         </div>
         """, unsafe_allow_html=True)
 
-        st.write("ここに工場日報の機能を実装します。")
+        with st.container():
+            st.markdown("### 📂 CSVファイルのアップロード")
+            st.info("以下のファイルをアップロードしてください。")
+
+            #　表示用ラベル
+            label_map = {
+                "yard": "ヤード一覧",
+                "shipping": "出荷一覧",
+                "receive": "受入一覧"
+            }
 
     elif template_option == "工場搬出収支表":
         st.subheader("📈 工場搬出収支表の集計")
@@ -80,22 +111,6 @@ elif menu == "管理業務":
         st.subheader("📄 項目を選択して下さい")
 
 
-
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("🛠 管理業務メニュー")
-    st.sidebar.checkbox("工場日報")
-    st.sidebar.checkbox("収支表の集計")
-    st.sidebar.checkbox("管理票の出力")
-    st.header("📊 管理業務")
-    st.subheader("📄 テンプレート選択")
-
-    # 辞書で必要ファイルを定義
-    template_dict = {
-        "工場日報":"factory_report",
-        "工場搬出入収支表": "balance_sheet",
-        "集計項目平均表": "average_sheet",
-        "管理票":"management_sheet"
-    }
 
 
     template_label = st.selectbox(
