@@ -7,9 +7,10 @@ from logic.detect_csv import detect_csv_type
 from utils.config_loader import load_config
 from components.ui_message import show_warning_bubble
 from logic.eigyo_management import template_processors
+from logic.eigyo_management import average_sheet, factory_report, balance_sheet, management_sheet
 from components.custom_button import centered_button
 from utils.file_loader import load_uploaded_csv_files
-from utils.preprocessor import process_csv_by_date
+from utils.preprocessor import process_csv_by_date, check_date_alignment,prepare_csv_data
 from utils.file_loader import read_csv
 
 
@@ -37,7 +38,7 @@ def show_manage_work():
         "management_sheet": ["receive", "yard", "shipping"]
     }
 
-    label_map = {
+    csv_label_map = {
         "yard": "ヤード一覧",
         "shipping": "出荷一覧",
         "receive": "受入一覧"
@@ -71,7 +72,7 @@ def show_manage_work():
         st.info("以下のファイルをアップロードしてください。")
 
         for file_key in required_files[selected_template]:
-            label = label_map.get(file_key, file_key)
+            label = csv_label_map.get(file_key, file_key)
             uploaded_file = st.file_uploader(label, type="csv", key=f"{file_key}_{selected_template}")
             uploaded_files[file_key] = uploaded_file
 
@@ -95,64 +96,51 @@ def show_manage_work():
         # --- 書類作成ボタン ---
         st.markdown("---")
         if centered_button("📊 書類作成"):
-            
-            # --- 書類作成の前処理---
-            st.success("📄 これから書類を作成します...")
-            dfs = load_uploaded_csv_files(uploaded_files)
-            st.write("データフレーム一覧:", dfs)
+            # --- 書類作成の前処理 ---
+            dfs = prepare_csv_data(uploaded_files, date_columns)
 
-            st.success("📄 CSVの日付を確認中です...")
-
-
-            if date_col not in df.columns:
-                st.warning(f"⚠️ {key} のCSVに「{date_col}」列が見つかりませんでした。")
-                st.stop()  # ← これでも可（処理を即停止）
-
-            for key, df in dfs.items():
-                date_col = date_columns.get(key)
-                if date_col and date_col in df.columns:
-                    dfs[key] = process_csv_by_date(df, date_col)
-
-
-
+            # --- 各処理の実行 ---
+            processor_func = template_processors.get(selected_template)
+            if processor_func:
+                dfs = processor_func(dfs, csv_label_map)
 
             
-            with st.spinner("計算中..."):
-                latest_iteration = st.empty()
-                bar = st.progress(0)
-                dfs = {}
+            # with st.spinner("計算中..."):
+            #     latest_iteration = st.empty()
+            #     bar = st.progress(0)
+            #     dfs = {}
 
-                for i, (k, file) in enumerate(uploaded_files.items()):
-                    latest_iteration.text(f"{label_map.get(k, k)} を処理中... ({i+1}/{len(uploaded_files)})")
-                    df = pd.read_csv(file)
-                    df["ファイル種別"] = label_map.get(k, k)
-                    dfs[k] = df
+            #     for i, (k, file) in enumerate(uploaded_files.items()):
+            #         latest_iteration.text(f"{csv_label_map.get(k, k)} を処理中... ({i+1}/{len(uploaded_files)})")
+            #         df = pd.read_csv(file)
+            #         df["ファイル種別"] = csv_label_map.get(k, k)
+            #         dfs[k] = df
 
-                # 実行
-                processor_func = template_processors.get(selected_template)
-                if processor_func:
-                    dfs = processor_func(dfs, label_map)
+            #     # 実行
+            #     processor_func = template_processors.get(selected_template)
+            #     if processor_func:
+            #         dfs = processor_func(dfs, csv_label_map)
 
-                # ↓ 進捗バー演出（オプション）
-                for i in range(100):
-                    bar.progress(i + 1)
-                    time.sleep(0.005)
+            #     # ↓ 進捗バー演出（オプション）
+            #     for i in range(100):
+            #         bar.progress(i + 1)
+            #         time.sleep(0.005)
 
-                # 📁 Excel 出力
-                output = BytesIO()
-                with pd.ExcelWriter(output, engine="openpyxl") as writer:
-                    for k, df in dfs.items():
-                        df.to_excel(writer, index=False, sheet_name=label_map.get(k, k))
+            #     # 📁 Excel 出力
+            #     output = BytesIO()
+            #     with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            #         for k, df in dfs.items():
+            #             df.to_excel(writer, index=False, sheet_name=csv_label_map.get(k, k))
 
-                bar.empty()
-                latest_iteration.text("✅ 書類作成が完了しました！")
+            #     bar.empty()
+            #     latest_iteration.text("✅ 書類作成が完了しました！")
 
-                st.download_button(
-                    label="📥 Excelファイルをダウンロード",
-                    data=output.getvalue(),
-                    file_name="出力結果.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+            #     st.download_button(
+            #         label="📥 Excelファイルをダウンロード",
+            #         data=output.getvalue(),
+            #         file_name="出力結果.xlsx",
+            #         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            #     )
 
 
     else:
@@ -168,7 +156,7 @@ def show_manage_work():
 
         # ✅ 各ファイルごとのステータス表示
         for k in required_keys:
-            label = label_map.get(k, k)
+            label = csv_label_map.get(k, k)
             if uploaded_files.get(k):
                 st.markdown(f"- ✅ **{label}**")
             else:

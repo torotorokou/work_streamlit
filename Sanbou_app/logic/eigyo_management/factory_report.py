@@ -1,5 +1,4 @@
-def generate_factory_report(dfs, label_map):
-    # 工場日報用の加工処理（仮）
-    for df in dfs.values():
-        df["レポート種別"] = "工場日報"
+def process(dfs, label_map):
+    # 工場日報の処理を書く
+    print("📄 工場日報を処理中...")
     return dfs

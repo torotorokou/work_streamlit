@@ -1,14 +1,11 @@
 # processors/__init__.py
 
-from .factory_report import generate_factory_report
-from .balance_sheet import generate_balance_sheet
-from .average_sheet import generate_average_sheet
-from .management_sheet import generate_management_sheet
+from . import average_sheet, factory_report, balance_sheet, management_sheet
 
 # テンプレートと処理の対応表
 template_processors = {
-    "factory_report": generate_factory_report,
-    "balance_sheet": generate_balance_sheet,
-    "average_sheet": generate_average_sheet,
-    "management_sheet": generate_management_sheet,
+    "average_sheet": average_sheet.process,
+    "factory_report": factory_report.process,
+    "balance_sheet": balance_sheet.process,
+    "management_sheet": management_sheet.process
 }

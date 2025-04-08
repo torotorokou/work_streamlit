@@ -2,6 +2,7 @@ import streamlit as st
 import time
 import random
 
+
 # タイプライター風チャット（プレーンテキスト用）
 def typewriter_chat(message: str, delay=0.03):
     placeholder = st.empty()
@@ -10,6 +11,7 @@ def typewriter_chat(message: str, delay=0.03):
         displayed += char
         placeholder.markdown(displayed)
         time.sleep(delay)
+
 
 # メイントップページ表示
 def show_top_page():
