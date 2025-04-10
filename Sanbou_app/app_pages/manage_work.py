@@ -12,7 +12,7 @@ from components.custom_button import centered_button
 from utils.file_loader import load_uploaded_csv_files
 from utils.preprocessor import process_csv_by_date, check_date_alignment,prepare_csv_data
 from utils.file_loader import read_csv
-from utils.debug_tools import save_debug_csvs
+from utils.debug_tools import save_debug_csvs, save_debug_parquets
 
 
 
@@ -102,7 +102,7 @@ def show_manage_work():
             dfs = prepare_csv_data(uploaded_files, date_columns)
 
             # デバッグ用CSV保存
-            save_debug_csvs(dfs, folder="/work/data/input")
+            save_debug_parquets(dfs, folder="/work/data/input")
 
             # --- 各処理の実行 ---
             processor_func = template_processors.get(selected_template)

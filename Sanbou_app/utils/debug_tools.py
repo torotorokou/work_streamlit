@@ -19,3 +19,15 @@ def check_dfs(dfs: dict, rows: int = 5, show_columns: bool = True):
         if show_columns:
             print("🧾 カラム:", df.columns.tolist())
         print(df.head(rows))
+
+
+
+from typing import Dict
+import pandas as pd
+import os
+
+def save_debug_parquets(dfs: Dict[str, pd.DataFrame], folder: str = "debug_data") -> None:
+    os.makedirs(folder, exist_ok=True)
+    for name, df in dfs.items():
+        file_path = os.path.join(folder, f"debug_{name}.parquet")
+        df.to_parquet(file_path, index=False)

@@ -14,9 +14,9 @@ csv_label_map = {
     "receive": "受入一覧"
 }
 
-debug_csv = "/work/data/input/debug_receive.csv"
+debug_parquet = "/work/data/input/debug_receive.parquet"
 dfs = {
-    "receive": pd.read_csv(debug_csv)  # テスト用CSV
+    "receive": pd.read_parquet(debug_parquet)  # テスト用CSV
 }
 dfs.items()
 # %%
@@ -35,7 +35,7 @@ master_csv, template = load_master_and_template(config)
 master_csv.head()
 
 # %%
-master_csv.dtypes
+# master_csv.dtypes
 df_receive.dtypes
 
 # %%

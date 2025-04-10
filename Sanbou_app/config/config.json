@@ -4,7 +4,8 @@
         "redim_header_csv_info": "config/need_columns_info.csv",
         "output_folder": "data/output",
         "app_logfile": "logs/app.log",
-        "master_data_folder": "data/master"
+        "master_data_folder": "data/master",
+        "header_dtypes_json": "config/expected_dtypes.json"
     },
     "app": {
         "title": "WEB版 参謀くん",

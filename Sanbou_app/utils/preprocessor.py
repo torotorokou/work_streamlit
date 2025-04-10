@@ -5,10 +5,20 @@ def prepare_csv_data(uploaded_files: dict, date_columns: dict) -> dict:
     import streamlit as st
     from utils.file_loader import load_uploaded_csv_files
     from utils.preprocessor import process_csv_by_date, check_date_alignment
+    from utils.data_schema import load_expected_dtypes
+    from utils.cleaners import enforce_dtypes
+    from utils.config_loader import load_config
 
     st.success("📄 これから書類を作成します...")
     dfs = load_uploaded_csv_files(uploaded_files)
     st.write("データフレーム一覧（元データ）:", dfs)
+
+    # 型変換/ロードと実行
+    config = load_config()
+    expected_dtypes = load_expected_dtypes(config)
+
+    for key in dfs:
+        dfs[key] = enforce_dtypes(dfs[key], expected_dtypes)
 
     st.success("📄 CSVの日付を確認中です...")
 
@@ -31,6 +41,7 @@ def prepare_csv_data(uploaded_files: dict, date_columns: dict) -> dict:
         st.stop()
 
     return dfs
+
 
 
 import pandas as pd
