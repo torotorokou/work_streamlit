@@ -46,3 +46,31 @@
 2025-04-10 14:18:52,745 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
 2025-04-10 14:18:52,770 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
 2025-04-10 14:19:59,482 [INFO] (average_sheet.py:56) [3e8cad86168e/root] ✅ 正味重量の合計: 8050.00 kg
+2025-04-10 14:22:15,631 [INFO] (average_sheet.py:56) [3e8cad86168e/root] ✅ 正味重量の合計: 8050.00 kg
+2025-04-10 14:23:36,340 [INFO] (average_sheet.py:56) [3e8cad86168e/root] ✅ 正味重量の合計: 8050.00 kg
+2025-04-10 14:24:38,081 [INFO] (average_sheet.py:56) [3e8cad86168e/root] ✅ 正味重量の合計: 8050.00 kg
+2025-04-10 14:29:00,953 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
+2025-04-10 14:29:00,978 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
+2025-04-10 14:29:07,069 [INFO] (average_sheet.py:74) [3e8cad86168e/root] ✅ A区分の台数: 18、重量: 8050.00、単価: 447.22
+2025-04-10 14:49:12,648 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
+2025-04-10 14:49:12,677 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
+2025-04-10 14:49:30,012 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
+2025-04-10 14:49:30,037 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
+2025-04-10 14:50:17,670 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
+2025-04-10 14:50:17,693 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
+2025-04-10 14:51:42,242 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
+2025-04-10 14:51:42,273 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
+2025-04-10 14:51:50,410 [INFO] (average_sheet.py:80) [3e8cad86168e/root] ✅ A区分 → 台数: 18, 重量: 8050.00, 単価: 447.22
+2025-04-10 14:51:50,414 [INFO] (average_sheet.py:80) [3e8cad86168e/root] ✅ B区分 → 台数: 29, 重量: 11160.00, 単価: 384.83
+2025-04-10 14:51:50,419 [INFO] (average_sheet.py:80) [3e8cad86168e/root] ✅ C区分 → 台数: 16, 重量: 6000.00, 単価: 375.00
+2025-04-10 14:51:50,424 [INFO] (average_sheet.py:80) [3e8cad86168e/root] ✅ D区分 → 台数: 18, 重量: 4500.00, 単価: 250.00
+2025-04-10 14:51:50,428 [INFO] (average_sheet.py:80) [3e8cad86168e/root] ✅ E区分 → 台数: 0, 重量: 0.00, 単価: 0.00
+2025-04-10 14:51:50,432 [INFO] (average_sheet.py:80) [3e8cad86168e/root] ✅ F区分 → 台数: 3, 重量: 100.00, 単価: 33.33
+2025-04-10 14:55:39,192 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
+2025-04-10 14:55:39,215 [WARNING] (__init__.py:28) [3e8cad86168e/root] ❌ 処理関数の読み込みエラー: average_sheet → module 'eigyo_management.average_sheet' has no attribute 'process'
+2025-04-10 14:56:02,686 [INFO] (average_sheet.py:80) [3e8cad86168e/root] ✅ A区分 → 台数: 18, 重量: 8050.00, 単価: 447.22
+2025-04-10 14:56:02,690 [INFO] (average_sheet.py:80) [3e8cad86168e/root] ✅ B区分 → 台数: 29, 重量: 11160.00, 単価: 384.83
+2025-04-10 14:56:02,695 [INFO] (average_sheet.py:80) [3e8cad86168e/root] ✅ C区分 → 台数: 16, 重量: 6000.00, 単価: 375.00
+2025-04-10 14:56:02,699 [INFO] (average_sheet.py:80) [3e8cad86168e/root] ✅ D区分 → 台数: 18, 重量: 4500.00, 単価: 250.00
+2025-04-10 14:56:02,704 [INFO] (average_sheet.py:80) [3e8cad86168e/root] ✅ E区分 → 台数: 0, 重量: 0.00, 単価: 0.00
+2025-04-10 14:56:02,709 [INFO] (average_sheet.py:80) [3e8cad86168e/root] ✅ F区分 → 台数: 3, 重量: 100.00, 単価: 33.33
