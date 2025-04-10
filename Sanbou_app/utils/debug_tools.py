@@ -10,10 +10,12 @@ from typing import Dict
 def save_debug_csvs(dfs: Dict[str, pd.DataFrame], folder: str = "debug_data") -> None:
     os.makedirs(folder, exist_ok=True)
     for name, df in dfs.items():
-        df.to_csv(os.path.join(folder, f"debug_{name}.csv"), index=False)
+        df.to_csv(os.path.join(folder, f"debug_{name}.csv"), index=False, encoding="utf-8-sig")
 
 
-if __name__ == "__main__":
-    # テスト用コード
-    df = pd.DataFrame({"日付": ["2024-01-01"], "数量": [100]})
-    save_debug_csvs({"テスト": df})
+def check_dfs(dfs: dict, rows: int = 5, show_columns: bool = True):
+    for key, df in dfs.items():
+        print(f"\n📘 {key} - {len(df)}件")
+        if show_columns:
+            print("🧾 カラム:", df.columns.tolist())
+        print(df.head(rows))

@@ -2,10 +2,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: manage_work",
+            "name": "Python: /work/logic/eigyo_management/debug_runner.py",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/app_pages/manage_work.py",
+            "program": "/work/logic/eigyo_management/debug_runner.py",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
         }

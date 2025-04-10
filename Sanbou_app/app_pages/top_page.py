@@ -21,8 +21,8 @@ def show_top_page():
     chat = [
         "こんにちは！私は **WEB版 参謀くん** です 🧠✨",
         "このツールは、**現場業務の効率化**と**帳票作成の自動化**をサポートする、社内専用の業務支援アプリです。",
-        "🛠 現在ご利用いただける機能は以下のとおりです：\n\n- 工場日報の作成\n- 工場搬出入収支表の集計\n- 管理票の自動生成",
-        "👇 ご利用の際は、左側の **サイドバー** から出力したい項目を選び、対象のCSVファイルをアップロードしてください。",
+        "現在ご利用いただける機能は以下のとおりです：\n\n- 工場日報の作成\n- 工場搬出入収支表の集計\n- 管理票の自動生成",
+        "ご利用の際は、👈 左側の **サイドバー** から出力したい項目を選び、対象のCSVファイルをアップロードしてください。",
         # "📄 アップロードが完了すると、所定のフォーマットに沿って **Excelファイルが自動で生成** されます。"
     ]
 
@@ -35,17 +35,17 @@ def show_top_page():
         for msg in chat:
             with st.chat_message("assistant"):
                 typewriter_chat(msg)
-            time.sleep(random.uniform(0.4, 1.2))  # 吹き出し間隔にゆらぎ
+            time.sleep(random.uniform(0.4, 0.6))  # 吹き出し間隔にゆらぎ
 
         # ✅ サイドバー誘導チャット（typewriter）
         sidebar_msg = (
-            "✅ では、左の **サイドバー** にあるメニューから  \n"
+            "では、左の **サイドバー** にあるメニューから  \n"
             "出力したい帳票を選んでみてくださいね。CSVファイルのアップロードもそちらから行えます！  \n"
             "何を選べばいいか迷ったら、操作マニュアルも見てみてください📄"
         )
         with st.chat_message("assistant"):
             typewriter_chat(sidebar_msg)
-        time.sleep(random.uniform(0.6, 1.2))
+        time.sleep(random.uniform(0.2, 0.6))
 
         # ✅ サポート案内リンク（HTMLは一括表示！）
         with st.chat_message("assistant"):

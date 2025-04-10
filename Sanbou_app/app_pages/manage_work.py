@@ -12,6 +12,8 @@ from components.custom_button import centered_button
 from utils.file_loader import load_uploaded_csv_files
 from utils.preprocessor import process_csv_by_date, check_date_alignment,prepare_csv_data
 from utils.file_loader import read_csv
+from utils.debug_tools import save_debug_csvs
+
 
 
 def show_manage_work():
@@ -64,7 +66,7 @@ def show_manage_work():
         st.markdown(f"""<div style=\"margin-left: 2em; color:#444;\">{description}</div>""", unsafe_allow_html=True)
 
     config = load_config()
-    header_csv_path = config["paths"]["check_header_csv"]
+    header_csv_path = config["main_paths"]["check_header_csv"]
 
     # --- ヘッダーCSVのアップロード ---
     with st.container():
@@ -99,12 +101,15 @@ def show_manage_work():
             # --- 書類作成の前処理 ---
             dfs = prepare_csv_data(uploaded_files, date_columns)
 
+            # デバッグ用CSV保存
+            save_debug_csvs(dfs, folder="/work/data/input")
+
             # --- 各処理の実行 ---
             processor_func = template_processors.get(selected_template)
             if processor_func:
                 dfs = processor_func(dfs, csv_label_map)
 
-            
+
             # with st.spinner("計算中..."):
             #     latest_iteration = st.empty()
             #     bar = st.progress(0)

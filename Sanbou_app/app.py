@@ -17,6 +17,7 @@ from app_pages.manage_work import show_manage_work
 from utils.config_loader import load_config
 from config.page_config import page_labels, page_dict, page_labels, page_dict_reverse
 
+
 # ✅ グローバルスタイル適用
 apply_global_style()
 
