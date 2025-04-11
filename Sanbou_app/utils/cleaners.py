@@ -31,6 +31,13 @@ def enforce_dtypes(df, dtype_map):
                     df[col] = pd.to_datetime(df[col], errors="coerce")
 
                 elif dtype in [int, np.int64]:
+                    df[col] = (
+                        df[col]
+                        .astype(str)
+                        .str.replace(",", "", regex=False)  # カンマ削除を追加
+                        .str.strip()
+                        .replace("", pd.NA)
+                    )
                     df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
 
                 elif dtype in [float, np.float64]:
