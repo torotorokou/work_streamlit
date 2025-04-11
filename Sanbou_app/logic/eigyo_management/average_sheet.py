@@ -28,28 +28,28 @@ def load_master_and_template(config):
     return master_csv, template
 
 # ---------------- ヘルパー関数：指定条件の行に値をセット ----------------
-def set_value(master_csv, abc_key: str, condition_name: str, item_name: str, value):
+def set_value(master_csv, category_name: str, level1_name: str, level2_name: str, value):
     # ABC項目は必須（空欄は許さない前提とします）
-    if not abc_key:
+    if not category_name:
         print("⚠️ ABC項目が未指定です。スキップします。")
         return
 
     # --- 条件構築 ---
-    cond = (master_csv["ABC項目"] == abc_key)
+    cond = (master_csv["大項目"] == category_name)
 
-    if condition_name in [None, ""]:
-        cond &= master_csv["kg売上単価"].isnull()
+    if level1_name in [None, ""]:
+        cond &= master_csv["小項目1"].isnull()
     else:
-        cond &= master_csv["kg売上単価"] == condition_name
+        cond &= master_csv["小項目1"] == level1_name
 
-    if item_name in [None, ""]:
-        cond &= master_csv["品名"].isnull()
+    if level2_name in [None, ""]:
+        cond &= master_csv["小項目2"].isnull()
     else:
-        cond &= master_csv["品名"] == item_name
+        cond &= master_csv["小項目2"] == level2_name
 
     # --- 該当行の確認 ---
     if cond.sum() == 0:
-        print(f"⚠️ 該当行が見つかりません（ABC: {abc_key}, 単価: {condition_name}, 品名: {item_name}）")
+        print(f"⚠️ 該当行が見つかりません（大項目: {category_name}, 小項目1: {level1_name}, 小項目2: {level2_name}）")
         return
 
     # --- 値の代入 ---
@@ -92,9 +92,9 @@ def daisuu_juuryou_daisuutanka(df_receive, master_csv, template, csv_label_map):
         unit_price = total_weight / total_car if total_car else 0
 
         # 結果を master_csv に書き込み
-        set_value(master_csv,abc_key, "重量","", total_weight)
-        set_value(master_csv, abc_key, "台数","", total_car)
-        set_value(master_csv, abc_key, "台数単価","", unit_price)
+        set_value(master_csv,abc_key, "","重量", total_weight)
+        set_value(master_csv, abc_key,"", "台数", total_car)
+        set_value(master_csv, abc_key,"", "台数単価", unit_price)
 
         logger.info(
             f"✅ {abc_key}区分 → 台数: {total_car}, 重量: {total_weight:.2f}, 単価: {unit_price:.2f}"
@@ -177,12 +177,12 @@ def abc_sum(df_receive, master_csv, template, csv_label_map):
     # 品名別の合計
     for item_key, _ in item_to_cd.items():
         filtered = master_csv[
-            (master_csv["品名"] == item_key)
+            (master_csv["小項目2"] == item_key)
        ]
 
         # 混合廃棄物の各品名で合計
-        total_weight = master_csv[master_csv["kg売上単価"]=="kg"].sum()
-        total_sell =  master_csv[master_csv["kg売上単価"]=="売上"].sum()
+        total_weight = filtered[filtered["小項目1"]=="kg"]["値"].sum()
+        total_sell =  filtered[filtered["小項目1"]=="売上"]["値"].sum()
         ave_sell =  total_sell / total_weight if total_sell else 0
 
         # 結果を master_csv に書き込み
@@ -193,16 +193,45 @@ def abc_sum(df_receive, master_csv, template, csv_label_map):
     # ABC業者ごとの合計
     for abc_key, abc_cd in abc_to_cd.items():
         filtered = master_csv[
-            (master_csv["ABC項目"] == abc_key)
+            (master_csv["大項目"] == abc_key)
         ]
 
         # ABCの各品名で合計
-        total_weight = master_csv[master_csv["kg売上単価"]=="kg"].sum()
-        total_sell =  master_csv[master_csv["品名"]=="売上"].sum()
+        total_weight = filtered[filtered["小項目1"]=="kg"]["値"].sum()
+        total_sell =  filtered[filtered["小項目1"]=="売上"]["値"].sum()
         ave_sell =  total_sell / total_weight if total_sell else 0
 
         # 結果を master_csv に書き込み
-        set_value(master_csv,"合計", "平均単価",item_key, ave_sell)
-        set_value(master_csv,"合計", "kg",item_key, total_weight)
-        set_value(master_csv,"合計", "売上",item_key, total_sell)
+        set_value(master_csv,abc_key, "平均単価","3品目合計", ave_sell)
+        set_value(master_csv,abc_key, "kg","3品目合計", total_weight)
+        set_value(master_csv,abc_key, "売上","3品目合計", total_sell)
 
+    # 大項目：合計の合計計算
+    filtered = master_csv[
+        (master_csv["小項目2"] == "3品目合計")
+    ]
+    logger.info(print(filtered.shape))
+    # 3品名の合計
+    total_weight = filtered[filtered["小項目1"]=="kg"]["値"].sum()
+    total_sell =  filtered[filtered["小項目1"]=="売上"]["値"].sum()
+    ave_sell =  total_sell / total_weight if total_sell else 0
+
+    # 結果を master_csv に書き込み
+    set_value(master_csv,"合計", "平均単価","3品目合計", ave_sell)
+    set_value(master_csv,"合計", "kg","3品目合計", total_weight)
+    set_value(master_csv,"合計", "売上","3品目合計", total_sell)
+
+
+    return master_csv
+
+
+def last_sum(df_receive, master_csv, template, csv_label_map):
+    logger = app_logger()
+
+    # 総品目合計
+    filtered = df_receive[
+        (df_receive["伝票区分名"] == "売上") &
+        (df_receive["単位名"] == filter_config["unit_name"]) &
+        (df_receive["集計項目CD"] == abc_cd) &
+        (df_receive["品名CD"] == item_cd)
+    ]

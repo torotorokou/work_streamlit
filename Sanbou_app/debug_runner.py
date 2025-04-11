@@ -4,7 +4,8 @@ from logic.eigyo_management.average_sheet import (
     load_receive_data,
     load_master_and_template,
     daisuu_juuryou_daisuutanka,
-    abc_indi
+    abc_indi,
+    abc_sum
 )
 import pandas as pd
 
@@ -34,13 +35,16 @@ master_csv, template = load_master_and_template(config)
 master_csv
 
 # %%
-master_csv = daisuu_juuryou_daisuutanka(df_receive,master_csv, template,csv_label_map)
+master_csv1 = daisuu_juuryou_daisuutanka(df_receive,master_csv, template,csv_label_map)
 
 
 
 # %%
-master_csv = abc_indi(df_receive,master_csv, template,csv_label_map)
-master_csv
+master_csv2 = abc_indi(df_receive,master_csv1, template,csv_label_map)
+master_csv2
 
 
+# %%
+master_csv3 = abc_sum(df_receive,master_csv2, template,csv_label_map)
+master_csv3
 # %%
