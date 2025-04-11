@@ -1,18 +1,12 @@
 # app_pages/manage_work.py
 import streamlit as st
-import pandas as pd
-import time
-from io import BytesIO
 from logic.detect_csv import detect_csv_type
 from utils.config_loader import load_config
 from components.ui_message import show_warning_bubble
 from logic.eigyo_management import template_processors
-from logic.eigyo_management import average_sheet, factory_report, balance_sheet, management_sheet
 from components.custom_button import centered_button
-from utils.file_loader import load_uploaded_csv_files
-from utils.preprocessor import process_csv_by_date, check_date_alignment,prepare_csv_data
-from utils.file_loader import read_csv
-from utils.debug_tools import save_debug_csvs, save_debug_parquets
+from utils.preprocessor import prepare_csv_data
+from utils.debug_tools import save_debug_parquets
 
 
 

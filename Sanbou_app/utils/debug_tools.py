@@ -6,7 +6,6 @@ import os
 import pandas as pd
 from typing import Dict
 
-
 def save_debug_csvs(dfs: Dict[str, pd.DataFrame], folder: str = "debug_data") -> None:
     os.makedirs(folder, exist_ok=True)
     for name, df in dfs.items():
@@ -22,9 +21,7 @@ def check_dfs(dfs: dict, rows: int = 5, show_columns: bool = True):
 
 
 
-from typing import Dict
-import pandas as pd
-import os
+
 
 def save_debug_parquets(dfs: Dict[str, pd.DataFrame], folder: str = "debug_data") -> None:
     os.makedirs(folder, exist_ok=True)

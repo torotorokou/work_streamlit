@@ -5,16 +5,15 @@ from logic.eigyo_management.average_sheet import (
     load_master_and_template,
     daisuu_juuryou_daisuutanka,
     abc_indi,
-    abc_sum
+    abc_sum,
+    last_sum,
+    syuusei,
 )
 import pandas as pd
+from utils.debug_tools import save_debug_parquets
 
 # 表示ラベルマップ（処理対象名として使う）
-csv_label_map = {
-    "yard": "ヤード一覧",
-    "shipping": "出荷一覧",
-    "receive": "受入一覧"
-}
+csv_label_map = {"yard": "ヤード一覧", "shipping": "出荷一覧", "receive": "受入一覧"}
 
 debug_parquet = "/work/data/input/debug_receive.parquet"
 dfs = {
@@ -35,16 +34,30 @@ master_csv, template = load_master_and_template(config)
 master_csv
 
 # %%
-master_csv1 = daisuu_juuryou_daisuutanka(df_receive,master_csv, template,csv_label_map)
-
+master_csv1 = daisuu_juuryou_daisuutanka(
+    df_receive, master_csv, template, csv_label_map
+)
 
 
 # %%
-master_csv2 = abc_indi(df_receive,master_csv1, template,csv_label_map)
+master_csv2 = abc_indi(df_receive, master_csv1, template, csv_label_map)
 master_csv2
 
 
 # %%
-master_csv3 = abc_sum(df_receive,master_csv2, template,csv_label_map)
+master_csv3 = abc_sum(df_receive, master_csv2, template, csv_label_map)
 master_csv3
+# %%
+master_csv4 = last_sum(df_receive, master_csv3, template, csv_label_map)
+master_csv4
+
+# %%
+master_csv5 = syuusei(df_receive, master_csv4, template, csv_label_map)
+master_csv5
+
+# %%
+dfs = {"receive": master_csv5}
+
+save_debug_parquets(dfs, folder="/work/data/output")
+
 # %%

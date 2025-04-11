@@ -1,7 +1,7 @@
 {
     "main_paths": {
         "check_header_csv": "config/input_header_info.csv",
-        "redim_header_csv_info": "config/need_columns_info.csv",
+        "used_header_csv_info": "config/need_columns_info.csv",
         "output_folder": "data/output",
         "app_logfile": "logs/app.log",
         "master_data_folder": "data/master",

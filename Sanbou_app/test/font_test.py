@@ -56,7 +56,7 @@ st.markdown(f"""
 st.markdown(f"<h1 style='color:#00BFFF;'>📘 フォント確認モード：{selected_font}</h1>", unsafe_allow_html=True)
 
 # 📄 表示サンプル（Kouさんのトップページ文）
-st.markdown(f"""
+st.markdown("""
 <div class="custom-font">
 
 ### WEB版 参謀くんへようこそ！

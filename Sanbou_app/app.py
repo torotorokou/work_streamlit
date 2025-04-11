@@ -1,7 +1,4 @@
 import streamlit as st
-import pandas as pd
-import time
-from io import BytesIO
 
 # ✅ ページ初期設定
 st.set_page_config(page_title="web版 参謀くん", layout="centered")
@@ -14,8 +11,7 @@ from components.notice import show_notice
 from components.version_info import show_version_info
 from components.ui_style import apply_global_style
 from app_pages.manage_work import show_manage_work
-from utils.config_loader import load_config
-from config.page_config import page_labels, page_dict, page_labels, page_dict_reverse
+from config.page_config import page_dict, page_labels, page_dict_reverse
 
 
 # ✅ グローバルスタイル適用

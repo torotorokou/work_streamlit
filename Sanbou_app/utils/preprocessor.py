@@ -44,7 +44,6 @@ def prepare_csv_data(uploaded_files: dict, date_columns: dict) -> dict:
 
 
 
-import pandas as pd
 
 
 def process_csv_by_date(df: pd.DataFrame, date_column: str) -> pd.DataFrame:

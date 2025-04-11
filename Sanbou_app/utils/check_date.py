@@ -1,5 +1,3 @@
-import pandas as pd
-import streamlit as st
 import utils.file_loader as load_uploaded_csv_files
 
 def check_csv_manegement(dfs: dict, uploaded_files: dict) -> dict:
