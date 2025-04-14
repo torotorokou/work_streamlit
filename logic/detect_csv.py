@@ -2,6 +2,7 @@
 from utils.file_loader import read_csv
 import pandas as pd
 
+
 def load_template_signatures(header_csv_path: str) -> dict:
     """
     CSVファイルからテンプレートのカラム情報を辞書として読み込む。
@@ -27,7 +28,7 @@ def detect_csv_type(file, header_csv_path: str) -> str:
         cols = list(df.columns)[:5]
 
         for name, expected in signatures.items():
-            if cols[:len(expected)] == expected:
+            if cols[: len(expected)] == expected:
                 return name
 
         return "不明な形式"

@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 
+
 def clean_numeric_column(df, column_name):
     """
     指定された列を float に変換（カンマや空文字を考慮）
@@ -38,7 +39,9 @@ def enforce_dtypes(df, dtype_map):
                         .str.strip()
                         .replace("", pd.NA)
                     )
-                    df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
+                    df[col] = (
+                        pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
+                    )
 
                 elif dtype in [float, np.float64]:
                     df[col] = (

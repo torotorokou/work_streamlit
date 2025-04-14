@@ -13,7 +13,7 @@ font_list = [
     "Arial",
     "Helvetica",
     "monospace",
-    "sans-serif"
+    "sans-serif",
 ]
 
 # 🎛️ サイドバー設定
@@ -28,12 +28,16 @@ bg_color = "#222" if bg_mode == "Dark" else "#f4f4f4"
 text_color = "#ffffff" if bg_mode == "Dark" else "#222"
 
 # 🌐 Google Fonts 読み込み
-st.markdown("""
+st.markdown(
+    """
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&family=Roboto&display=swap" rel="stylesheet">
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # 💄 グローバルCSS適用（タイトル等にも影響）
-st.markdown(f"""
+st.markdown(
+    f"""
     <style>
     html, body, h1, h2, h3, h4, h5, h6, p, span, div {{
         font-family: '{selected_font}', sans-serif !important;
@@ -50,13 +54,19 @@ st.markdown(f"""
         margin-top: 1rem;
     }}
     </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # ✅ タイトル
-st.markdown(f"<h1 style='color:#00BFFF;'>📘 フォント確認モード：{selected_font}</h1>", unsafe_allow_html=True)
+st.markdown(
+    f"<h1 style='color:#00BFFF;'>📘 フォント確認モード：{selected_font}</h1>",
+    unsafe_allow_html=True,
+)
 
 # 📄 表示サンプル（Kouさんのトップページ文）
-st.markdown("""
+st.markdown(
+    """
 <div class="custom-font">
 
 ### WEB版 参謀くんへようこそ！
@@ -88,4 +98,6 @@ st.markdown("""
 ※ このアプリは定期的に機能追加・改善が行われます。お知らせ欄も随時ご確認ください。
 
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)

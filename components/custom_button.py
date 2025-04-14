@@ -1,20 +1,22 @@
 import streamlit as st
 
+
 def centered_button(label: str, key: str = None) -> bool:
     """
     中央寄せでスタイル付きのボタンを表示する関数。
-    
+
     Parameters:
         label (str): ボタンに表示するテキスト
         key (str): ボタンのキー（任意）
-    
+
     Returns:
         bool: ボタンが押されたかどうか
     """
 
     # スタイルを一度だけ適用
     if "_custom_centered_button" not in st.session_state:
-        st.markdown("""
+        st.markdown(
+            """
         <style>
         div.stButton > button {
             background-color: #fbbc04;
@@ -31,7 +33,9 @@ def centered_button(label: str, key: str = None) -> bool:
             background-color: #f9a825;
         }
         </style>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
         st.session_state["_custom_centered_button"] = True
 
     # 中央寄せレイアウト

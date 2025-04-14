@@ -1,10 +1,11 @@
 import pandas as pd
 import streamlit as st
 
+
 @st.cache_data
 def read_csv(file, nrows=None):
     file.seek(0)
-    return pd.read_csv(file, encoding='utf-8', nrows=nrows)
+    return pd.read_csv(file, encoding="utf-8", nrows=nrows)
 
 
 def load_uploaded_csv_files(uploaded_files: dict) -> dict:

@@ -49,13 +49,16 @@ def show_top_page():
 
         # ✅ サポート案内リンク（HTMLは一括表示！）
         with st.chat_message("assistant"):
-            st.markdown("""
+            st.markdown(
+                """
                 <div style="font-size: 16px;">
                 💬 困ったときはこちらをご確認ください👇<br><br>
                 📄 <a href="https://your-manual-link.com" target="_blank">操作マニュアルを見る</a><br>
                 📧 <a href="mailto:support@example.com">サポートチームにメールする</a>
                 </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )
 
         st.session_state.top_page_viewed = True  # 一度表示したら次回は一括へ
 
@@ -66,17 +69,22 @@ def show_top_page():
                 st.markdown(msg)
 
         with st.chat_message("assistant"):
-            st.markdown("""
+            st.markdown(
+                """
                 ✅ では、左の **サイドバー** にあるメニューから  
                 出力したい帳票を選んでみてくださいね。CSVファイルのアップロードもそちらから行えます！  
                 何を選べばいいか迷ったら、操作マニュアルも見てみてください📄
-            """)
+            """
+            )
 
         with st.chat_message("assistant"):
-            st.markdown("""
+            st.markdown(
+                """
                 <div style="font-size: 16px;">
                 💬 困ったときはこちらをご確認ください👇<br><br>
                 📄 <a href="https://your-manual-link.com" target="_blank">操作マニュアルを見る</a><br>
                 📧 <a href="mailto:support@example.com">サポートチームにメールする</a>
                 </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )

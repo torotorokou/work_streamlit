@@ -17,9 +17,7 @@ from utils.write_excel import write_values_to_template
 csv_label_map = {"yard": "ヤード一覧", "shipping": "出荷一覧", "receive": "受入一覧"}
 
 debug_parquet = "/work/data/input/debug_receive.parquet"
-dfs = {
-    "receive": pd.read_parquet(debug_parquet)  # テスト用CSV
-}
+dfs = {"receive": pd.read_parquet(debug_parquet)}  # テスト用CSV
 # %%
 # 絞り込みヘッダー情報の読み込み
 config, key, target_columns = load_config_and_headers(csv_label_map)

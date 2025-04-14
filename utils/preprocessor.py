@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 # utils/preprocessor.py などに置くとよい
 def prepare_csv_data(uploaded_files: dict, date_columns: dict) -> dict:
     import streamlit as st
@@ -11,7 +12,6 @@ def prepare_csv_data(uploaded_files: dict, date_columns: dict) -> dict:
 
     st.success("📄 これから書類を作成します...")
     dfs = load_uploaded_csv_files(uploaded_files)
-    st.write("データフレーム一覧（元データ）:", dfs)
 
     # 型変換/ロードと実行
     config = load_config()
@@ -35,15 +35,10 @@ def prepare_csv_data(uploaded_files: dict, date_columns: dict) -> dict:
 
         dfs[key] = process_csv_by_date(df, date_col)
 
-    st.write("データフレーム一覧（処理済）:", dfs)
-
     if not check_date_alignment(dfs, date_columns):
         st.stop()
 
     return dfs
-
-
-
 
 
 def process_csv_by_date(df: pd.DataFrame, date_column: str) -> pd.DataFrame:
@@ -59,10 +54,12 @@ def process_csv_by_date(df: pd.DataFrame, date_column: str) -> pd.DataFrame:
         pd.DataFrame: ソート＆フィルタ済みのDataFrame
     """
     # 曜日などの文字を除去（例："2024/04/01(月)" → "2024/04/01"）
-    df[date_column] = df[date_column].astype(str).str.replace(r"\(.*?\)", "", regex=True).str.strip()
+    df[date_column] = (
+        df[date_column].astype(str).str.replace(r"\(.*?\)", "", regex=True).str.strip()
+    )
 
     # 日付変換
-    df[date_column] = pd.to_datetime(df[date_column], errors='coerce')
+    df[date_column] = pd.to_datetime(df[date_column], errors="coerce")
 
     # 有効な日付だけに絞る
     df = df.dropna(subset=[date_column])
@@ -81,6 +78,7 @@ def process_csv_by_date(df: pd.DataFrame, date_column: str) -> pd.DataFrame:
 
 import pandas as pd
 import streamlit as st
+
 
 def check_date_alignment(dfs: dict, date_columns: dict) -> bool:
     """

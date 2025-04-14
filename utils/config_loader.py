@@ -1,6 +1,7 @@
 import json
 import os
 
+
 def load_config(config_path="config/config.json") -> dict:
     """
     config.json を読み込んで辞書として返す関数。

@@ -3,6 +3,7 @@ from utils.config_loader import load_config
 from utils.logger import app_logger
 from utils.date_tools import get_weekday_japanese
 from utils.rounding_tools import round_value_column
+from utils.value_setter import set_value
 
 
 # 処理の統合
@@ -50,6 +51,19 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
 
 
 def load_config_and_headers(label_map):
+    """
+    コンフィグ設定とヘッダー定義CSVから、指定データセット（例："receive"）の必要カラムリストを取得する。
+
+    Parameters:
+        label_map (dict): データ種別（例: "receive"）に対応する日本語ラベル名の辞書。
+                          例: {"receive": "受入一覧"}
+
+    Returns:
+        tuple:
+            - config (dict): 読み込まれた設定情報（JSONファイルベースの辞書）
+            - key (str): 使用するデータのキー（例: "receive"）
+            - target_columns (list): 抽出すべきカラム名のリスト（空欄は除外済）
+    """
     config = load_config()
     use_headers_path = config["main_paths"]["used_header_csv_info"]
     df_header = pd.read_csv(use_headers_path)
@@ -62,53 +76,56 @@ def load_config_and_headers(label_map):
 
 
 def load_receive_data(dfs, key, target_columns):
+    """
+    指定された辞書型DataFrameから、対象キーのDataFrameを取得し、必要なカラムのみを抽出して返す。
+
+    Parameters:
+        dfs (dict): 複数のDataFrameを格納した辞書。例: {"receive": df1, "yard": df2}
+        key (str): 対象となるDataFrameのキー名。例: "receive"
+        target_columns (list): 抽出するカラム名のリスト。例: ["伝票日付", "品名", "正味重量"]
+
+    Returns:
+        pd.DataFrame: 指定されたカラムのみを持つDataFrame（フィルタ済み）
+    """
     return dfs[key][target_columns]
 
 
 def load_master_and_template(config):
+    """
+    コンフィグから指定されたパスをもとに、平均表テンプレート用のマスターCSVを読み込んで返す。
+
+    Parameters:
+        config (dict): 設定情報を含む辞書。主に `config["templates"]["average_sheet"]["master_csv_path"]` を参照。
+
+    Returns:
+        pd.DataFrame: 読み込まれたマスターCSVの内容（テンプレートに書き込むための元データ）。
+    """
     master_path = config["templates"]["average_sheet"]["master_csv_path"]
     master_csv = pd.read_csv(master_path, encoding="utf-8-sig")
 
     return master_csv
 
 
-# ---------------- ヘルパー関数：指定条件の行に値をセット ----------------
-def set_value(
-    master_csv, category_name: str, level1_name: str, level2_name: str, value
-):
-    # ABC項目は必須（空欄は許さない前提とします）
-    if not category_name:
-        print("⚠️ ABC項目が未指定です。スキップします。")
-        return
-
-    # --- 条件構築 ---
-    cond = master_csv["大項目"] == category_name
-
-    if level1_name in [None, ""]:
-        cond &= master_csv["小項目1"].isnull()
-    else:
-        cond &= master_csv["小項目1"] == level1_name
-
-    if level2_name in [None, ""]:
-        cond &= master_csv["小項目2"].isnull()
-    else:
-        cond &= master_csv["小項目2"] == level2_name
-
-    # --- 該当行の確認 ---
-    if cond.sum() == 0:
-        print(
-            f"⚠️ 該当行が見つかりません（大項目: {category_name}, 小項目1: {level1_name}, 小項目2: {level2_name}）"
-        )
-        return
-
-    # --- 値の代入 ---
-    master_csv.loc[cond, "値"] = value
-
-
 # 台数・重量・台数単価をABC区分ごとに集計
-def aggregate_vehicle_data(
-    df_receive: pd.DataFrame, master_csv: pd.DataFrame
-) -> pd.DataFrame:
+def aggregate_vehicle_data(df_receive: pd.DataFrame, master_csv: pd.DataFrame) -> pd.DataFrame:
+    """
+    受入データからABC区分ごとの台数・総重量・台数単価を集計し、
+    テンプレートマスターCSVに対応する値を設定する。
+
+    Parameters:
+        df_receive (pd.DataFrame): 受入データを格納したDataFrame。
+                                   「集計項目CD」「正味重量」「受入番号」などの列を含む。
+        master_csv (pd.DataFrame): テンプレート構造に対応したマスター表。
+                                   「大項目」「小項目1」「小項目2」「値」列を含む必要がある。
+
+    Returns:
+        pd.DataFrame: 集計結果が反映されたマスターCSV（引数と同じDataFrameに上書き）
+    
+    Notes:
+        - ABC区分（A〜F）に対応する「集計項目CD」を基に台数・重量を算出。
+        - 台数が0の場合は単価は0として処理。
+        - ログに各区分の処理結果および注意を出力する。
+    """
     logger = app_logger()
 
     # --- ABC項目と集計項目CDの対応表 ---
@@ -139,9 +156,31 @@ def aggregate_vehicle_data(
     return master_csv
 
 
-def calculate_itemwise_summary(
-    df_receive: pd.DataFrame, master_csv: pd.DataFrame
-) -> pd.DataFrame:
+def calculate_itemwise_summary(df_receive: pd.DataFrame, master_csv: pd.DataFrame) -> pd.DataFrame:
+    """
+    受入データをもとに、ABC区分 × 品目ごとに売上・重量・平均単価を集計し、
+    テンプレートマスターCSVに反映する。
+
+    Parameters:
+        df_receive (pd.DataFrame): 受入データ。以下の列を含む必要がある：
+            - "伝票区分名"
+            - "単位名"
+            - "集計項目CD"
+            - "品名CD"
+            - "正味重量"
+            - "金額"
+        master_csv (pd.DataFrame): テンプレートに対応したマスター表。
+                                   「大項目」「小項目1」「小項目2」「値」列を含む必要がある。
+
+    Returns:
+        pd.DataFrame: 品目別の集計結果が反映されたマスターCSV（上書き）
+
+    Notes:
+        - 売上は "伝票区分名" が "売上" のみを対象とする。
+        - 単位は "kg" のみを対象とする。
+        - ABC区分（A〜F）と各品目に対応したコードでフィルタし、売上・重量を合計。
+        - 重量が0の場合は平均単価を0とし、警告をログ出力する。
+    """
     logger = app_logger()
 
     # --- フィルター条件 ---
@@ -190,6 +229,27 @@ def calculate_itemwise_summary(
 
 
 def summarize_item_and_abc_totals(master_csv: pd.DataFrame) -> pd.DataFrame:
+    """
+    マスターCSVに対して、品目ごと・ABC業者ごと・全体の「3品目合計」を集計し、
+    平均単価・総重量・売上をテンプレートに書き込む。
+
+    処理ステップ：
+        ① 品目別（混合廃棄物A/B/焼却物）の合計を「大項目=合計」として記入
+        ② ABC業者別の3品目合計を「小項目2=3品目合計」として記入
+        ③ 全体の3品目合計を「大項目=合計」「小項目2=3品目合計」として記入
+
+    Parameters:
+        master_csv (pd.DataFrame): テンプレート形式のマスター表。
+                                   「大項目」「小項目1」「小項目2」「値」列が含まれていることが前提。
+
+    Returns:
+        pd.DataFrame: 集計済みのマスターCSV（対象セルに上書きされたDataFrame）
+
+    Notes:
+        - 平均単価は「売上 ÷ 重量」で計算される。
+        - 重量が0の場合は平均単価を0として処理。
+        - ログに集計完了メッセージを出力。
+    """
     logger = app_logger()
 
     abc_to_cd = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "F": 6}
@@ -239,9 +299,37 @@ def summarize_item_and_abc_totals(master_csv: pd.DataFrame) -> pd.DataFrame:
     return master_csv
 
 
-def calculate_final_totals(
-    df_receive: pd.DataFrame, master_csv: pd.DataFrame
-) -> pd.DataFrame:
+def calculate_final_totals(df_receive: pd.DataFrame, master_csv: pd.DataFrame) -> pd.DataFrame:
+    """
+    テンプレート用マスターCSVに対し、全体の台数・重量・単価・売上情報を集計し、
+    総品目・その他品目の値とともに日付・曜日も書き込む。
+
+    Parameters:
+        df_receive (pd.DataFrame): 受入データ。以下の列を含む必要あり：
+            - "伝票区分名"
+            - "単位名"
+            - "正味重量"
+            - "金額"
+            - "伝票日付"
+
+        master_csv (pd.DataFrame): テンプレート形式のマスターCSV。
+                                   「大項目」「小項目1」「小項目2」「値」列が含まれていること。
+
+    Returns:
+        pd.DataFrame: 最終集計値と日付・曜日情報が反映されたマスターCSV。
+
+    集計内容:
+        - 「小項目2」が "台数" / "重量" の行をもとに、全体合計台数・重量・台数単価を算出
+        - "売上" × "kg" のフィルタで総品目の重量・売上・平均単価を計算
+        - 総品目 － 3品目合計 = その他品目 として差分を計算
+        - df_receive の先頭日付から日付と曜日を取得し、テンプレートに書き込み
+
+    Notes:
+        - 重量や売上が0の場合は割り算を回避して平均単価を0とする。
+        - 曜日は日本語（例："月", "火", ...）で `get_weekday_japanese()` により算出。
+        - 日付のフォーマットは "YYYY/MM/DD"。
+    """
+
     logger = app_logger()
 
     # --- 台数・重量・台数単価の全体合計 ---

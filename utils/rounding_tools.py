@@ -8,7 +8,9 @@ def round_value_column(df: pd.DataFrame) -> pd.DataFrame:
     それ以外は整数に丸める。
     ただし、丸めた結果が0.00なら 0 に変換する。
     """
-    is_tanka = df["小項目1"].astype(str).str.contains("単価", na=False) | df["小項目2"].astype(str).str.contains("単価", na=False)
+    is_tanka = df["小項目1"].astype(str).str.contains("単価", na=False) | df[
+        "小項目2"
+    ].astype(str).str.contains("単価", na=False)
 
     df["値"] = pd.to_numeric(df["値"], errors="coerce")
 

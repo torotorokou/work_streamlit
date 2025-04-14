@@ -2,7 +2,8 @@ import streamlit as st
 
 
 def show_warning_bubble(expected_name, detected_name):
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div style="
         background-color: #fffbea;
         border-left: 6px solid #e6b800;
@@ -29,4 +30,6 @@ def show_warning_bubble(expected_name, detected_name):
             border-bottom: 12px solid #fffbea;
         "></div>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )

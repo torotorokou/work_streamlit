@@ -1,6 +1,7 @@
 import numpy as np
 import json
 
+
 def load_expected_dtypes(config):
     path = config["main_paths"]["header_dtypes_json"]
     with open(path, encoding="utf-8") as f:
@@ -14,7 +15,7 @@ def load_expected_dtypes(config):
         "int64": np.int64,
         "str": str,
         "bool": bool,
-        "datetime": "datetime64[ns]"  # pandasで読み取り可能な形式
+        "datetime": "datetime64[ns]",  # pandasで読み取り可能な形式
     }
 
     return {k: type_map.get(v, str) for k, v in dtype_str_map.items()}

@@ -1,7 +1,9 @@
 import streamlit as st
 
+
 def apply_global_style():
-    st.markdown("""
+    st.markdown(
+        """
     <style>
     .css-1d391kg {
         background-color: #fff8d6;
@@ -40,5 +42,6 @@ def apply_global_style():
         background-color: #fffce6;
     }
     </style>
-    """, unsafe_allow_html=True)
-
+    """,
+        unsafe_allow_html=True,
+    )
