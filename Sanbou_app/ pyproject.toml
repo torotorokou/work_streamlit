@@ -1,4 +1,0 @@
-[tool.ruff]
-line-length = 88
-target-version = "py310"
-fix = true  # ← これが保存時自動整形に必要！

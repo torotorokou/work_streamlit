@@ -1,0 +1,41 @@
+# Pythonキャッシュ系（必須）
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# 環境ファイルや設定
+.env
+*.env
+
+# Jupyter関係（もし含まれていれば）
+.ipynb_checkpoints/
+
+# OS・エディタ用キャッシュ
+.DS_Store
+.vscode/
+
+# 出力ファイル・一時ファイル
+*.log
+*.sqlite3
+*.db
+*.parquet
+*.xls*
+*.csv
+*.zip
+
+# Streamlitキャッシュ
+.streamlit/
+
+# Dockerによる出力など
+*.tar
+*.whl
+
+# ★以下は含めない！（Gitフック・履歴のため）
+# .git/        ← 含める必要があるので **コメントアウト or 削除**
+# .pre-commit-config.yaml ← これは含める（チェック設定）
+
+# テンプレートやパスワードファイルを防ぐ例（任意）
+# secrets.json
+# config.yaml

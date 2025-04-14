@@ -1,0 +1,4 @@
+[tool.ruff]
+line-length = 88        # 行長制限（デフォルト88）
+target-version = "py310" # 対応するPythonバージョン（3.10）
+fix = true               # 自動修正を有効にする（保存時自動整形）

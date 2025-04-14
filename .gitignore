@@ -1,0 +1,55 @@
+# ▶ Pythonキャッシュ系
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# ▶ Jupyter系（もし使っていれば）
+.ipynb_checkpoints/
+
+# ▶ VSCode設定ファイル（個人の環境に依存する）
+.vscode/
+
+# ▶ OSごとのゴミファイル
+.DS_Store
+Thumbs.db
+
+# ▶ 環境変数や秘密情報
+.env
+*.env
+
+# ▶ Streamlitキャッシュ
+.streamlit/
+
+# ▶ 出力ファイル（自動生成されるもの）
+*.log
+*.sqlite3
+*.db
+*.parquet
+*.csv
+*.zip
+*.xlsx
+*.xls
+
+# ▶ テスト用の保存ファイルやテンプレート一時ファイル
+data/output/
+data/input/
+templates/*.bak.xlsx
+
+# ▶ Docker関連（不要なら）
+*.tar
+*.whl
+
+# ▶ pre-commitが自動生成するファイル（必要ならコメントアウト）
+# .pre-commit-config.yaml
+
+# ▶ VSCodeワークスペース用の設定ファイル
+*.code-workspace
+
+# ▶ __init__.py が空のままなら除外（※プロジェクトによる）
+# **/__init__.py
+
+# ▶ その他バックアップ
+*~
+*.swp
