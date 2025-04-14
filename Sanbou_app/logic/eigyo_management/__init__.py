@@ -17,9 +17,6 @@ template_configs = config["templates"]
 template_processors = {}
 
 # 各テンプレートの処理関数を動的にインポート
-
-
-
 for key, info in template_configs.items():
     try:
         module = importlib.import_module(f"eigyo_management.{key}")

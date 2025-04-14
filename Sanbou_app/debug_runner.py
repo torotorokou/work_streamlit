@@ -3,14 +3,15 @@ from logic.eigyo_management.average_sheet import (
     load_config_and_headers,
     load_receive_data,
     load_master_and_template,
-    daisuu_juuryou_daisuutanka,
-    abc_indi,
-    abc_sum,
-    last_sum,
-    syuusei,
+    aggregate_vehicle_data,
+    calculate_itemwise_summary,
+    calculate_itemwise_summary,
+    calculate_final_totals,
+    apply_rounding,
 )
 import pandas as pd
 from utils.debug_tools import save_debug_parquets
+from utils.write_excel import write_values_to_template
 
 # 表示ラベルマップ（処理対象名として使う）
 csv_label_map = {"yard": "ヤード一覧", "shipping": "出荷一覧", "receive": "受入一覧"}
@@ -34,30 +35,29 @@ master_csv, template = load_master_and_template(config)
 master_csv
 
 # %%
-master_csv1 = daisuu_juuryou_daisuutanka(
-    df_receive, master_csv, template, csv_label_map
-)
+master_csv1 = aggregate_vehicle_data(df_receive, master_csv, template, csv_label_map)
 
 
 # %%
-master_csv2 = abc_indi(df_receive, master_csv1, template, csv_label_map)
+master_csv2 = calculate_itemwise_summary(
+    df_receive, master_csv1, template, csv_label_map
+)
 master_csv2
 
 
 # %%
-master_csv3 = abc_sum(df_receive, master_csv2, template, csv_label_map)
+master_csv3 = calculate_itemwise_summary(
+    df_receive, master_csv2, template, csv_label_map
+)
 master_csv3
 # %%
-master_csv4 = last_sum(df_receive, master_csv3, template, csv_label_map)
+master_csv4 = calculate_final_totals(df_receive, master_csv3, template, csv_label_map)
 master_csv4
 
 # %%
-master_csv5 = syuusei(df_receive, master_csv4, template, csv_label_map)
+master_csv5 = apply_rounding(df_receive, master_csv4, template, csv_label_map)
 master_csv5
 
-# %%
-dfs = {"receive": master_csv5}
-
-save_debug_parquets(dfs, folder="/work/data/output")
 
 # %%
+output_excel = write_values_to_template(master_csv5, "template.xlsx")
