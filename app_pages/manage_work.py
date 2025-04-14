@@ -1,11 +1,13 @@
 # app_pages/manage_work.py
 import streamlit as st
+import time
 from logic.detect_csv import detect_csv_type
 from utils.config_loader import load_config
 from components.ui_message import show_warning_bubble
 from logic.eigyo_management import template_processors
-from components.custom_button import centered_button
-from utils.preprocessor import prepare_csv_data
+from components.custom_button import centered_button,centered_download_button
+# from utils.preprocessor import prepare_csv_data
+from logic.controllers.csv_controller import prepare_csv_data
 from utils.debug_tools import save_debug_parquets
 from utils.write_excel import write_values_to_template
 
@@ -94,26 +96,34 @@ def show_manage_work():
         # --- 書類作成ボタン ---
         st.markdown("---")
         if centered_button("📊 書類作成"):
-            # --- 書類作成の前処理 ---
+            progress = st.progress(0)
+
+            progress.progress(10, "📥 ファイルを処理中...")
+            time.sleep(0.3)
             dfs = prepare_csv_data(uploaded_files, date_columns)
 
-            # --- 各処理の実行 ---
             processor_func = template_processors.get(selected_template)
             if processor_func:
+                progress.progress(40, "🧮 データを計算中...")
+                time.sleep(0.3)
                 df = processor_func(dfs, csv_label_map)
 
-                # --- Excelテンプレート埋め込み ---
+                progress.progress(70, "📄 テンプレートに書き込み中...")
+                time.sleep(0.3)
                 template_path = config["templates"][selected_template]["template_excel_path"]
                 output_excel = write_values_to_template(df, template_path)
 
-                st.download_button(
+                progress.progress(90, "✅ 整理完了")
+                time.sleep(0.3)
+
+                progress.progress(100)
+                st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
+                centered_download_button(
                     label="📥 Excelファイルをダウンロード",
                     data=output_excel.getvalue(),
                     file_name=f"{template_label}_計算結果.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
-            else:
-                st.error(f"❌ このテンプレート「{template_label}」には対応する処理関数が定義されていません。")
 
 
     else:
