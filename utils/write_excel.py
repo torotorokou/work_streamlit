@@ -2,6 +2,7 @@ from openpyxl import load_workbook
 from io import BytesIO
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
 
 def safe_excel_value(value):
@@ -17,7 +18,8 @@ def safe_excel_value(value):
 
 def write_values_to_template(df: pd.DataFrame, template_path: str) -> BytesIO:
     """
-    DataFrameの 'セル' 列を使って、指定セルに '値' を書き込む関数
+    DataFrameの 'セル' 列を使って、指定セルに '値' を書き込む関数。
+    さらに、シート名を「YYYYMMDD」に変更する。
 
     Returns:
         BytesIO: 書き込み済みExcelファイルのメモリデータ（Streamlitダウンロード用など）
@@ -25,6 +27,7 @@ def write_values_to_template(df: pd.DataFrame, template_path: str) -> BytesIO:
     wb = load_workbook(template_path)
     ws = wb.active
 
+    # --- セルへの書き込み ---
     for _, row in df.iterrows():
         cell_ref = row["セル"]
         value = safe_excel_value(row["値"])
@@ -32,10 +35,15 @@ def write_values_to_template(df: pd.DataFrame, template_path: str) -> BytesIO:
 
         if isinstance(value, (int, float)) and value == 0:
             cell.value = 0
-            cell.number_format = "0"  # 0.00 → 0 に見せる
+            cell.number_format = "0"
         else:
             cell.value = value
 
+    # --- シート名を今日の日付に変更（例：20250414） ---
+    today_str = datetime.now().strftime("%Y%m%d")
+    ws.title = today_str
+
+    # --- メモリ上に保存 ---
     output = BytesIO()
     wb.save(output)
     output.seek(0)

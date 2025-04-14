@@ -1,6 +1,7 @@
 # app_pages/manage_work.py
 import streamlit as st
 import time
+from datetime import datetime
 from logic.detect_csv import detect_csv_type
 from utils.config_loader import load_config
 from components.ui_message import show_warning_bubble
@@ -117,11 +118,15 @@ def show_manage_work():
                 time.sleep(0.3)
 
                 progress.progress(100)
+                # 日付を "YYYYMMDD" 形式で取得
+                today_str = datetime.now().strftime("%Y%m%d")
+
                 st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
+
                 centered_download_button(
                     label="📥 Excelファイルをダウンロード",
                     data=output_excel.getvalue(),
-                    file_name=f"{template_label}_計算結果.xlsx",
+                    file_name=f"{template_label}_{today_str}.xlsx",  # ✅ 日付付き
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
 
