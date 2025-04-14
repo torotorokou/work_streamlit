@@ -6,11 +6,11 @@ from logic.detect_csv import detect_csv_type
 from utils.config_loader import load_config
 from components.ui_message import show_warning_bubble
 from logic.eigyo_management import template_processors
-from components.custom_button import centered_button,centered_download_button
-# from utils.preprocessor import prepare_csv_data
+from components.custom_button import centered_button, centered_download_button
 from logic.controllers.csv_controller import prepare_csv_data
 from utils.debug_tools import save_debug_parquets
 from utils.write_excel import write_values_to_template
+
 
 
 def show_manage_work():
@@ -42,7 +42,6 @@ def show_manage_work():
         "receive": "受入一覧",
     }
 
-    # 各ファイルに対応する日付カラム名を設定（変更可能）
     date_columns = {"receive": "伝票日付", "yard": "伝票日付", "shipping": "伝票日付"}
 
     # --- UI ---
@@ -58,7 +57,7 @@ def show_manage_work():
     description = template_descriptions.get(template_label, "")
     if description:
         st.markdown(
-            f"""<div style=\"margin-left: 2em; color:#444;\">{description}</div>""",
+            f"""<div style=\"margin-left: 2em; color:#ccc;\">{description}</div>""",
             unsafe_allow_html=True,
         )
 
@@ -75,16 +74,46 @@ def show_manage_work():
             uploaded_file = st.file_uploader(
                 label, type="csv", key=f"{file_key}_{selected_template}"
             )
-            uploaded_files[file_key] = uploaded_file
+
+            # ✅ 新しいアップロードがあればセッションに保存
+            if uploaded_file is not None:
+                st.session_state[f"uploaded_{file_key}"] = uploaded_file
+                uploaded_files[file_key] = uploaded_file
+            else:
+                uploaded_files[file_key] = st.session_state.get(f"uploaded_{file_key}", None)
 
             # 🔍 自動判別チェック
-            if uploaded_file is not None:
-                detected_name = detect_csv_type(uploaded_file, header_csv_path)
+            if uploaded_files[file_key] is not None:
+                detected_name = detect_csv_type(uploaded_files[file_key], header_csv_path)
                 expected_name = label
-
                 if detected_name != expected_name:
                     show_warning_bubble(expected_name, detected_name)
-                    uploaded_files[file_key] = None  # 無効化（より堅牢に）
+                    uploaded_files[file_key] = None
+                    st.session_state[f"uploaded_{file_key}"] = None
+
+            # ✅ アップロード状態表示（file_uploaderの直下）
+            if uploaded_files.get(file_key):
+                st.markdown(
+                    """
+                    <div style="margin-top: -0.5em; margin-bottom: 1.5em; padding: 0.4em 1em;
+                                background-color: #e6f4ea; border-left: 4px solid #34a853;
+                                border-radius: 4px; font-weight: 500; color: #111;">
+                        ✅ アップロード済み
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            else:
+                st.markdown(
+                    """
+                    <div style="margin-top: -0.5em; margin-bottom: 1.5em; padding: 0.4em 1em;
+                                background-color: #fef7e0; border-left: 4px solid #f9ab00;
+                                border-radius: 4px; font-weight: 500; color: #111;">
+                        ⏳ 未アップロード
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
     # --- ファイルチェック ---
     required_keys = required_files[selected_template]
@@ -94,7 +123,6 @@ def show_manage_work():
     if not missing_keys:
         st.success("✅ 必要なファイルがすべてアップロードされました！")
 
-        # --- 書類作成ボタン ---
         st.markdown("---")
         if centered_button("📊 書類作成"):
             progress = st.progress(0)
@@ -118,7 +146,6 @@ def show_manage_work():
                 time.sleep(0.3)
 
                 progress.progress(100)
-                # 日付を "YYYYMMDD" 形式で取得
                 today_str = datetime.now().strftime("%Y%m%d")
 
                 st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
@@ -126,32 +153,14 @@ def show_manage_work():
                 centered_download_button(
                     label="📥 Excelファイルをダウンロード",
                     data=output_excel.getvalue(),
-                    file_name=f"{template_label}_{today_str}.xlsx",  # ✅ 日付付き
+                    file_name=f"{template_label}_{today_str}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
 
-
     else:
-        # 📥 アップロードされたファイル数のカウント
+
         uploaded_count = len(required_keys) - len(missing_keys)
         total_count = len(required_keys)
 
-        # ✅ 進捗バー
         st.progress(uploaded_count / total_count)
-
-        # ✅ 進捗情報メッセージ
         st.info(f"📥 {uploaded_count} / {total_count} ファイルがアップロードされました")
-
-        # ✅ 各ファイルごとのステータス表示
-        for k in required_keys:
-            label = csv_label_map.get(k, k)
-            if uploaded_files.get(k):
-                st.markdown(f"- ✅ **{label}**")
-            else:
-                # 未アップロード：黄色のハイライト付きで表示
-                st.markdown(
-                    f"""
-                    - ⏳ <strong>{label}</strong><span style="color:#e6a800">（未アップロード）</span>
-                    """,
-                    unsafe_allow_html=True,
-                )
