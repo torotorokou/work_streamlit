@@ -29,33 +29,26 @@ df_receive = load_receive_data(dfs, key, target_columns)
 df_receive.shape
 # %%
 # マスターとテンプレートの読み込み
-master_csv, template = load_master_and_template(config)
+master_csv = load_master_and_template(config)
 master_csv
 
 # %%
-master_csv1 = aggregate_vehicle_data(df_receive, master_csv, template, csv_label_map)
+master_csv1 = aggregate_vehicle_data(df_receive, master_csv)
 
 
 # %%
-master_csv2 = calculate_itemwise_summary(
-    df_receive, master_csv1, template, csv_label_map
-)
+master_csv2 = calculate_itemwise_summary(df_receive, master_csv1)
 master_csv2
 
 
 # %%
-master_csv3 = calculate_itemwise_summary(
-    df_receive, master_csv2, template, csv_label_map
-)
+master_csv3 = calculate_itemwise_summary(df_receive, master_csv2)
 master_csv3
 # %%
-master_csv4 = calculate_final_totals(df_receive, master_csv3, template, csv_label_map)
+master_csv4 = calculate_final_totals(df_receive, master_csv3)
 master_csv4
 
 # %%
-master_csv5 = apply_rounding(df_receive, master_csv4, template, csv_label_map)
+master_csv5 = apply_rounding(master_csv4)
 master_csv5
 
-
-# %%
-output_excel = write_values_to_template(master_csv5, "template.xlsx")

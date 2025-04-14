@@ -102,18 +102,19 @@ def show_manage_work():
             if processor_func:
                 df = processor_func(dfs, csv_label_map)
 
-            # --- Excelテンプレート埋め込み ---
-            template_path = config["templates"][selected_template][
-                "template_excel_path"
-            ]
-            output_excel = write_values_to_template(df, template_path)
+                # --- Excelテンプレート埋め込み ---
+                template_path = config["templates"][selected_template]["template_excel_path"]
+                output_excel = write_values_to_template(df, template_path)
 
-            st.download_button(
-                label="📥 Excelファイルをダウンロード",
-                data=output_excel.getvalue(),
-                file_name=f"{template_label}_計算結果.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
+                st.download_button(
+                    label="📥 Excelファイルをダウンロード",
+                    data=output_excel.getvalue(),
+                    file_name=f"{template_label}_計算結果.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
+            else:
+                st.error(f"❌ このテンプレート「{template_label}」には対応する処理関数が定義されていません。")
+
 
     else:
         # 📥 アップロードされたファイル数のカウント

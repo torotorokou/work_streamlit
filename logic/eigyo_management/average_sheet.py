@@ -4,6 +4,7 @@ from utils.logger import app_logger
 from utils.date_tools import get_weekday_japanese
 from utils.rounding_tools import round_value_column
 from utils.value_setter import set_value
+from logic.eigyo_management.utils.load_template import load_master_and_template
 
 
 # 処理の統合
@@ -41,11 +42,7 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
     master_csv = load_master_and_template(config)
 
     # 集計処理ステップ
-    master_csv = aggregate_vehicle_data(df_receive, master_csv)
-    master_csv = calculate_itemwise_summary(df_receive, master_csv)
-    master_csv = summarize_item_and_abc_totals(master_csv)
-    master_csv = calculate_final_totals(df_receive, master_csv)
-    master_csv = apply_rounding(master_csv)
+    master_csv = process_average_sheet(df_receive, master_csv)
 
     return master_csv
 
@@ -75,6 +72,18 @@ def load_config_and_headers(label_map):
     return config, key, target_columns
 
 
+def process_average_sheet(df_receive: pd.DataFrame, master_csv: pd.DataFrame) -> pd.DataFrame:
+    """
+    平均表テンプレート用の処理群を順に実行し、マスターCSVを完成形にする。
+    """
+    master_csv = aggregate_vehicle_data(df_receive, master_csv)
+    master_csv = calculate_itemwise_summary(df_receive, master_csv)
+    master_csv = summarize_item_and_abc_totals(master_csv)
+    master_csv = calculate_final_totals(df_receive, master_csv)
+    master_csv = set_report_date_info(df_receive, master_csv)
+    master_csv = apply_rounding(master_csv)
+    return master_csv
+
 def load_receive_data(dfs, key, target_columns):
     """
     指定された辞書型DataFrameから、対象キーのDataFrameを取得し、必要なカラムのみを抽出して返す。
@@ -90,24 +99,10 @@ def load_receive_data(dfs, key, target_columns):
     return dfs[key][target_columns]
 
 
-def load_master_and_template(config):
-    """
-    コンフィグから指定されたパスをもとに、平均表テンプレート用のマスターCSVを読み込んで返す。
-
-    Parameters:
-        config (dict): 設定情報を含む辞書。主に `config["templates"]["average_sheet"]["master_csv_path"]` を参照。
-
-    Returns:
-        pd.DataFrame: 読み込まれたマスターCSVの内容（テンプレートに書き込むための元データ）。
-    """
-    master_path = config["templates"]["average_sheet"]["master_csv_path"]
-    master_csv = pd.read_csv(master_path, encoding="utf-8-sig")
-
-    return master_csv
-
-
 # 台数・重量・台数単価をABC区分ごとに集計
-def aggregate_vehicle_data(df_receive: pd.DataFrame, master_csv: pd.DataFrame) -> pd.DataFrame:
+def aggregate_vehicle_data(
+    df_receive: pd.DataFrame, master_csv: pd.DataFrame
+) -> pd.DataFrame:
     """
     受入データからABC区分ごとの台数・総重量・台数単価を集計し、
     テンプレートマスターCSVに対応する値を設定する。
@@ -120,7 +115,7 @@ def aggregate_vehicle_data(df_receive: pd.DataFrame, master_csv: pd.DataFrame) -
 
     Returns:
         pd.DataFrame: 集計結果が反映されたマスターCSV（引数と同じDataFrameに上書き）
-    
+
     Notes:
         - ABC区分（A〜F）に対応する「集計項目CD」を基に台数・重量を算出。
         - 台数が0の場合は単価は0として処理。
@@ -156,7 +151,9 @@ def aggregate_vehicle_data(df_receive: pd.DataFrame, master_csv: pd.DataFrame) -
     return master_csv
 
 
-def calculate_itemwise_summary(df_receive: pd.DataFrame, master_csv: pd.DataFrame) -> pd.DataFrame:
+def calculate_itemwise_summary(
+    df_receive: pd.DataFrame, master_csv: pd.DataFrame
+) -> pd.DataFrame:
     """
     受入データをもとに、ABC区分 × 品目ごとに売上・重量・平均単価を集計し、
     テンプレートマスターCSVに反映する。
@@ -299,7 +296,9 @@ def summarize_item_and_abc_totals(master_csv: pd.DataFrame) -> pd.DataFrame:
     return master_csv
 
 
-def calculate_final_totals(df_receive: pd.DataFrame, master_csv: pd.DataFrame) -> pd.DataFrame:
+def calculate_final_totals(
+    df_receive: pd.DataFrame, master_csv: pd.DataFrame
+) -> pd.DataFrame:
     """
     テンプレート用マスターCSVに対し、全体の台数・重量・単価・売上情報を集計し、
     総品目・その他品目の値とともに日付・曜日も書き込む。
@@ -351,11 +350,11 @@ def calculate_final_totals(df_receive: pd.DataFrame, master_csv: pd.DataFrame) -
     ]
     total_weight_all = pd.to_numeric(filtered["正味重量"], errors="coerce").sum()
     total_sell_all = pd.to_numeric(filtered["金額"], errors="coerce").sum()
-    average_price_all = total_weight_all / total_sell_all if total_sell_all > 0 else 0
+    average_price_all = total_sell_all / total_weight_all if total_sell_all > 0 else 0
 
     set_value(master_csv, "総品目㎏", "", "", total_weight_all)
     set_value(master_csv, "総品目売上", "", "", total_sell_all)
-    set_value(master_csv, "総品目平均", "", "", average_price_all)
+    set_value(master_csv, "総品目平均単価", "", "", average_price_all)
 
     # --- その他品目 = 総品目 － 3品目合計 ---
     total_sell_3items = master_csv[
@@ -372,22 +371,39 @@ def calculate_final_totals(df_receive: pd.DataFrame, master_csv: pd.DataFrame) -
 
     other_sell = total_sell_all - total_sell_3items
     other_weight = total_weight_all - total_weight_3items
-    other_avg_price = other_weight / other_sell if other_sell > 0 else 0
+    other_avg_price = other_sell / other_weight if other_sell > 0 else 0
 
     set_value(master_csv, "その他品目㎏", "", "", other_weight)
     set_value(master_csv, "その他品目売上", "", "", other_sell)
-    set_value(master_csv, "その他品目平均", "", "", other_avg_price)
+    set_value(master_csv, "その他品目平均単価", "", "", other_avg_price)
 
-    # --- 日付・曜日の記録 ---
+    return master_csv
+
+def set_report_date_info(
+    df_receive: pd.DataFrame, master_csv: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    受入データから最初の日付を抽出し、帳票テンプレートに「月/日」と対応する曜日を記録する。
+
+    Parameters:
+        df_receive (pd.DataFrame): 「受入一覧」のCSVデータフレーム（「伝票日付」列を含む）。
+        master_csv (pd.DataFrame): 帳票テンプレートのマスターCSV。
+
+    Returns:
+        pd.DataFrame: 日付と曜日を記録したあとのマスターCSV。
+    """
+    logger = app_logger()
     today = pd.to_datetime(df_receive["伝票日付"].dropna().iloc[0])
     weekday = get_weekday_japanese(today)
 
-    set_value(master_csv, "日付", "", "", today.strftime("%Y/%m/%d"))
+    formatted_date = today.strftime("%m/%d")
+    set_value(master_csv, "日付", "", "", formatted_date)
     set_value(master_csv, "曜日", "", "", weekday)
 
-    logger.info(f"🗓 日付: {today.strftime('%Y/%m/%d')}（{weekday}）")
+    logger.info(f"日付: {formatted_date}（{weekday}）")
 
     return master_csv
+
 
 
 def apply_rounding(master_csv: pd.DataFrame) -> pd.DataFrame:

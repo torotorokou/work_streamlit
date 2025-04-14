@@ -1,23 +1,36 @@
 import pandas as pd
-import numpy as np
-
 
 def round_value_column(df: pd.DataFrame) -> pd.DataFrame:
     """
-    「小項目1」または「小項目2」に「単価」が含まれる行は小数点第2位に丸め、
+    「大項目」「小項目1」「小項目2」に「単価」が含まれる行は小数点第2位に丸め、
     それ以外は整数に丸める。
-    ただし、丸めた結果が0.00なら 0 に変換する。
+    値が数値でない（文字列や日付など）の行はスキップする。
     """
-    is_tanka = df["小項目1"].astype(str).str.contains("単価", na=False) | df[
-        "小項目2"
-    ].astype(str).str.contains("単価", na=False)
+    # --- 単価かどうか判定 ---
+    is_tanka = (
+        df["大項目"].astype(str).str.contains("単価", na=False)
+        | df["小項目1"].astype(str).str.contains("単価", na=False)
+        | df["小項目2"].astype(str).str.contains("単価", na=False)
+    )
 
-    df["値"] = pd.to_numeric(df["値"], errors="coerce")
+    # --- 値を数値に変換（できないものは NaN になる） ---
+    numeric_vals = pd.to_numeric(df["値"], errors="coerce")
 
-    # 丸め処理
-    rounded = np.where(is_tanka, df["値"].round(2), df["値"].round(0))
+    # --- 値が数値である行だけ処理対象とする ---
+    is_numeric = ~numeric_vals.isna()
 
-    # 値が0.00なら0に置き換え（型は float → int にせず float のまま 0.0 → 0）
-    df["値"] = np.where(rounded == 0, 0, rounded)
+    # --- 値の初期化（元をコピーしておく） ---
+    rounded = df["値"].copy()
+
+    # --- 単価かつ数値で0以外 → 小数点第2位 ---
+    mask_tanka = is_tanka & is_numeric & (numeric_vals != 0)
+    rounded.loc[mask_tanka] = numeric_vals.loc[mask_tanka].round(2)
+
+    # --- 単価以外かつ数値 → 整数に丸め ---
+    mask_non_tanka = ~is_tanka & is_numeric
+    rounded.loc[mask_non_tanka] = numeric_vals.loc[mask_non_tanka].round(0).astype("Int64")
+
+    # --- 結果を反映 ---
+    df["値"] = rounded
 
     return df

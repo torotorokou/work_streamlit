@@ -1,4 +1,39 @@
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+skip-string-normalization = false  # ダブルクォート統一（false 推奨）
+
 [tool.ruff]
-line-length = 88        # 行長制限（デフォルト88）
-target-version = "py310" # 対応するPythonバージョン（3.10）
-fix = true               # 自動修正を有効にする（保存時自動整形）
+line-length = 88
+target-version = "py310"
+fix = true
+select = [
+    "E",  # pycodestyle (PEP8)
+    "F",  # pyflakes
+    "B",  # flake8-bugbear
+    "I",  # isort
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (Blackに任せる)
+]
+
+[tool.ruff.format]
+quote-style = "double"  # "single" にするとシングルクォートで統一される
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = 3.10
+check_untyped_defs = true
+ignore_missing_imports = true
+disallow_untyped_defs = false
+warn_unused_ignores = true
+no_implicit_optional = true
+strict_optional = true
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"

@@ -1,6 +1,6 @@
-
-
-def set_value(master_csv, category_name: str, level1_name: str, level2_name: str, value):
+def set_value(
+    master_csv, category_name: str, level1_name: str, level2_name: str, value
+):
     """
     指定された「大項目・小項目1・小項目2」の組み合わせに一致する行をマスターCSVから探し、
     該当する「値」列に指定の値を代入する。
