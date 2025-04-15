@@ -1,0 +1,12 @@
+receive:
+    key: receive
+    label: 受入一覧
+    date_column: 伝票日付
+yard:
+    key : yard
+    label: ヤード一覧
+    date_column: 伝票日付
+shipping:
+    key : shipping
+    label : 出荷一覧
+    date_column : 伝票日付

@@ -85,3 +85,24 @@ def get_page_dicts():
     reverse_dict = {v: k for k, v in page_dict.items()}
     labels = list(page_dict.keys())
     return page_dict, reverse_dict, labels
+
+
+def get_csv_import_config() -> dict:
+    config_path = get_path_config()["config_files"]["csv_label_map"]
+    return load_yaml(config_path)
+
+
+def get_csv_label_map() -> dict:
+    config = get_csv_import_config()
+    return {key: value["label"] for key, value in config.items()}
+
+
+def get_csv_date_columns() -> dict:
+    """
+    各CSVファイル種別に対応する日付カラム名を取得する。
+
+    Returns:
+        dict: { "receive": "伝票日付", "yard": "伝票日付", ... } の形式
+    """
+    config = get_csv_import_config()
+    return {key: value["date_column"] for key, value in config.items()}

@@ -1,22 +1,26 @@
 # テンプレートごとの構成と説明
-average_sheet:
-    key: average_sheet
-    label: 集計項目平均表
-    description: 分類別の平均単価と売上を集計（仮）
-    master_csv_path: data/master/abc_average_write_targets.csv
-    template_excel_path: templates/average_sheet.xlsx
-
 factory_report:
     key: factory_report
     label: 工場日報
-    description: 日ごとの搬入実績（仮）
+    description: ヤードと出荷データをもとに、工場内の稼働日報を出力します。
+    required_files: [yard, shipping]
 
 balance_sheet:
     key: balance_sheet
     label: 工場搬出入収支表
-    description: 収入と支出のバランスを表示（仮）
+    description: 受入・ヤード・出荷一覧から収支表を自動集計します。
+    required_files: [receive, yard, shipping]
+
+average_sheet:
+    key: average_sheet
+    label: 集計項目平均表
+    description: 受入データをABC分類し、各品目の平均値を算出して出力します。
+    required_files: [receive]
+    master_csv_path: data/master/abc_average_write_targets.csv
+    template_excel_path: templates/average_sheet.xlsx
 
 management_sheet:
     key: management_sheet
     label: 管理票
-    description: 品目ごとの管理記録（仮）
+    description: 受入・ヤード・出荷の一覧を使って管理用の帳票を出力します。
+    required_files: [receive, yard, shipping]

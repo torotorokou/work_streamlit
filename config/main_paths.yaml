@@ -23,3 +23,4 @@ config_files:
     expected_dtypes: 'config/expected_dtypes.yaml'
     page_config: 'config/page_config.yaml'
     templates_config: 'config/templates_config.yaml'
+    csv_import_config.yaml: 'config/csv_import_config.yaml'
