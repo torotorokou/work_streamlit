@@ -1,6 +1,3 @@
-# 表示用のページ名リスト（UI用）
-page_labels = ["トップページ", "管理業務", "やよい会計", "機能２"]
-
 # 表示名 → URL ID
 page_dict = {
     "トップページ": "home",
@@ -11,3 +8,6 @@ page_dict = {
 
 # URL ID → 表示名（逆変換用）
 page_dict_reverse = {v: k for k, v in page_dict.items()}
+
+# 表示用のページ名リスト（UI用）
+page_labels = list(page_dict.keys())
