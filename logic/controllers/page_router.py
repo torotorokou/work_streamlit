@@ -1,5 +1,6 @@
 import streamlit as st
-from config.page_config import page_dict, page_dict_reverse, page_labels
+# from config.page_config import page_dict, page_dict_reverse, page_labels
+from utils.config_loader import get_page_dicts
 from app_pages.top_page import show_top_page
 from app_pages.manage_work import show_manage_work
 from components.manual_links import show_manual_links
@@ -8,6 +9,8 @@ from components.update_log import show_update_log
 from components.version_info import show_version_info
 
 def route_page():
+    page_dict,  page_dict_reverse, page_labels = get_page_dicts()
+
     # URLパラメータと初期化
     params = st.query_params
     page_id = params.get("page", "home")
