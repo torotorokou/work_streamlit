@@ -1,0 +1,18 @@
+# config/main_paths.yaml
+
+# 📄 CSVファイル関連パス
+csv:
+    receive_header_definition: 'config/input_header_info.csv' # 種別判定用ヘッダー
+    required_columns_definition: 'config/need_columns_info.csv' # 必須カラムの定義
+    expected_dtypes: 'config/expected_dtypes.json' # データ型の期待定義
+
+# 📁 ディレクトリ構成
+directories:
+    output: 'data/output' # 出力結果の保存先
+    master_data: 'data/master' # マスターCSVの格納場所
+    temp: 'data/temp' # 一時ファイル格納
+
+# 📜 ログ設定
+logs:
+    app: 'logs/app.log'
+    error: 'logs/error.log'

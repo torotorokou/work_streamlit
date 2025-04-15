@@ -1,0 +1,12 @@
+pages:
+    - label: トップページ
+      id: home
+
+    - label: 管理業務
+      id: manage_work
+
+    - label: やよい会計
+      id: yayoi
+
+    - label: 機能２
+      id: feature2

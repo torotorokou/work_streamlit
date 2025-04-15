@@ -62,7 +62,7 @@ def show_manage_work():
         )
 
     config = load_config()
-    header_csv_path = config["main_paths"]["check_header_csv"]
+    header_csv_path = config["main_paths"]["receive_header_definition"]
 
     # --- ヘッダーCSVのアップロード ---
     with st.container():

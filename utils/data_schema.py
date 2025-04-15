@@ -3,7 +3,7 @@ import json
 
 
 def load_expected_dtypes(config):
-    path = config["main_paths"]["header_dtypes_json"]
+    path = config["main_paths"]["expected_dtypes"]
     with open(path, encoding="utf-8") as f:
         dtype_str_map = json.load(f)
 

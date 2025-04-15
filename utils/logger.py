@@ -13,7 +13,7 @@ def jst_time(*args):
 
 def app_logger(to_console=True) -> logging.Logger:
     config = load_config()
-    log_path = config["main_paths"]["app_logfile"]
+    log_path = config["main_paths"]["app"]
 
     # ログフォルダがなければ作成
     os.makedirs(os.path.dirname(log_path), exist_ok=True)

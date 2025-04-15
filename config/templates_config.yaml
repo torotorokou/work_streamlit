@@ -1,0 +1,22 @@
+# テンプレートごとの構成と説明
+average_sheet:
+    key: average_sheet
+    label: 集計項目平均表
+    description: 分類別の平均単価と売上を集計（仮）
+    master_csv_path: data/master/abc_average_write_targets.csv
+    template_excel_path: templates/average_sheet.xlsx
+
+factory_report:
+    key: factory_report
+    label: 工場日報
+    description: 日ごとの搬入実績（仮）
+
+balance_sheet:
+    key: balance_sheet
+    label: 工場搬出入収支表
+    description: 収入と支出のバランスを表示（仮）
+
+management_sheet:
+    key: management_sheet
+    label: 管理票
+    description: 品目ごとの管理記録（仮）

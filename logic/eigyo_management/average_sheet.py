@@ -62,7 +62,7 @@ def load_config_and_headers(label_map):
             - target_columns (list): 抽出すべきカラム名のリスト（空欄は除外済）
     """
     config = load_config()
-    use_headers_path = config["main_paths"]["used_header_csv_info"]
+    use_headers_path = config["main_paths"]["required_columns_definition"]
     df_header = pd.read_csv(use_headers_path)
 
     key = "receive"
