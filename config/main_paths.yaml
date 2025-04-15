@@ -21,5 +21,5 @@ logs:
 config_files:
     app_config: 'config/app_config.yaml'
     expected_dtypes: 'config/expected_dtypes.yaml'
-    page_config: '/work/config/page_config.yam'
-    templates_config: '/work/config/templates_config.yaml'
+    page_config: 'config/page_config.yaml'
+    templates_config: 'config/templates_config.yaml'

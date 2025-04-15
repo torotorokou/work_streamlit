@@ -12,4 +12,4 @@ st.set_page_config(page_title=title['title'], layout="centered")
 apply_global_style()
 
 # ルーティング制御（URLとsession_state）
-# route_page()
+route_page()
