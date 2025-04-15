@@ -2,7 +2,7 @@
 import sys
 import os
 import importlib
-from utils.config_loader import load_config
+from utils.config_loader import load_config_json
 from utils.logger import app_logger
 import streamlit as st
 
@@ -11,7 +11,7 @@ import streamlit as st
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 logger = app_logger()
-config = load_config()
+config = load_config_json()
 template_configs = config["templates"]
 
 template_processors = {}

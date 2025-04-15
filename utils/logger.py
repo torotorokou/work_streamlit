@@ -3,7 +3,7 @@ import os
 import socket
 import getpass
 import time
-from utils.config_loader import load_config
+from utils.config_loader import load_config_json
 
 
 # 日本時間に変換する関数（UTC + 9時間）
@@ -12,7 +12,7 @@ def jst_time(*args):
 
 
 def app_logger(to_console=True) -> logging.Logger:
-    config = load_config()
+    config = load_config_json()
     log_path = config["main_paths"]["app"]
 
     # ログフォルダがなければ作成

@@ -5,7 +5,7 @@ from utils.file_loader import load_uploaded_csv_files
 from utils.cleaners import enforce_dtypes
 # from utils.preprocessor import enforce_dtypes
 from utils.data_schema import load_expected_dtypes
-from utils.config_loader import load_config
+from utils.config_loader import load_config_json
 from utils.logger import app_logger
 
 
@@ -29,7 +29,7 @@ def prepare_csv_data(uploaded_files: dict, date_columns: dict) -> dict:
     logger.info("📄 これからCSVの書類を作成します...")
     dfs = load_uploaded_csv_files(uploaded_files)
 
-    config = load_config()
+    config = load_config_json()
     expected_dtypes = load_expected_dtypes(config)
 
     for key in dfs:

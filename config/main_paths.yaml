@@ -16,3 +16,10 @@ directories:
 logs:
     app: 'logs/app.log'
     error: 'logs/error.log'
+
+# yamlパス
+config_files:
+    app_config: 'config/app_config.yaml'
+    expected_dtypes: 'config/expected_dtypes.yaml'
+    page_config: '/work/config/page_config.yam'
+    templates_config: '/work/config/templates_config.yaml'

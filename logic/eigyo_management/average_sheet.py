@@ -1,5 +1,5 @@
 import pandas as pd
-from utils.config_loader import load_config
+from utils.config_loader import load_config_json
 from utils.logger import app_logger
 from utils.date_tools import get_weekday_japanese
 from utils.rounding_tools import round_value_column
@@ -61,7 +61,7 @@ def load_config_and_headers(label_map):
             - key (str): 使用するデータのキー（例: "receive"）
             - target_columns (list): 抽出すべきカラム名のリスト（空欄は除外済）
     """
-    config = load_config()
+    config = load_config_json()
     use_headers_path = config["main_paths"]["required_columns_definition"]
     df_header = pd.read_csv(use_headers_path)
 

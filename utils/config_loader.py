@@ -4,7 +4,7 @@ import yaml
 from pathlib import Path
 
 
-def load_config(config_path="config/config.json") -> dict:
+def load_config_json(config_path="config/config.json") -> dict:
     """
     JSON形式の設定ファイル（config.json）を読み込んで辞書として返す。
 
@@ -38,53 +38,50 @@ def load_yaml(filename: str) -> dict:
     Returns:
         dict: YAMLから読み込まれた辞書データ
     """
-    path = Path("config") / filename
+    path = Path(filename)
     with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
-def get_app_config() -> dict:
-    """アプリケーション設定（app_config.yaml）を読み込む"""
-    return load_yaml("app_config.yaml")
-
-
 def get_path_config() -> dict:
-    """パス設定（main_paths.yaml）を読み込む"""
-    return load_yaml("main_paths.yaml")
+    """main_paths.yamlを辞書として取得"""
+    return load_yaml("config/main_paths.yaml")
 
 
-def get_template_config() -> dict:
-    """テンプレート設定（templates_config.yaml）を読み込む"""
-    return load_yaml("templates_config.yaml")
+def get_app_config() -> dict:
+    """main_paths.yaml 経由で app_config を読み込む"""
+    config_path = get_path_config()["config_files"]["app_config"]
+    return load_yaml(config_path)
 
 
 def get_expected_dtypes() -> dict:
-    """各列の期待されるデータ型設定（expected_dtypes.yaml）を読み込む"""
-    return load_yaml("expected_dtypes.yaml")
+    """main_paths.yaml 経由で expected_dtypes.yaml を読み込む"""
+    config_path = get_path_config()["config_files"]["expected_dtypes"]
+    return load_yaml(config_path)
+
+
+def get_template_config() -> dict:
+    """main_paths.yaml 経由で templates_config.yaml を読み込む"""
+    config_path = get_path_config()["config_files"]["templates_config"]
+    return load_yaml(config_path)
 
 
 def get_page_config() -> list:
-    """
-    ページ設定ファイル（page_config.yaml）からページ一覧を取得。
-
-    Returns:
-        list[dict]: ページ設定（各要素に label と id を含む）
-    """
-    return load_yaml("page_config.yaml")["pages"]
+    """main_paths.yaml 経由で page_config.yaml のページ定義を取得"""
+    config_path = get_path_config()["config_files"]["page_config"]
+    return load_yaml(config_path)["pages"]
 
 
 def get_page_dicts():
     """
-    ページ設定から、以下3つの辞書/リストを生成して返す：
-      - page_dict: 表示名 → URL ID
-      - page_dict_reverse: URL ID → 表示名
-      - page_labels: 表示名のリスト（UI用）
-
-    Returns:
-        tuple(dict, dict, list): (page_dict, page_dict_reverse, page_labels)
+    ページ設定（page_config.yaml）から
+    - 表示名→IDの辞書
+    - ID→表示名の逆引き
+    - 表示名リスト（UI用）
+    を返す
     """
     pages = get_page_config()
-    page_dict = {page["label"]: page["id"] for page in pages}
-    page_dict_reverse = {v: k for k, v in page_dict.items()}
-    page_labels = list(page_dict.keys())
-    return page_dict, page_dict_reverse, page_labels
+    page_dict = {p["label"]: p["id"] for p in pages}
+    reverse_dict = {v: k for k, v in page_dict.items()}
+    labels = list(page_dict.keys())
+    return page_dict, reverse_dict, labels
