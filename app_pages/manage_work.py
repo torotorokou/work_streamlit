@@ -12,7 +12,6 @@ from utils.debug_tools import save_debug_parquets
 from utils.write_excel import write_values_to_template
 
 
-
 def show_manage_work():
     # --- 内部データ定義 ---
     template_dict = {
@@ -80,11 +79,15 @@ def show_manage_work():
                 st.session_state[f"uploaded_{file_key}"] = uploaded_file
                 uploaded_files[file_key] = uploaded_file
             else:
-                uploaded_files[file_key] = st.session_state.get(f"uploaded_{file_key}", None)
+                uploaded_files[file_key] = st.session_state.get(
+                    f"uploaded_{file_key}", None
+                )
 
             # 🔍 自動判別チェック
             if uploaded_files[file_key] is not None:
-                detected_name = detect_csv_type(uploaded_files[file_key], header_csv_path)
+                detected_name = detect_csv_type(
+                    uploaded_files[file_key], header_csv_path
+                )
                 expected_name = label
                 if detected_name != expected_name:
                     show_warning_bubble(expected_name, detected_name)
@@ -101,7 +104,7 @@ def show_manage_work():
                         ✅ アップロード済み
                     </div>
                     """,
-                    unsafe_allow_html=True
+                    unsafe_allow_html=True,
                 )
             else:
                 st.markdown(
@@ -112,7 +115,7 @@ def show_manage_work():
                         ⏳ 未アップロード
                     </div>
                     """,
-                    unsafe_allow_html=True
+                    unsafe_allow_html=True,
                 )
 
     # --- ファイルチェック ---
@@ -139,7 +142,9 @@ def show_manage_work():
 
                 progress.progress(70, "📄 テンプレートに書き込み中...")
                 time.sleep(0.3)
-                template_path = config["templates"][selected_template]["template_excel_path"]
+                template_path = config["templates"][selected_template][
+                    "template_excel_path"
+                ]
                 output_excel = write_values_to_template(df, template_path)
 
                 progress.progress(90, "✅ 整理完了")
@@ -148,13 +153,15 @@ def show_manage_work():
                 progress.progress(100)
                 today_str = datetime.now().strftime("%Y%m%d")
 
-                st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
+                st.info(
+                    "✅ ファイルが生成されました。下のボタンからダウンロードできます👇"
+                )
 
                 centered_download_button(
                     label="📥 Excelファイルをダウンロード",
                     data=output_excel.getvalue(),
                     file_name=f"{template_label}_{today_str}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
 
     else:

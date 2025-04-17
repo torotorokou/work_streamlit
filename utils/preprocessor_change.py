@@ -1,7 +1,6 @@
 import pandas as pd
 
 
-
 def process_csv_by_date(df: pd.DataFrame, date_column: str) -> pd.DataFrame:
     """
     CSVデータを日付カラムでソートし、最小日付のデータのみ抽出する。
@@ -37,12 +36,10 @@ def process_csv_by_date(df: pd.DataFrame, date_column: str) -> pd.DataFrame:
     return filtered_df
 
 
-
-
-
 def check_date_alignment(dfs: dict, date_columns: dict) -> bool:
     import pandas as pd
     import streamlit as st
+
     """
     各DataFrameにおける日付のユニーク値が揃っているか確認。
     """

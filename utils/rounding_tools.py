@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def round_value_column(df: pd.DataFrame) -> pd.DataFrame:
     """
     「大項目」「小項目1」「小項目2」に「単価」が含まれる行は小数点第2位に丸め、
@@ -28,7 +29,9 @@ def round_value_column(df: pd.DataFrame) -> pd.DataFrame:
 
     # --- 単価以外かつ数値 → 整数に丸め ---
     mask_non_tanka = ~is_tanka & is_numeric
-    rounded.loc[mask_non_tanka] = numeric_vals.loc[mask_non_tanka].round(0).astype("Int64")
+    rounded.loc[mask_non_tanka] = (
+        numeric_vals.loc[mask_non_tanka].round(0).astype("Int64")
+    )
 
     # --- 結果を反映 ---
     df["値"] = rounded

@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def process_csv_by_date(df: pd.DataFrame, date_column: str) -> pd.DataFrame:
     df[date_column] = (
         df[date_column].astype(str).str.replace(r"\(.*?\)", "", regex=True).str.strip()
@@ -16,7 +17,10 @@ def check_date_alignment(dfs: dict, date_columns: dict) -> dict:
     for key, df in dfs.items():
         date_col = date_columns.get(key)
         if date_col not in df.columns:
-            return {"status": False, "error": f"{key} に日付カラム {date_col} が見つかりません。"}
+            return {
+                "status": False,
+                "error": f"{key} に日付カラム {date_col} が見つかりません。",
+            }
         dates = pd.to_datetime(df[date_col], errors="coerce").dropna().dt.date
         date_sets[key] = set(dates)
 
@@ -27,10 +31,7 @@ def check_date_alignment(dfs: dict, date_columns: dict) -> dict:
             return {
                 "status": False,
                 "error": f"`{keys[0]}` と `{k}` の日付セットが一致していません。",
-                "details": {
-                    keys[0]: sorted(base_dates),
-                    k: sorted(date_sets[k])
-                }
+                "details": {keys[0]: sorted(base_dates), k: sorted(date_sets[k])},
             }
 
     return {"status": True, "dates": sorted(base_dates)}

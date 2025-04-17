@@ -6,7 +6,7 @@ pages:
 
     - label: 管理業務
       id: manage_work
-      function: show_manage_work
+      function: manage_work_controller
 
     - label: やよい会計
       id: yayoi

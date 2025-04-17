@@ -47,7 +47,14 @@ def centered_button(label: str, key: str = None) -> bool:
 import streamlit as st
 from io import BytesIO
 
-def centered_download_button(label: str, data: BytesIO, file_name: str, mime: str = "application/octet-stream", key: str = None) -> bool:
+
+def centered_download_button(
+    label: str,
+    data: BytesIO,
+    file_name: str,
+    mime: str = "application/octet-stream",
+    key: str = None,
+) -> bool:
     """
     中央寄せでスタイル付きのダウンロードボタンを表示する関数。
 
@@ -91,9 +98,5 @@ def centered_download_button(label: str, data: BytesIO, file_name: str, mime: st
     col1, col2, col3 = st.columns([3, 2, 3])
     with col2:
         return st.download_button(
-            label=label,
-            data=data,
-            file_name=file_name,
-            mime=mime,
-            key=key
+            label=label, data=data, file_name=file_name, mime=mime, key=key
         )

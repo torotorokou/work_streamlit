@@ -72,7 +72,9 @@ def load_config_and_headers(label_map):
     return config, key, target_columns
 
 
-def process_average_sheet(df_receive: pd.DataFrame, master_csv: pd.DataFrame) -> pd.DataFrame:
+def process_average_sheet(
+    df_receive: pd.DataFrame, master_csv: pd.DataFrame
+) -> pd.DataFrame:
     """
     平均表テンプレート用の処理群を順に実行し、マスターCSVを完成形にする。
     """
@@ -83,6 +85,7 @@ def process_average_sheet(df_receive: pd.DataFrame, master_csv: pd.DataFrame) ->
     master_csv = set_report_date_info(df_receive, master_csv)
     master_csv = apply_rounding(master_csv)
     return master_csv
+
 
 def load_receive_data(dfs, key, target_columns):
     """
@@ -379,6 +382,7 @@ def calculate_final_totals(
 
     return master_csv
 
+
 def set_report_date_info(
     df_receive: pd.DataFrame, master_csv: pd.DataFrame
 ) -> pd.DataFrame:
@@ -403,7 +407,6 @@ def set_report_date_info(
     logger.info(f"日付: {formatted_date}（{weekday}）")
 
     return master_csv
-
 
 
 def apply_rounding(master_csv: pd.DataFrame) -> pd.DataFrame:

@@ -1,8 +1,9 @@
 import streamlit as st
+
 # from config.page_config import page_dict, page_dict_reverse, page_labels
 from utils.config_loader import get_page_dicts, get_app_config
 from app_pages.top_page import show_top_page
-from app_pages.manage_work import show_manage_work
+from app_pages.manage.controller import manage_work_controller
 from components.manual_links import show_manual_links
 from components.notice import show_notice
 from components.update_log import show_update_log
@@ -12,6 +13,7 @@ from utils.config_loader import get_page_config
 
 # controller: route_page.py
 
+
 def route_page():
     """
     Streamlitアプリのルーティング処理を行うメイン関数。
@@ -20,7 +22,7 @@ def route_page():
     - サイドバーにページメニューを表示、
     - 選択されたページの中身を描画する。
 
-    ページ構成情報（ID・ラベル）は YAML から読み込み、 
+    ページ構成情報（ID・ラベル）は YAML から読み込み、
     MVC構成のController的役割を担う。
     """
     # ページ構成情報を取得（ラベルとURL ID）
@@ -35,8 +37,6 @@ def route_page():
     # 選択されたページの中身を描画
     _render_selected_page()
 
-
-# ↓↓↓↓ 以下は内部関数へ ↓↓↓↓
 
 def _handle_query_params(page_dict, page_dict_reverse):
     params = st.query_params
@@ -57,7 +57,7 @@ def _render_selected_page():
     title = get_app_config()["title"]
     selected_label = st.session_state.selected_page
     pages = get_page_config()
- 
+
     for page in pages:
         if page["label"] == selected_label:
             st.title(f" {selected_label}" if page["id"] != "home" else title)
@@ -71,7 +71,7 @@ def _render_selected_page():
                     func()
                 else:
                     st.warning(f"⚠️ `{page['function']}` は存在しない関数です。")
-                
+
             # トップページだけ追加表示
             if page.get("addons") is True:
                 _render_sidebar_addons()

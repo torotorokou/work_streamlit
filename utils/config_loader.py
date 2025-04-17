@@ -87,13 +87,13 @@ def get_page_dicts():
     return page_dict, reverse_dict, labels
 
 
-def get_csv_import_config() -> dict:
-    config_path = get_path_config()["config_files"]["csv_label_map"]
+def get_csv_sources_config() -> dict:
+    config_path = get_path_config()["config_files"]["csv_sources_config"]
     return load_yaml(config_path)
 
 
 def get_csv_label_map() -> dict:
-    config = get_csv_import_config()
+    config = get_csv_sources_config()
     return {key: value["label"] for key, value in config.items()}
 
 
@@ -104,5 +104,32 @@ def get_csv_date_columns() -> dict:
     Returns:
         dict: { "receive": "伝票日付", "yard": "伝票日付", ... } の形式
     """
-    config = get_csv_import_config()
+    config = get_csv_sources_config()
     return {key: value["date_column"] for key, value in config.items()}
+
+
+def get_required_files_map() -> dict:
+    """
+    各テンプレートに必要なファイル（required_files）を辞書形式で取得。
+
+    Returns:
+        dict: テンプレートキー → 必須ファイルリスト
+    """
+    config = get_template_config()
+    return {key: value.get("required_files", []) for key, value in config.items()}
+
+
+def get_template_descriptions() -> dict:
+    config = get_template_config()
+    return {key: value.get("description", []) for key, value in config.items()}
+
+
+def get_template_dict() -> dict:
+    """
+    テンプレートの表示ラベル → テンプレートキー の辞書を返す。
+
+    Returns:
+        dict: 例 {"工場日報": "factory_report", ...}
+    """
+    config = get_template_config()
+    return {value["label"]: key for key, value in config.items()}

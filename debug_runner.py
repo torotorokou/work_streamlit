@@ -51,4 +51,3 @@ master_csv4
 # %%
 master_csv5 = apply_rounding(master_csv4)
 master_csv5
-
