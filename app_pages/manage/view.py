@@ -1,5 +1,7 @@
 import streamlit as st
 from components.status_box import render_status_box
+from components.custom_button import centered_download_button
+from io import BytesIO
 
 # from utils.config_loader import (
 #     get_template_dict,
@@ -57,44 +59,22 @@ def render_file_upload_section(required_keys, csv_label_map):
 
 
 # app_pages/manage/view.py
-def render_status_message(missing_keys, required_keys, uploaded_files, date_columns, selected_template, csv_label_map, config):
-    from logic.controllers.csv_controller import prepare_csv_data
-    from components.custom_button import centered_button, centered_download_button
-    from logic.manage.processor import process_template_to_excel
-    from datetime import datetime
-    import time
+def render_status_message_ui(
+    file_ready: bool,
+    file_name: str = None,
+    output_excel: BytesIO = None,
+    uploaded_count: int = 0,
+    total_count: int = 0,
+):
 
-    if not missing_keys:
-        st.success("✅ 必要なファイルがすべてアップロードされました！")
-        st.markdown("---")
-
-        if centered_button("📊 書類作成"):
-            progress = st.progress(0)
-            progress.progress(10, "📥 ファイルを処理中...")
-            time.sleep(0.3)
-
-            dfs = prepare_csv_data(uploaded_files, date_columns)
-
-            progress.progress(40, "🧮 データを計算中...")
-            time.sleep(0.3)
-
-            output_excel = process_template_to_excel(selected_template, dfs, csv_label_map, config)
-
-            progress.progress(90, "✅ 整理完了")
-            time.sleep(0.3)
-            progress.progress(100)
-
-            today_str = datetime.now().strftime("%Y%m%d")
-            st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
-
-            centered_download_button(
-                label="📥 Excelファイルをダウンロード",
-                data=output_excel.getvalue(),
-                file_name=f"{selected_template}_{today_str}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
+    if file_ready and output_excel:
+        st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
+        centered_download_button(
+            label="📥 Excelファイルをダウンロード",
+            data=output_excel.getvalue(),
+            file_name=file_name,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
     else:
-        uploaded_count = len(required_keys) - len(missing_keys)
-        total_count = len(required_keys)
         st.progress(uploaded_count / total_count)
         st.info(f"📥 {uploaded_count} / {total_count} ファイルがアップロードされました")

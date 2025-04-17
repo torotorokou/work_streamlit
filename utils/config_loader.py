@@ -4,28 +4,28 @@ import yaml
 from pathlib import Path
 
 
-def load_config_json(config_path="config/config.json") -> dict:
-    """
-    JSON形式の設定ファイル（config.json）を読み込んで辞書として返す。
+# def load_config_json(config_path="config/config.json") -> dict:
+#     """
+#     JSON形式の設定ファイル（config.json）を読み込んで辞書として返す。
 
-    Parameters:
-        config_path (str): 設定ファイルへのパス（デフォルト: config/config.json）
+#     Parameters:
+#         config_path (str): 設定ファイルへのパス（デフォルト: config/config.json）
 
-    Returns:
-        dict: 読み込まれた設定情報
+#     Returns:
+#         dict: 読み込まれた設定情報
 
-    Raises:
-        FileNotFoundError: ファイルが存在しない場合
-        ValueError: JSONの解析に失敗した場合
-    """
-    if not os.path.exists(config_path):
-        raise FileNotFoundError(f"設定ファイルが見つかりません: {config_path}")
+#     Raises:
+#         FileNotFoundError: ファイルが存在しない場合
+#         ValueError: JSONの解析に失敗した場合
+#     """
+#     if not os.path.exists(config_path):
+#         raise FileNotFoundError(f"設定ファイルが見つかりません: {config_path}")
 
-    with open(config_path, encoding="utf-8") as f:
-        try:
-            return json.load(f)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"設定ファイルの読み込みに失敗しました: {e}")
+#     with open(config_path, encoding="utf-8") as f:
+#         try:
+#             return json.load(f)
+#         except json.JSONDecodeError as e:
+#             raise ValueError(f"設定ファイルの読み込みに失敗しました: {e}")
 
 
 def load_yaml(filename: str) -> dict:
@@ -133,3 +133,8 @@ def get_template_dict() -> dict:
     """
     config = get_template_config()
     return {value["label"]: key for key, value in config.items()}
+
+
+def get_expected_dtypes_by_template(template_key: str) -> dict:
+    config = get_expected_dtypes()
+    return config.get(template_key, {})

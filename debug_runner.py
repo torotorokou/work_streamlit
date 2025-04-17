@@ -1,5 +1,5 @@
 # %% 準備
-from logic.eigyo_management.average_sheet import (
+from logic.manage.average_sheet import (
     load_config_and_headers,
     load_receive_data,
     load_master_and_template,

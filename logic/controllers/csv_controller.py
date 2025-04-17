@@ -8,40 +8,38 @@ from components.ui_message import (
 )
 from utils.file_loader import load_uploaded_csv_files
 from utils.cleaners import enforce_dtypes
+from utils.config_loader import get_expected_dtypes_by_template
 
 # from utils.preprocessor import enforce_dtypes
-from utils.data_schema import load_expected_dtypes
-from utils.config_loader import load_config_json
+# from utils.data_schema import load_expected_dtypes
+# from utils.config_loader import load_config_json
 from utils.logger import app_logger
 
 
-def prepare_csv_data(uploaded_files: dict, date_columns: dict) -> dict:
+def prepare_csv_data(
+    uploaded_files: dict, date_columns: dict, template_key: str
+) -> dict:
     """
-    アップロードされた CSV ファイル群を読み込み、各データフレームの型を整形し、
-    日付処理および日付整合性チェックを行います。
-    処理途中で一旦 success メッセージを表示し、最終的にのみ最終結果の success メッセージを残します。
-
+    アップロードされた CSV ファイル群を読み込み、データ型と日付をチェックする。
     Parameters:
-        uploaded_files (dict): アップロードされたファイル群
-        date_columns (dict): 各ファイルの対応する日付カラム名
-
+        uploaded_files (dict): key = receive, yard など / value = UploadedFile
+        date_columns (dict): 各ファイルに対する日付カラム名
+        template_key (str): テンプレート名（例: average_sheet）
     Returns:
-        dict: 前処理後のデータフレーム辞書（問題があれば空辞書）
+        dict: 正常に読み込めた DataFrame 群
     """
-    # ステータス用のプレースホルダーを用意（成功メッセージ用）
     logger = app_logger()
-
-    # --- 書類作成の開始メッセージ ---
     logger.info("📄 これからCSVの書類を作成します...")
     dfs = load_uploaded_csv_files(uploaded_files)
 
-    config = load_config_json()
-    expected_dtypes = load_expected_dtypes(config)
+    # ✅ テンプレート用の型定義を取得
+    expected_dtypes_per_file = get_expected_dtypes_by_template(template_key)
 
     for key in dfs:
-        dfs[key] = enforce_dtypes(dfs[key], expected_dtypes)
+        dtypes = expected_dtypes_per_file.get(key)
+        if dtypes:
+            dfs[key] = enforce_dtypes(dfs[key], dtypes)
 
-    # --- CSVの日付確認中 ---
     logger.info("📄 CSVの日付を確認中です...")
     for key, df in dfs.items():
         date_col = date_columns.get(key)
@@ -63,6 +61,5 @@ def prepare_csv_data(uploaded_files: dict, date_columns: dict) -> dict:
             show_date_mismatch(result["details"])
         return {}
 
-    # --- 中間の成功メッセージをクリアし、最終メッセージのみ表示 ---
     logger.info(f"✅ すべてのCSVで日付が一致しています：{result['dates']}")
     return dfs

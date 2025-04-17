@@ -2,6 +2,7 @@ import streamlit as st
 from logic.detect_csv import detect_csv_type
 from components.ui_message import show_warning_bubble
 
+
 def handle_uploaded_files(required_keys, csv_label_map, header_csv_path):
 
     uploaded_files = {}

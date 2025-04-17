@@ -4,7 +4,7 @@ from utils.logger import app_logger
 from utils.date_tools import get_weekday_japanese
 from utils.rounding_tools import round_value_column
 from utils.value_setter import set_value
-from logic.eigyo_management.utils.load_template import load_master_and_template
+from logic.manage.utils.load_template import load_master_and_template
 
 
 # 処理の統合

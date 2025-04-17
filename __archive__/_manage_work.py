@@ -5,7 +5,7 @@ from datetime import datetime
 from logic.detect_csv import detect_csv_type
 from utils.config_loader import load_config_json
 from components.ui_message import show_warning_bubble
-from logic.eigyo_management import template_processors
+from logic.manage import template_processors
 from components.custom_button import centered_button, centered_download_button
 from logic.controllers.csv_controller import prepare_csv_data
 from utils.debug_tools import save_debug_parquets

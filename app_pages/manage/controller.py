@@ -1,8 +1,13 @@
 import streamlit as st
 from logic.detect_csv import detect_csv_type
-from logic.manage.upload_handler import handle_uploaded_files
+from logic.manage.utils.upload_handler import handle_uploaded_files
 from components.ui_message import show_warning_bubble
-from app_pages.manage.view import render_status_message
+from app_pages.manage.view import render_file_upload_section
+from app_pages.manage.view import render_status_message_ui
+from datetime import datetime
+from logic.controllers.csv_controller import prepare_csv_data
+from logic.manage.utils.processor import process_template_to_excel
+from components.custom_button import centered_button
 from app_pages.manage.view import render_manage_page
 from utils.config_loader import (
     get_csv_date_columns,
@@ -34,26 +39,44 @@ def manage_work_controller():
     required_keys = required_files.get(selected_template, [])
 
     # --- ファイルアップロードUI表示 & 取得 ---
-    from app_pages.manage.view import render_file_upload_section
-
     uploaded_files = render_file_upload_section(required_keys, csv_label_map)
 
     # --- ヘッダーチェック ---
-    validated_files = handle_uploaded_files(
-        required_keys, csv_label_map, header_csv_path
-    )
-
+    handle_uploaded_files(required_keys, csv_label_map, header_csv_path)
 
     # --- アップロード状態チェック ---
     missing_keys = [k for k in required_keys if uploaded_files.get(k) is None]
+    if not missing_keys:
+        st.success("✅ 必要なファイルがすべてアップロードされました！")
 
-    # --- 帳票作成またはステータス表示に分岐 ---
-    render_status_message(
-        missing_keys,
-        required_keys,
-        uploaded_files,
-        date_columns,
-        selected_template,
-        csv_label_map,
-        get_path_config()  # 必要ならconfig渡す
-    )
+    # --- 書類作成トリガー ---
+    if centered_button("📊 書類作成"):
+        st.markdown("---")
+        progress = st.progress(0)
+        progress.progress(10, "📥 ファイルを処理中...")
+
+        # CSVを読み込み・前処理
+        dfs = prepare_csv_data(uploaded_files, date_columns, selected_template)
+
+        # 処理関数取得とExcel出力
+        config = get_path_config()
+        output_excel = process_template_to_excel(
+            selected_template, dfs, csv_label_map, config
+        )
+
+        today_str = datetime.now().strftime("%Y%m%d")
+        file_name = f"{selected_template}_{today_str}.xlsx"
+
+        # ✅ ViewへUI出力処理を渡す（最小限の値だけ）
+        render_status_message_ui(
+            file_ready=True, file_name=file_name, output_excel=output_excel
+        )
+
+    else:
+        # 🔁 ファイルが足りないときの進捗表示だけ（Viewに分離）
+        uploaded_count = len(required_keys) - len(missing_keys)
+        total_count = len(required_keys)
+
+        render_status_message_ui(
+            file_ready=False, uploaded_count=uploaded_count, total_count=total_count
+        )
