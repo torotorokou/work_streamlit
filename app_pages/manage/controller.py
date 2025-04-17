@@ -42,26 +42,25 @@ def manage_work_controller():
     # --- ファイルアップロードUI表示 & 取得 ---
     uploaded_files = render_file_upload_section(required_keys, csv_label_map)
 
-    # --- ヘッダーチェック ---
-    validated_files = handle_uploaded_files(required_keys, csv_label_map, header_csv_path)
+    # --- CSVファイルの妥当性確認（毎回確認）---
+    validated_files = handle_uploaded_files(
+        required_keys, csv_label_map, header_csv_path
+    )
 
-    # --- アップロード状態チェック ---
+    # --- アップロードされていないファイルを確認 ---
     missing_keys = [k for k in required_keys if validated_files.get(k) is None]
     all_uploaded = len(missing_keys) == 0
 
     if all_uploaded:
         st.success("✅ 必要なファイルがすべてアップロードされました！")
 
-    # --- 書類作成ボタン表示（アップロード未完了なら無効化） ---
+    # ✅ 毎回更新されたアップロード状態に応じてボタンを切り替える
     if centered_button("📊 書類作成", disabled=not all_uploaded):
         st.markdown("---")
         progress = st.progress(0)
         progress.progress(10, "📥 ファイルを処理中...")
 
-        # CSVを読み込み・前処理
         dfs = prepare_csv_data(uploaded_files, date_columns, selected_template)
-
-        # 処理関数取得とExcel出力
         config = get_path_config()
         output_excel = process_template_to_excel(
             selected_template, dfs, csv_label_map, config
@@ -75,7 +74,7 @@ def manage_work_controller():
         )
 
     else:
-        # 🔁 ファイルが足りないときの進捗表示だけ
+        # アップロード状況の表示
         uploaded_count = len(required_keys) - len(missing_keys)
         total_count = len(required_keys)
 

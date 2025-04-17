@@ -43,19 +43,46 @@ def render_file_upload_section(required_keys, csv_label_map):
     st.info("以下のファイルをアップロードしてください。")
 
     uploaded_files = {}
-    for key in required_keys:
-        label = csv_label_map.get(key, key)
-        uploaded_file = st.file_uploader(label, type="csv", key=f"{key}")
+    all_keys = list(csv_label_map.keys())
 
+    for key in all_keys:
+        label = csv_label_map.get(key, key)
+
+        # 表示ON or OFF を条件で分岐
+        if key in required_keys:
+            # 通常のアップロードUI
+            uploaded_file = st.file_uploader(label, type="csv", key=f"{key}")
+        else:
+            # 👇 session_stateを維持するために「非表示」でfile_uploaderを実行
+            uploaded_file = st.file_uploader(
+                label,
+                type="csv",
+                key=f"{key}",
+                disabled=True,
+                label_visibility="collapsed"  # ← これで見えなくなるけど内部的には維持される！
+            )
+
+        # 共通：アップロードされたら session_state に保存
         if uploaded_file is not None:
             st.session_state[f"uploaded_{key}"] = uploaded_file
             uploaded_files[key] = uploaded_file
         else:
-            uploaded_files[key] = st.session_state.get(f"uploaded_{key}", None)
+            # 表示されているCSVのみ削除（非表示のCSVは保持）
+            if key in required_keys:
+                if f"uploaded_{key}" in st.session_state:
+                    del st.session_state[f"uploaded_{key}"]
+                uploaded_files[key] = None
+            else:
+                # 非表示のものは session_state に残っていればそのまま使う
+                uploaded_files[key] = st.session_state.get(f"uploaded_{key}", None)
 
-        show_upload_status(uploaded_files[key])
+        # ステータスは必要なCSVのみ表示
+        if key in required_keys:
+            show_upload_status(uploaded_files[key])
 
     return uploaded_files
+
+
 
 
 # app_pages/manage/view.py
@@ -64,9 +91,9 @@ def render_status_message_ui(
     file_name: str = None,
     output_excel: BytesIO = None,
     uploaded_count: int = 0,
-    total_count: int = 0
+    total_count: int = 0,
 ):
-    
+
     if file_ready and output_excel:
         st.success("✅ 必要なファイルがすべてアップロードされました！")
         st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
@@ -74,7 +101,7 @@ def render_status_message_ui(
             label="📥 Excelファイルをダウンロード",
             data=output_excel.getvalue(),
             file_name=file_name,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
     else:
         st.progress(uploaded_count / total_count)
