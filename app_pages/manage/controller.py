@@ -1,10 +1,11 @@
 import streamlit as st
+from datetime import datetime
+
 from logic.detect_csv import detect_csv_type
 from logic.manage.utils.upload_handler import handle_uploaded_files
 from components.ui_message import show_warning_bubble
 from app_pages.manage.view import render_file_upload_section
 from app_pages.manage.view import render_status_message_ui
-from datetime import datetime
 from logic.controllers.csv_controller import prepare_csv_data
 from logic.manage.utils.processor import process_template_to_excel
 from components.custom_button import centered_button
@@ -42,15 +43,17 @@ def manage_work_controller():
     uploaded_files = render_file_upload_section(required_keys, csv_label_map)
 
     # --- ヘッダーチェック ---
-    handle_uploaded_files(required_keys, csv_label_map, header_csv_path)
+    validated_files = handle_uploaded_files(required_keys, csv_label_map, header_csv_path)
 
     # --- アップロード状態チェック ---
-    missing_keys = [k for k in required_keys if uploaded_files.get(k) is None]
-    if not missing_keys:
+    missing_keys = [k for k in required_keys if validated_files.get(k) is None]
+    all_uploaded = len(missing_keys) == 0
+
+    if all_uploaded:
         st.success("✅ 必要なファイルがすべてアップロードされました！")
 
-    # --- 書類作成トリガー ---
-    if centered_button("📊 書類作成"):
+    # --- 書類作成ボタン表示（アップロード未完了なら無効化） ---
+    if centered_button("📊 書類作成", disabled=not all_uploaded):
         st.markdown("---")
         progress = st.progress(0)
         progress.progress(10, "📥 ファイルを処理中...")
@@ -67,13 +70,12 @@ def manage_work_controller():
         today_str = datetime.now().strftime("%Y%m%d")
         file_name = f"{selected_template}_{today_str}.xlsx"
 
-        # ✅ ViewへUI出力処理を渡す（最小限の値だけ）
         render_status_message_ui(
             file_ready=True, file_name=file_name, output_excel=output_excel
         )
 
     else:
-        # 🔁 ファイルが足りないときの進捗表示だけ（Viewに分離）
+        # 🔁 ファイルが足りないときの進捗表示だけ
         uploaded_count = len(required_keys) - len(missing_keys)
         total_count = len(required_keys)
 

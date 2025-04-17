@@ -1,13 +1,15 @@
 import streamlit as st
+from io import BytesIO
 
 
-def centered_button(label: str, key: str = None) -> bool:
+def centered_button(label: str, key: str = None, disabled: bool = False) -> bool:
     """
     中央寄せでスタイル付きのボタンを表示する関数。
 
     Parameters:
         label (str): ボタンに表示するテキスト
         key (str): ボタンのキー（任意）
+        disabled (bool): ボタンを無効化するかどうか（デフォルトは有効）
 
     Returns:
         bool: ボタンが押されたかどうか
@@ -41,11 +43,7 @@ def centered_button(label: str, key: str = None) -> bool:
     # 中央寄せレイアウト
     col1, col2, col3 = st.columns([3, 2, 3])
     with col2:
-        return st.button(label, key=key)
-
-
-import streamlit as st
-from io import BytesIO
+        return st.button(label, key=key, disabled=disabled)
 
 
 def centered_download_button(

@@ -64,16 +64,17 @@ def render_status_message_ui(
     file_name: str = None,
     output_excel: BytesIO = None,
     uploaded_count: int = 0,
-    total_count: int = 0,
+    total_count: int = 0
 ):
-
+    
     if file_ready and output_excel:
+        st.success("✅ 必要なファイルがすべてアップロードされました！")
         st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
         centered_download_button(
             label="📥 Excelファイルをダウンロード",
             data=output_excel.getvalue(),
             file_name=file_name,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     else:
         st.progress(uploaded_count / total_count)
