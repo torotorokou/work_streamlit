@@ -1,11 +1,15 @@
 import streamlit as st
+from utils.config_loader import get_csv_date_columns,get_csv_label_map
 
 # 変数の宣言
 template_dict ={}
 template_descriptions={}
 required_files={}
+
 csv_label_map={}
-date_columns = {"receive": "伝票日付", "yard": "伝票日付", "shipping": "伝票日付"}
+get_csv_label_map
+date_columns ={}
+get_csv_date_columns()
 
 # --- UI ---
 st.sidebar.markdown("---")
