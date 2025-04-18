@@ -6,7 +6,7 @@ from utils.date_tools import get_weekday_japanese
 from utils.rounding_tools import round_value_column
 from utils.value_setter import set_value
 from logic.manage.utils.load_template import load_master_and_template
-from utils.config_loader import get_path_config, get_template_config
+from utils.config_loader import get_path_config, get_template_config,get_required_columns_definition
 
 
 # 処理の統合
@@ -34,9 +34,11 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
     pd.DataFrame
         出力対象となる master_csv（Excelテンプレートに埋め込む形式）
     """
-    # 設定とヘッダー情報の読み込み
+    # 必要なヘッダー情報の読み込み
     key = "receive"
-    key, target_columns = load_config_and_headers_from_label_map(csv_label_map)
+    target_columns = get_required_columns_definition()[key]
+
+    # key, target_columns = load_config_and_headers_from_label_map(csv_label_map)
 
     # 対象CSVの読み込み
     df_receive = load_receive_data(dfs, key, target_columns)
@@ -65,7 +67,6 @@ def load_config_and_headers(label_map,key):
             - key (str): 使用するデータのキー（例: "receive"）
             - target_columns (list): 抽出すべきカラム名のリスト（空欄は除外済）
     """
-
     required_columns_definition = (
         get_path_config()["csv"]["required_columns_definition"]
     )
@@ -79,29 +80,31 @@ def load_config_and_headers(label_map,key):
 
 def load_config_and_headers_from_label_map(label_map: dict) -> dict[str, list[str]]:
     """
-    ヘッダー定義CSVから、label_map に定義されたデータ種別に対応する必要カラム名リストを取得する。
+    YAML設定ファイルから、label_map に定義されたデータ種別に対応する必要カラム名リストを取得する。
 
     Parameters:
-        label_map (dict): データキーと対応するCSVヘッダー列名（同じでも可）。
+        label_map (dict): データキーと対応するテンプレート名。
                           例: {"receive": "receive", "yard": "yard"}
 
     Returns:
         dict[str, list[str]]: 各データキーに対応するカラムリスト辞書。
                               例: {"receive": [...], "yard": [...]}
-    """
-    required_columns_definition = get_path_config()["csv"]["required_columns_definition"]
-    df_header = pd.read_csv(required_columns_definition)
+    # """
+    # # YAMLファイルのパスを取得（任意の方法で取得してOK）
+    # config_path =
 
-    result = {}
+    # with open(config_path, encoding="utf-8") as f:
+    #     template_config = yaml.safe_load(f)
 
-    for key, column_name in label_map.items():
-        if column_name not in df_header.columns:
-            raise ValueError(f"{column_name} はヘッダー定義CSVに存在しません。")
+    # result = {}
 
-        target_columns = df_header[column_name].dropna().tolist()
-        result[key] = target_columns
+    # for key, template_name in label_map.items():
+    #     if template_name not in template_config:
+    #         raise ValueError(f"{template_name} はテンプレート設定に存在しません。")
 
-    return result
+    #     result[key] = template_config[template_name]
+
+    # return result
 
 
 

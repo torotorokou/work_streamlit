@@ -70,8 +70,7 @@ def manage_work_controller():
 
     # --- アップロードされていないファイルを確認 ---
     all_uploaded, missing_keys = check_missing_files(validated_files, required_keys)
-    logger.info(f"コッチの方が使えるか？{uploaded_files}")
-    
+
     # 書類作成
     # --- ステータス表示 ---
     if all_uploaded:
@@ -92,7 +91,6 @@ def manage_work_controller():
             logger.info("dfsの読込完了")
 
             processor_func = template_processors.get(selected_template)
-
             # テンプレートに従い、処理実行
             if processor_func:
                 update_progress(progress, 40, "🧮 データを計算中...")
