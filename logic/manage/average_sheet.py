@@ -36,7 +36,7 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
     """
     # 設定とヘッダー情報の読み込み
     key = "receive"
-    key, target_columns = load_config_and_headers(csv_label_map,key)
+    key, target_columns = load_config_and_headers_from_label_map(csv_label_map)
 
     # 対象CSVの読み込み
     df_receive = load_receive_data(dfs, key, target_columns)
@@ -75,6 +75,34 @@ def load_config_and_headers(label_map,key):
     target_columns = df_header[header_name].dropna().tolist()
 
     return key, target_columns
+
+
+def load_config_and_headers_from_label_map(label_map: dict) -> dict[str, list[str]]:
+    """
+    ヘッダー定義CSVから、label_map に定義されたデータ種別に対応する必要カラム名リストを取得する。
+
+    Parameters:
+        label_map (dict): データキーと対応するCSVヘッダー列名（同じでも可）。
+                          例: {"receive": "receive", "yard": "yard"}
+
+    Returns:
+        dict[str, list[str]]: 各データキーに対応するカラムリスト辞書。
+                              例: {"receive": [...], "yard": [...]}
+    """
+    required_columns_definition = get_path_config()["csv"]["required_columns_definition"]
+    df_header = pd.read_csv(required_columns_definition)
+
+    result = {}
+
+    for key, column_name in label_map.items():
+        if column_name not in df_header.columns:
+            raise ValueError(f"{column_name} はヘッダー定義CSVに存在しません。")
+
+        target_columns = df_header[column_name].dropna().tolist()
+        result[key] = target_columns
+
+    return result
+
 
 
 def load_receive_data(dfs, key, target_columns):
