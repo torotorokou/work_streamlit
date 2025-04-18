@@ -65,8 +65,10 @@ def load_config_and_headers(label_map):
             - target_columns (list): 抽出すべきカラム名のリスト（空欄は除外済）
     """
 
-    use_headers_path = get_path_config()["csv"]["required_columns_definition"]
-    df_header = pd.read_csv(use_headers_path)
+    required_columns_definition = get_path_config()["csv"][
+        "required_columns_definition"
+    ]
+    df_header = pd.read_csv(required_columns_definition)
 
     key = "receive"
     header_name = label_map[key]
@@ -82,7 +84,7 @@ def process_average_sheet(
     平均表テンプレート用の処理群を順に実行し、マスターCSVを完成形にする。
     """
     master_csv = aggregate_vehicle_data(df_receive, master_csv)
-    master_csv = calculate_itemwise_summary(df_receive, master_csv)
+    master_csv = calculate_item_summary(df_receive, master_csv)
     master_csv = summarize_item_and_abc_totals(master_csv)
     master_csv = calculate_final_totals(df_receive, master_csv)
     master_csv = set_report_date_info(df_receive, master_csv)
@@ -157,7 +159,7 @@ def aggregate_vehicle_data(
     return master_csv
 
 
-def calculate_itemwise_summary(
+def calculate_item_summary(
     df_receive: pd.DataFrame, master_csv: pd.DataFrame
 ) -> pd.DataFrame:
     """

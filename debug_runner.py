@@ -4,8 +4,8 @@ from logic.manage.average_sheet import (
     load_receive_data,
     load_master_and_template,
     aggregate_vehicle_data,
-    calculate_itemwise_summary,
-    calculate_itemwise_summary,
+    calculate_item_summary,
+    calculate_item_summary,
     calculate_final_totals,
     apply_rounding,
 )
@@ -37,12 +37,12 @@ master_csv1 = aggregate_vehicle_data(df_receive, master_csv)
 
 
 # %%
-master_csv2 = calculate_itemwise_summary(df_receive, master_csv1)
+master_csv2 = calculate_item_summary(df_receive, master_csv1)
 master_csv2
 
 
 # %%
-master_csv3 = calculate_itemwise_summary(df_receive, master_csv2)
+master_csv3 = calculate_item_summary(df_receive, master_csv2)
 master_csv3
 # %%
 master_csv4 = calculate_final_totals(df_receive, master_csv3)

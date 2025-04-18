@@ -25,6 +25,7 @@ from logic.manage.utils.upload_handler import handle_uploaded_files
 from logic.manage.utils.file_validator import check_missing_files
 
 # ✅ プロジェクト内 - utils（共通ユーティリティ）
+from utils.progress_helper import update_progress
 from utils.logger import app_logger
 from utils.write_excel import write_values_to_template
 from utils.config_loader import (
@@ -55,7 +56,7 @@ def manage_work_controller():
         template_descriptions,
     )
     selected_template = template_dict.get(selected_template_label)
-    
+
     # --- 必要ファイルキーを取得 ---
     required_keys = required_files.get(selected_template, [])
 
@@ -93,14 +94,12 @@ def manage_work_controller():
 
             # テンプレートに従い、処理実行
             if processor_func:
-                progress.progress(40, "🧮 データを計算中...")
-                time.sleep(0.3)
+                update_progress(progress, 40, "🧮 データを計算中...")
 
                 # 個々のprocessにより、dfを取得
                 df = processor_func(dfs, csv_label_map)
 
-                progress.progress(70, "📄 テンプレートに書き込み中...")
-                time.sleep(0.3)
+                update_progress(progress, 70, "📄 テンプレートに書き込み中...")
 
                 # テンプレートへの書き込み
                 template_path = get_template_config()[selected_template][
@@ -110,9 +109,7 @@ def manage_work_controller():
                     df, template_path, extracted_date
                 )
 
-                progress.progress(90, "✅ 整理完了")
-                time.sleep(0.3)
-                progress.progress(100)
+                update_progress(progress, 100, "✅ 整理完了")
 
                 # ダウンロードボタン表示
                 st.info(
