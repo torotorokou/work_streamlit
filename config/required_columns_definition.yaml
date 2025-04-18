@@ -9,10 +9,7 @@ receive:
     - 品名
     - 品名CD
 
-yard:
-
-shipping:
-
-買掛一覧表:
-
-売上集計表:
+yard: []
+shipping: []
+買掛一覧表: []
+売上集計表: []
