@@ -15,7 +15,7 @@ def handle_uploaded_files(required_keys, csv_label_map, header_csv_path):
     Returns:
     - uploaded_files: キーに対応するアップロード済みファイルの辞書（不正ならNone）
     """
-    
+
     uploaded_files = {}  # 各キーごとに検証済みのファイルを格納する辞書
 
     for key in required_keys:
@@ -28,7 +28,7 @@ def handle_uploaded_files(required_keys, csv_label_map, header_csv_path):
 
             # アップロードされたファイルのCSV種別を判定
             detected_name = detect_csv_type(uploaded, header_csv_path)
-        
+
             if detected_name != expected_name:
                 # 判定結果が一致しない場合は警告を表示し、ファイルを無効化
                 show_warning_bubble(expected_name, detected_name)
