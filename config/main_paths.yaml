@@ -6,10 +6,15 @@ csv:
     required_columns_definition: 'config/need_columns_info.csv' # 必須カラムの定義
     expected_dtypes: 'config/expected_dtypes.json' # データ型の期待定義
 
+# # excelテンプレートパス
+# excel:
+#     manage_template_path: 'data/master/abc_average_write_targets.csv'
+
 # 📁 ディレクトリ構成
 directories:
     output: 'data/output' # 出力結果の保存先
     master_data: 'data/master' # マスターCSVの格納場所
+    template: 'data/template'
     temp: 'data/temp' # 一時ファイル格納
 
 # 📜 ログ設定

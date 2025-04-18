@@ -1,10 +1,11 @@
 import pandas as pd
-from utils.config_loader import load_config_json
+# from utils.config_loader import load_config_json
 from utils.logger import app_logger
 from utils.date_tools import get_weekday_japanese
 from utils.rounding_tools import round_value_column
 from utils.value_setter import set_value
 from logic.manage.utils.load_template import load_master_and_template
+from utils.config_loader import get_path_config,get_template_config
 
 
 # 処理の統合
@@ -33,13 +34,14 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
         出力対象となる master_csv（Excelテンプレートに埋め込む形式）
     """
     # 設定とヘッダー情報の読み込み
-    config, key, target_columns = load_config_and_headers(csv_label_map)
+    key, target_columns = load_config_and_headers(csv_label_map)
 
     # 対象CSVの読み込み
     df_receive = load_receive_data(dfs, key, target_columns)
 
     # マスターファイルとテンプレートの読み込み
-    master_csv = load_master_and_template(config)
+    master_path =get_template_config()["average_sheet"]["master_csv_path"]
+    master_csv = load_master_and_template(master_path)
 
     # 集計処理ステップ
     master_csv = process_average_sheet(df_receive, master_csv)
@@ -61,15 +63,15 @@ def load_config_and_headers(label_map):
             - key (str): 使用するデータのキー（例: "receive"）
             - target_columns (list): 抽出すべきカラム名のリスト（空欄は除外済）
     """
-    config = load_config_json()
-    use_headers_path = config["main_paths"]["required_columns_definition"]
+
+    use_headers_path = get_path_config["csv"]["required_columns_definition"]
     df_header = pd.read_csv(use_headers_path)
 
     key = "receive"
     header_name = label_map[key]
     target_columns = df_header[header_name].dropna().tolist()
 
-    return config, key, target_columns
+    return key, target_columns
 
 
 def process_average_sheet(

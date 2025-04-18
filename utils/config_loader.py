@@ -2,6 +2,7 @@ import json
 import os
 import yaml
 from pathlib import Path
+from utils.type_converter import resolve_dtype
 
 
 # def load_config_json(config_path="config/config.json") -> dict:
@@ -55,9 +56,20 @@ def get_app_config() -> dict:
 
 
 def get_expected_dtypes() -> dict:
-    """main_paths.yaml 経由で expected_dtypes.yaml を読み込む"""
+    """main_paths.yaml 経由で expected_dtypes.yaml を読み込み、型を解決する"""
     config_path = get_path_config()["config_files"]["expected_dtypes"]
-    return load_yaml(config_path)
+    raw_yaml = load_yaml(config_path)
+
+    resolved = {}
+    for template_key, file_map in raw_yaml.items():
+        resolved[template_key] = {}
+        for file_key, dtype_map in file_map.items():
+            resolved[template_key][file_key] = {
+                col: resolve_dtype(dtype_str)
+                for col, dtype_str in dtype_map.items()
+            }
+
+    return resolved
 
 
 def get_template_config() -> dict:
@@ -136,5 +148,31 @@ def get_template_dict() -> dict:
 
 
 def get_expected_dtypes_by_template(template_key: str) -> dict:
+    """
+    指定されたテンプレートキーに対応するCSVファイルごとの
+    カラム型定義（expected_dtypes）を返す。
+
+    この関数は expected_dtypes.yaml を読み込んだ結果から、
+    指定テンプレートに対応する型定義だけを抽出して返します。
+
+    Parameters:
+        template_key (str): テンプレート名（例: "average_sheet", "factory_report"）
+
+    Returns:
+        dict: ファイルキーごとのカラム名と型の辞書。
+              例:
+              {
+                  "receive": {
+                      "金額": float,
+                      "正味重量": int,
+                      "伝票日付": "datetime64[ns]"
+                  },
+                  "yard": {
+                      "品名": str,
+                      ...
+                  }
+              }
+              対応テンプレートが存在しない場合は空の辞書を返します。
+    """
     config = get_expected_dtypes()
     return config.get(template_key, {})

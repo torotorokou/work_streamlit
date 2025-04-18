@@ -14,10 +14,11 @@ template_configs = get_template_config()
 
 template_processors = {}
 
-# 各テンプレートの処理関数を動的にインポート
-for key, info in template_configs.items():
+for key in template_configs.keys():
     try:
-        module = importlib.import_module(f"eigyo_management.{key}")
-        template_processors[key] = getattr(module, "process")
+        module = importlib.import_module(f".{key}", package=__name__)  # ← ここがポイント
+        func = getattr(module, "process")
+        template_processors[key] = func
+        logger.info(f"✅ {key}.py の process 関数を登録しました")
     except Exception as e:
-        logger.warning(f"❌ 処理関数の読み込みエラー: {key} → {e}")
+        logger.warning(f"❌ 処理関数の読み込みエラー: {key} → {type(e).__name__}: {e}")

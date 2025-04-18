@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+from utils.logger import app_logger
+from components.ui_message import show_warning
 
 
 def clean_numeric_column(df, column_name):
@@ -18,6 +20,7 @@ def clean_numeric_column(df, column_name):
 
 
 def enforce_dtypes(df, dtype_map):
+    logger = app_logger()
     for col, dtype in dtype_map.items():
         if col in df.columns:
             try:
@@ -57,5 +60,8 @@ def enforce_dtypes(df, dtype_map):
                     df[col] = df[col].astype(dtype)
 
             except Exception as e:
-                print(f"⚠️ {col} の型変換に失敗: {e}")
+                msg =f"⚠️ {col} の型変換に失敗: {e}"
+                logger.warning(msg)
+                show_warning(msg)
+
     return df

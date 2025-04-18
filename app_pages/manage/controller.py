@@ -1,6 +1,8 @@
 import streamlit as st
 from datetime import datetime
-
+import time
+from logic.manage import template_processors
+from utils.write_excel import write_values_to_template
 from logic.detect_csv import detect_csv_type
 from logic.manage.utils.upload_handler import handle_uploaded_files
 from components.ui_message import show_warning_bubble
@@ -8,7 +10,8 @@ from app_pages.manage.view import render_file_upload_section
 from app_pages.manage.view import render_status_message_ui
 from logic.controllers.csv_controller import prepare_csv_data
 from logic.manage.utils.processor import process_template_to_excel
-from components.custom_button import centered_button
+from utils.logger import app_logger
+from components.custom_button import centered_button, centered_download_button
 from app_pages.manage.view import render_manage_page
 from utils.config_loader import (
     get_csv_date_columns,
@@ -17,10 +20,12 @@ from utils.config_loader import (
     get_template_descriptions,
     get_template_dict,
     get_path_config,
+    get_template_config,
 )
 
 
 def manage_work_controller():
+    logger = app_logger()
     # --- 設定を取得 ---
     template_dict = get_template_dict()
     template_descriptions = get_template_descriptions()
@@ -51,33 +56,60 @@ def manage_work_controller():
     missing_keys = [k for k in required_keys if validated_files.get(k) is None]
     all_uploaded = len(missing_keys) == 0
 
+
+    # 書類作成
+    # --- ステータス表示 ---
     if all_uploaded:
         st.success("✅ 必要なファイルがすべてアップロードされました！")
 
-    # 書類作成
-    if centered_button("📊 書類作成", disabled=not all_uploaded):
+    # if not missing_keys:
+    #     st.success("✅ 必要なファイルがすべてアップロードされました！")
+
         st.markdown("---")
-        progress = st.progress(0)
-        progress.progress(10, "📥 ファイルを処理中...")
+        if centered_button("📊 書類作成"):
+            progress = st.progress(0)
 
-        dfs = prepare_csv_data(uploaded_files, date_columns, selected_template)
-        config = get_path_config()
-        output_excel = process_template_to_excel(
-            selected_template, dfs, csv_label_map, config
-        )
+            progress.progress(10, "📥 ファイルを処理中...")
+            time.sleep(0.3)
+            dfs = prepare_csv_data(uploaded_files, date_columns, selected_template)
+            logger.info("dfsの読込完了")
+            logger.info(selected_template)
+            processor_func = template_processors.get(selected_template)
+            
+            logger.info(f"{processor_func}処理用関数の読込完了")
+            if processor_func:
+                progress.progress(40, "🧮 データを計算中...")
+                time.sleep(0.3)
+                df = processor_func(dfs, csv_label_map)
 
-        today_str = datetime.now().strftime("%Y%m%d")
-        file_name = f"{selected_template}_{today_str}.xlsx"
+                progress.progress(70, "📄 テンプレートに書き込み中...")
+                time.sleep(0.3)
+                template_path = get_template_config()[selected_template][
+                    "template_excel_path"
+                ]
+                output_excel = write_values_to_template(df, template_path)
 
-        render_status_message_ui(
-            file_ready=True, file_name=file_name, output_excel=output_excel,total_count=len(required_keys),
-        )
+                progress.progress(90, "✅ 整理完了")
+                time.sleep(0.3)
+
+                progress.progress(100)
+                today_str = datetime.now().strftime("%Y%m%d")
+
+                st.info(
+                    "✅ ファイルが生成されました。下のボタンからダウンロードできます👇"
+                )
+
+                centered_download_button(
+                    label="📥 Excelファイルをダウンロード",
+                    data=output_excel.getvalue(),
+                    file_name=f"{selected_template_label}_{today_str}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
 
     else:
-        # アップロード状況の表示
+
         uploaded_count = len(required_keys) - len(missing_keys)
         total_count = len(required_keys)
 
-        render_status_message_ui(
-            file_ready=False, uploaded_count=uploaded_count, total_count=total_count
-        )
+        st.progress(uploaded_count / total_count)
+        st.info(f"📥 {uploaded_count} / {total_count} ファイルがアップロードされました")

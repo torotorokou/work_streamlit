@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def load_master_and_template(config):
+def load_master_and_template(master_path):
     """
     平均表テンプレート用のマスターCSVを読み込む。
     各列に対して明示的にデータ型を指定し、「値」列は object 型として混在データに対応。
@@ -12,8 +12,7 @@ def load_master_and_template(config):
     Returns:
         pd.DataFrame: 型指定されたマスターCSVの内容
     """
-    master_path = config["templates"]["average_sheet"]["master_csv_path"]
-
+    
     dtype_spec = {
         "q": str,
         "小項目1": str,
