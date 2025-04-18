@@ -17,7 +17,7 @@ average_sheet:
     description: 受入データをABC分類し、各品目の平均値を算出して出力します。
     required_files: [receive]
     master_csv_path: data/master/abc_average_write_targets.csv
-    template_excel_path: templates/average_sheet.xlsx
+    template_excel_path: data/templates/average_sheet.xlsx
 
 management_sheet:
     key: management_sheet
