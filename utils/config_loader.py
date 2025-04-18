@@ -174,6 +174,17 @@ def get_expected_dtypes_by_template(template_key: str) -> dict:
     config = get_expected_dtypes()
     return config.get(template_key, {})
 
+
 def get_required_columns_definition():
     config_path = get_path_config()["config_files"]["required_columns_definition"]
     return load_yaml(config_path)
+
+
+def get_csv_type_signatures():
+    config_path = get_path_config()["config_files"]["csv_type_signatures"]
+    return load_yaml(config_path)
+
+
+def get_csv_key_from_japanese(label_map: dict, detected_japanese: str) -> str:
+    reversed_map = {v: k for k, v in label_map.items()}
+    return reversed_map.get(detected_japanese, detected_japanese)

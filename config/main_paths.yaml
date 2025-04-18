@@ -30,3 +30,4 @@ config_files:
     templates_config: 'config/templates_config.yaml'
     csv_sources_config: 'config/csv_sources_config.yaml'
     required_columns_definition: 'config/required_columns_definition.yaml'
+    csv_type_signatures: 'config/csv_type_signatures.yaml'

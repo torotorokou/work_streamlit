@@ -48,7 +48,7 @@ def manage_work_controller():
     required_files = get_required_files_map()
     csv_label_map = get_csv_label_map()
     date_columns = get_csv_date_columns()
-    receive_header_definition = get_path_config()["csv"]["receive_header_definition"]
+    # receive_header_definition = get_path_config()["csv"]["receive_header_definition"]
 
     # --- UI:テンプレート選択 ---
     selected_template_label = render_manage_page(
@@ -64,9 +64,7 @@ def manage_work_controller():
     uploaded_files = render_file_upload_section(required_keys, csv_label_map)
 
     # --- CSVファイルの妥当性確認（毎回確認）---
-    validated_files = handle_uploaded_files(
-        required_keys, csv_label_map, receive_header_definition
-    )
+    validated_files = handle_uploaded_files(required_keys, csv_label_map)
 
     # --- アップロードされていないファイルを確認 ---
     all_uploaded, missing_keys = check_missing_files(validated_files, required_keys)

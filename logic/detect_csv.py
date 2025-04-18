@@ -1,6 +1,7 @@
 # logic/detect_csv.py
-from utils.file_loader import read_csv
+from utils.config_loader import get_csv_type_signatures
 import pandas as pd
+from utils.logger import app_logger
 
 
 def load_template_signatures(header_csv_path: str) -> dict:
@@ -18,19 +19,22 @@ def load_template_signatures(header_csv_path: str) -> dict:
     return templates
 
 
-def detect_csv_type(file, header_csv_path: str) -> str:
+def detect_csv_type(file) -> str:
+    logger = app_logger()
     try:
-        # 判別ルール読み込み
-        signatures = load_template_signatures(header_csv_path)
-
-        # ✅ キャッシュ付き読み込み（1行だけ）
-        df = read_csv(file, nrows=1)
+        signatures = get_csv_type_signatures()  # dict[str, list[str]]
+        df = pd.read_csv(file, nrows=1)
         cols = list(df.columns)[:5]
+        logger.info(f"読み込んだsignaturesは：{signatures}")
+        logger.info(f"カラムは：{cols}")
 
-        for name, expected in signatures.items():
-            if cols[: len(expected)] == expected:
-                return name
+
+        for key, expected in signatures.items():
+            if cols == expected:  # ✅ 順序・長さ含めて完全一致
+                logger.info(f"expectedは：{signatures}")
+                return key
 
         return "不明な形式"
+
     except Exception as e:
         return f"読み込みエラー: {e}"

@@ -1,9 +1,10 @@
 import streamlit as st
 from logic.detect_csv import detect_csv_type
+# from utils.config_loader import get_receive_header_definition,get_csv_key_from_japanese
 from components.ui_message import show_warning_bubble
 
 
-def handle_uploaded_files(required_keys, csv_label_map, header_csv_path):
+def handle_uploaded_files(required_keys, csv_label_map):
     """
     アップロードされたCSVファイルの整合性を確認し、正しいもののみを返す関数。
 
@@ -15,7 +16,6 @@ def handle_uploaded_files(required_keys, csv_label_map, header_csv_path):
     Returns:
     - uploaded_files: キーに対応するアップロード済みファイルの辞書（不正ならNone）
     """
-
     uploaded_files = {}  # 各キーごとに検証済みのファイルを格納する辞書
 
     for key in required_keys:
@@ -23,15 +23,18 @@ def handle_uploaded_files(required_keys, csv_label_map, header_csv_path):
         uploaded = st.session_state.get(f"uploaded_{key}")
 
         if uploaded:
-            # 期待されるCSVの種別名（なければキー名を使う）
-            expected_name = csv_label_map.get(key, key)
+            # 期待されるCSVの種別名
+            expected_name = key
 
             # アップロードされたファイルのCSV種別を判定
-            detected_name = detect_csv_type(uploaded, header_csv_path)
+            detected_name = detect_csv_type(uploaded)
 
             if detected_name != expected_name:
-                # 判定結果が一致しない場合は警告を表示し、ファイルを無効化
-                show_warning_bubble(expected_name, detected_name)
+                # 判定結果が一致しない場合は日本語で警告
+                jp_expected = csv_label_map.get(expected_name, expected_name)
+                jp_detected = csv_label_map.get(detected_name, detected_name)
+                show_warning_bubble(jp_expected, jp_detected)
+
                 st.session_state[f"uploaded_{key}"] = None  # アップロード欄をリセット
                 uploaded_files[key] = None  # このキーのファイルは不正とする
             else:
