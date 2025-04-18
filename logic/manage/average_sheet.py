@@ -38,7 +38,6 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
     key = "receive"
     target_columns = get_required_columns_definition()[key]
 
-    # key, target_columns = load_config_and_headers_from_label_map(csv_label_map)
 
     # 対象CSVの読み込み
     df_receive = load_receive_data(dfs, key, target_columns)
