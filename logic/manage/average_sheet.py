@@ -35,7 +35,8 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
         出力対象となる master_csv（Excelテンプレートに埋め込む形式）
     """
     # 設定とヘッダー情報の読み込み
-    key, target_columns = load_config_and_headers(csv_label_map)
+    key = "receive"
+    key, target_columns = load_config_and_headers(csv_label_map,key)
 
     # 対象CSVの読み込み
     df_receive = load_receive_data(dfs, key, target_columns)
@@ -50,13 +51,13 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
     return master_csv
 
 
-def load_config_and_headers(label_map):
+def load_config_and_headers(label_map,key):
     """
     コンフィグ設定とヘッダー定義CSVから、指定データセット（例："receive"）の必要カラムリストを取得する。
 
     Parameters:
         label_map (dict): データ種別（例: "receive"）に対応する日本語ラベル名の辞書。
-                          例: {"receive": "受入一覧"}
+                        例: {"receive": "受入一覧"}
 
     Returns:
         tuple:
@@ -65,31 +66,15 @@ def load_config_and_headers(label_map):
             - target_columns (list): 抽出すべきカラム名のリスト（空欄は除外済）
     """
 
-    required_columns_definition = get_path_config()["csv"][
-        "required_columns_definition"
-    ]
+    required_columns_definition = (
+        get_path_config()["csv"]["required_columns_definition"]
+    )
     df_header = pd.read_csv(required_columns_definition)
 
-    key = "receive"
     header_name = label_map[key]
     target_columns = df_header[header_name].dropna().tolist()
 
     return key, target_columns
-
-
-def process_average_sheet(
-    df_receive: pd.DataFrame, master_csv: pd.DataFrame
-) -> pd.DataFrame:
-    """
-    平均表テンプレート用の処理群を順に実行し、マスターCSVを完成形にする。
-    """
-    master_csv = aggregate_vehicle_data(df_receive, master_csv)
-    master_csv = calculate_item_summary(df_receive, master_csv)
-    master_csv = summarize_item_and_abc_totals(master_csv)
-    master_csv = calculate_final_totals(df_receive, master_csv)
-    master_csv = set_report_date_info(df_receive, master_csv)
-    master_csv = apply_rounding(master_csv)
-    return master_csv
 
 
 def load_receive_data(dfs, key, target_columns):
@@ -105,6 +90,21 @@ def load_receive_data(dfs, key, target_columns):
         pd.DataFrame: 指定されたカラムのみを持つDataFrame（フィルタ済み）
     """
     return dfs[key][target_columns]
+
+
+def process_average_sheet(
+    df_receive: pd.DataFrame, master_csv: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    平均表テンプレート用の処理群を順に実行し、マスターCSVを完成形にする。
+    """
+    master_csv = aggregate_vehicle_data(df_receive, master_csv)
+    master_csv = calculate_item_summary(df_receive, master_csv)
+    master_csv = summarize_item_and_abc_totals(master_csv)
+    master_csv = calculate_final_totals(df_receive, master_csv)
+    master_csv = set_report_date_info(df_receive, master_csv)
+    master_csv = apply_rounding(master_csv)
+    return master_csv
 
 
 # 台数・重量・台数単価をABC区分ごとに集計
