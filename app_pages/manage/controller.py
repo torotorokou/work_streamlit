@@ -54,7 +54,7 @@ def manage_work_controller():
     if all_uploaded:
         st.success("✅ 必要なファイルがすべてアップロードされました！")
 
-    # ✅ 毎回更新されたアップロード状態に応じてボタンを切り替える
+    # 書類作成
     if centered_button("📊 書類作成", disabled=not all_uploaded):
         st.markdown("---")
         progress = st.progress(0)
@@ -70,7 +70,7 @@ def manage_work_controller():
         file_name = f"{selected_template}_{today_str}.xlsx"
 
         render_status_message_ui(
-            file_ready=True, file_name=file_name, output_excel=output_excel
+            file_ready=True, file_name=file_name, output_excel=output_excel,total_count=len(required_keys),
         )
 
     else:
