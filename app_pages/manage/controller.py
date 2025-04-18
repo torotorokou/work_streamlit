@@ -70,7 +70,8 @@ def manage_work_controller():
 
     # --- アップロードされていないファイルを確認 ---
     all_uploaded, missing_keys = check_missing_files(validated_files, required_keys)
-
+    logger.info(f"コッチの方が使えるか？{uploaded_files}")
+    
     # 書類作成
     # --- ステータス表示 ---
     if all_uploaded:
