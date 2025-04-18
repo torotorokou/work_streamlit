@@ -1,6 +1,5 @@
 # ✅ 標準ライブラリ
 import time
-from datetime import datetime
 
 # ✅ サードパーティ
 import streamlit as st
@@ -21,7 +20,6 @@ from logic.manage import template_processors
 from logic.controllers.csv_controller import prepare_csv_data
 # from logic.detect_csv import detect_csv_type
 from logic.manage.utils.upload_handler import handle_uploaded_files
-# from logic.manage.utils.processor import process_template_to_excel
 
 # ✅ プロジェクト内 - utils（共通ユーティリティ）
 from utils.logger import app_logger
@@ -83,38 +81,39 @@ def manage_work_controller():
 
             progress.progress(10, "📥 ファイルを処理中...")
             time.sleep(0.3)
-            dfs = prepare_csv_data(uploaded_files, date_columns, selected_template)
+
+            # dfsとcsv日付の作成
+            dfs, extracted_date = prepare_csv_data(uploaded_files, date_columns, selected_template)
+            extracted_date = extracted_date[0].strftime("%Y%m%d")
             logger.info("dfsの読込完了")
-            logger.info(selected_template)
+
             processor_func = template_processors.get(selected_template)
 
-            logger.info(f"{processor_func}処理用関数の読込完了")
+            # テンプレートに従い、処理実行
             if processor_func:
                 progress.progress(40, "🧮 データを計算中...")
                 time.sleep(0.3)
+
+                # 個々のprocessにより、dfを取得
                 df = processor_func(dfs, csv_label_map)
 
                 progress.progress(70, "📄 テンプレートに書き込み中...")
                 time.sleep(0.3)
-                template_path = get_template_config()[selected_template][
-                    "template_excel_path"
-                ]
-                output_excel = write_values_to_template(df, template_path)
+
+                # テンプレートへの書き込み
+                template_path = get_template_config()[selected_template]["template_excel_path"]
+                output_excel = write_values_to_template(df, template_path,extracted_date)
 
                 progress.progress(90, "✅ 整理完了")
                 time.sleep(0.3)
-
                 progress.progress(100)
-                today_str = datetime.now().strftime("%Y%m%d")
 
-                st.info(
-                    "✅ ファイルが生成されました。下のボタンからダウンロードできます👇"
-                )
-
+                # ダウンロードボタン表示
+                st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
                 centered_download_button(
                     label="📥 Excelファイルをダウンロード",
                     data=output_excel.getvalue(),
-                    file_name=f"{selected_template_label}_{today_str}.xlsx",
+                    file_name=f"{selected_template_label}_{extracted_date}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
 

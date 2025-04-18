@@ -16,7 +16,7 @@ def safe_excel_value(value):
     return value
 
 
-def write_values_to_template(df: pd.DataFrame, template_path: str) -> BytesIO:
+def write_values_to_template(df: pd.DataFrame, template_path: str, extracted_date) -> BytesIO:
     """
     DataFrameの 'セル' 列を使って、指定セルに '値' を書き込む関数。
     さらに、シート名を「YYYYMMDD」に変更する。
@@ -40,8 +40,9 @@ def write_values_to_template(df: pd.DataFrame, template_path: str) -> BytesIO:
             cell.value = value
 
     # --- シート名を今日の日付に変更（例：20250414） ---
-    today_str = datetime.now().strftime("%Y%m%d")
-    ws.title = today_str
+    ws.title = extracted_date
+
+
 
     # --- メモリ上に保存 ---
     output = BytesIO()

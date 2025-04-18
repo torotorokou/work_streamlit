@@ -9,10 +9,6 @@ from components.ui_message import (
 from utils.file_loader import load_uploaded_csv_files
 from utils.cleaners import enforce_dtypes
 from utils.config_loader import get_expected_dtypes_by_template
-
-# from utils.preprocessor import enforce_dtypes
-# from utils.data_schema import load_expected_dtypes
-# from utils.config_loader import load_config_json
 from utils.logger import app_logger
 
 
@@ -62,4 +58,4 @@ def prepare_csv_data(
         return {}
 
     logger.info(f"✅ すべてのCSVで日付が一致しています：{result['dates']}")
-    return dfs
+    return dfs, result["dates"]
