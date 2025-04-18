@@ -1,5 +1,6 @@
 # ✅ 標準ライブラリ
 import time
+import pandas as pd
 
 # ✅ サードパーティ
 import streamlit as st
@@ -80,7 +81,10 @@ def manage_work_controller():
 
             progress.progress(10, "📥 ファイルを処理中...")
             time.sleep(0.3)
-
+            logger.info(f"デバッグ用：{uploaded_files}")
+            df = pd.read_csv(uploaded_files["receive"])
+            logger.info("カラム:", df.columns)
+            logger.info("行数:", len(df))
             # dfsとcsv日付の作成
             dfs, extracted_date = prepare_csv_data(
                 uploaded_files, date_columns, selected_template

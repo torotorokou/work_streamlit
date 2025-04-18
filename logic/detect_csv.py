@@ -1,4 +1,3 @@
-# logic/detect_csv.py
 from utils.config_loader import get_csv_type_signatures
 import pandas as pd
 from utils.logger import app_logger
@@ -20,18 +19,14 @@ def load_template_signatures(header_csv_path: str) -> dict:
 
 
 def detect_csv_type(file) -> str:
-    logger = app_logger()
+    # logger = app_logger()
     try:
         signatures = get_csv_type_signatures()  # dict[str, list[str]]
         df = pd.read_csv(file, nrows=1)
         cols = list(df.columns)[:5]
-        logger.info(f"読み込んだsignaturesは：{signatures}")
-        logger.info(f"カラムは：{cols}")
-
 
         for key, expected in signatures.items():
             if cols == expected:  # ✅ 順序・長さ含めて完全一致
-                logger.info(f"expectedは：{signatures}")
                 return key
 
         return "不明な形式"
