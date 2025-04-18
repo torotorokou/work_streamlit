@@ -12,7 +12,7 @@ def load_master_and_template(master_path):
     Returns:
         pd.DataFrame: 型指定されたマスターCSVの内容
     """
-    
+
     dtype_spec = {
         "q": str,
         "小項目1": str,

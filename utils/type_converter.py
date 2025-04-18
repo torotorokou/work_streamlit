@@ -1,4 +1,3 @@
-
 def resolve_dtype(dtype_str):
     import numpy as np
 

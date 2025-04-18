@@ -1,11 +1,12 @@
 import pandas as pd
+
 # from utils.config_loader import load_config_json
 from utils.logger import app_logger
 from utils.date_tools import get_weekday_japanese
 from utils.rounding_tools import round_value_column
 from utils.value_setter import set_value
 from logic.manage.utils.load_template import load_master_and_template
-from utils.config_loader import get_path_config,get_template_config
+from utils.config_loader import get_path_config, get_template_config
 
 
 # 処理の統合
@@ -40,7 +41,7 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
     df_receive = load_receive_data(dfs, key, target_columns)
 
     # マスターファイルとテンプレートの読み込み
-    master_path =get_template_config()["average_sheet"]["master_csv_path"]
+    master_path = get_template_config()["average_sheet"]["master_csv_path"]
     master_csv = load_master_and_template(master_path)
 
     # 集計処理ステップ

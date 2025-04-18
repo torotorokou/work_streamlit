@@ -39,7 +39,8 @@ def show_upload_status(file):
 
 
 def render_upload_header(title: str):
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div style="
         background-color: rgba(255, 223, 89, 0.15);  /* 上品な薄黄色 */
         color: #222;
@@ -57,9 +58,9 @@ def render_upload_header(title: str):
         <span style="font-size: 17px;">📁</span>
         <span>{title}</span>
     </div>
-    """, unsafe_allow_html=True)
-
-
+    """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_file_upload_section(required_keys, csv_label_map):
@@ -75,7 +76,9 @@ def render_file_upload_section(required_keys, csv_label_map):
         # --- 必要なCSVファイル（通常表示） ---
         if key in required_keys:
             render_upload_header(label)  # ← 👈 カスタム見出し追加
-            uploaded_file = st.file_uploader(label, type="csv", key=f"{key}", label_visibility="collapsed")
+            uploaded_file = st.file_uploader(
+                label, type="csv", key=f"{key}", label_visibility="collapsed"
+            )
 
             if uploaded_file is not None:
                 st.session_state[f"uploaded_{key}"] = uploaded_file
@@ -89,14 +92,18 @@ def render_file_upload_section(required_keys, csv_label_map):
 
         # --- 不要なCSVファイル（グレー表示で保持＋案内） ---
         else:
-            with st.expander(f"🗂 {label}（このテンプレートでは不要です）", expanded=False):
-                st.caption("このファイルは他のテンプレートで使用されます。削除する必要はありません。")
+            with st.expander(
+                f"🗂 {label}（このテンプレートでは不要です）", expanded=False
+            ):
+                st.caption(
+                    "このファイルは他のテンプレートで使用されます。削除する必要はありません。"
+                )
                 uploaded_file = st.file_uploader(
                     label,
                     type="csv",
                     key=f"{key}",
                     disabled=True,
-                    label_visibility="collapsed"
+                    label_visibility="collapsed",
                 )
 
                 if uploaded_file is not None:
@@ -106,8 +113,6 @@ def render_file_upload_section(required_keys, csv_label_map):
                     uploaded_files[key] = st.session_state.get(f"uploaded_{key}", None)
 
     return uploaded_files
-
-
 
 
 # app_pages/manage/view.py

@@ -1,18 +1,31 @@
-import streamlit as st
-from datetime import datetime
+# ✅ 標準ライブラリ
 import time
-from logic.manage import template_processors
-from utils.write_excel import write_values_to_template
-from logic.detect_csv import detect_csv_type
-from logic.manage.utils.upload_handler import handle_uploaded_files
-from components.ui_message import show_warning_bubble
-from app_pages.manage.view import render_file_upload_section
-from app_pages.manage.view import render_status_message_ui
-from logic.controllers.csv_controller import prepare_csv_data
-from logic.manage.utils.processor import process_template_to_excel
-from utils.logger import app_logger
+from datetime import datetime
+
+# ✅ サードパーティ
+import streamlit as st
+
+# ✅ プロジェクト内 - components（UI共通パーツ）
 from components.custom_button import centered_button, centered_download_button
-from app_pages.manage.view import render_manage_page
+# from components.ui_message import show_warning_bubble
+
+# ✅ プロジェクト内 - view（UIビュー）
+from app_pages.manage.view import (
+    render_file_upload_section,
+    render_manage_page,
+    # render_status_message_ui,
+)
+
+# ✅ プロジェクト内 - logic（処理・データ変換など）
+from logic.manage import template_processors
+from logic.controllers.csv_controller import prepare_csv_data
+# from logic.detect_csv import detect_csv_type
+from logic.manage.utils.upload_handler import handle_uploaded_files
+# from logic.manage.utils.processor import process_template_to_excel
+
+# ✅ プロジェクト内 - utils（共通ユーティリティ）
+from utils.logger import app_logger
+from utils.write_excel import write_values_to_template
 from utils.config_loader import (
     get_csv_date_columns,
     get_csv_label_map,
@@ -56,14 +69,13 @@ def manage_work_controller():
     missing_keys = [k for k in required_keys if validated_files.get(k) is None]
     all_uploaded = len(missing_keys) == 0
 
-
     # 書類作成
     # --- ステータス表示 ---
     if all_uploaded:
         st.success("✅ 必要なファイルがすべてアップロードされました！")
 
-    # if not missing_keys:
-    #     st.success("✅ 必要なファイルがすべてアップロードされました！")
+        # if not missing_keys:
+        #     st.success("✅ 必要なファイルがすべてアップロードされました！")
 
         st.markdown("---")
         if centered_button("📊 書類作成"):
@@ -75,7 +87,7 @@ def manage_work_controller():
             logger.info("dfsの読込完了")
             logger.info(selected_template)
             processor_func = template_processors.get(selected_template)
-            
+
             logger.info(f"{processor_func}処理用関数の読込完了")
             if processor_func:
                 progress.progress(40, "🧮 データを計算中...")

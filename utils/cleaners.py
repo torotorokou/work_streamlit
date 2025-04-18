@@ -60,7 +60,7 @@ def enforce_dtypes(df, dtype_map):
                     df[col] = df[col].astype(dtype)
 
             except Exception as e:
-                msg =f"⚠️ {col} の型変換に失敗: {e}"
+                msg = f"⚠️ {col} の型変換に失敗: {e}"
                 logger.warning(msg)
                 show_warning(msg)
 

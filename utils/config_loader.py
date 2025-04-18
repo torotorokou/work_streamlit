@@ -65,8 +65,7 @@ def get_expected_dtypes() -> dict:
         resolved[template_key] = {}
         for file_key, dtype_map in file_map.items():
             resolved[template_key][file_key] = {
-                col: resolve_dtype(dtype_str)
-                for col, dtype_str in dtype_map.items()
+                col: resolve_dtype(dtype_str) for col, dtype_str in dtype_map.items()
             }
 
     return resolved

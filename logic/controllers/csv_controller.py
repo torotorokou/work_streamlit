@@ -35,8 +35,6 @@ def prepare_csv_data(
     # ✅ テンプレート用の型定義を取得
     expected_dtypes_per_file = get_expected_dtypes_by_template(template_key)
 
-    
-
     for key in dfs:
         dtypes = expected_dtypes_per_file.get(key)
         if dtypes:
