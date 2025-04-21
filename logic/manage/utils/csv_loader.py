@@ -28,9 +28,13 @@ def load_filtered_dataframe(dfs, key, target_columns):
     return df[target_columns]
 
 
-def load_all_filtered_dataframes(dfs: dict, keys: list[str]) -> dict:
+def load_all_filtered_dataframes(
+    dfs: dict,
+    keys: list[str],
+    template_name: str,
+) -> dict:
     """
-    指定されたCSVキーに基づき、必要なカラムのみ抽出して返す。
+    指定された帳票テンプレートとCSVキーに基づき、必要なカラムのみ抽出して返す。
 
     Parameters
     ----------
@@ -38,14 +42,18 @@ def load_all_filtered_dataframes(dfs: dict, keys: list[str]) -> dict:
         アップロード済みのCSVデータ（キー："receive"など、値：DataFrame）
     keys : list[str]
         対象とするCSVのキー一覧（例：["receive", "shipping"]）
+    template_name : str
+        使用するテンプレート名（帳票名）。例: "factory_report", "average_sheet"
 
     Returns
     -------
     dict
         フィルタ済みDataFrameの辞書（key: str → df: pd.DataFrame）
     """
-    column_defs = get_required_columns_definition()
+    from utils.config_loader import get_required_columns_definition
+
     df_dict = {}
+    column_defs = get_required_columns_definition(template_name)
 
     for key in keys:
         if key in dfs:
@@ -53,3 +61,4 @@ def load_all_filtered_dataframes(dfs: dict, keys: list[str]) -> dict:
             df_dict[key] = load_filtered_dataframe(dfs, key, target_columns)
 
     return df_dict
+
