@@ -1,4 +1,5 @@
 from utils.config_loader import get_required_columns_definition
+from utils.logger import app_logger
 
 
 def load_filtered_dataframe(dfs, key, target_columns):
@@ -17,12 +18,14 @@ def load_filtered_dataframe(dfs, key, target_columns):
         KeyError: 指定されたキーがdfsに存在しない場合
         ValueError: 指定カラムの一部がDataFrameに存在しない場合
     """
+    logger = app_logger()
     if key not in dfs:
         raise KeyError(f"{key} はdfsに存在しません。")
 
     df = dfs[key]
     missing_cols = [col for col in target_columns if col not in df.columns]
     if missing_cols:
+        logger.error(f"{key} に必要なカラムが不足しています: {missing_cols}")
         raise ValueError(f"{key} に次のカラムが存在しません: {missing_cols}")
 
     return df[target_columns]
@@ -61,4 +64,3 @@ def load_all_filtered_dataframes(
             df_dict[key] = load_filtered_dataframe(dfs, key, target_columns)
 
     return df_dict
-

@@ -9,3 +9,9 @@ average_sheet:
         伝票日付: datetime
         品名: str
         品名CD: int
+
+factory_report:
+    shipping:
+        業者CD: int
+        品名: str
+        正味重量: int
