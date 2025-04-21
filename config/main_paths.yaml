@@ -29,3 +29,4 @@ config_files:
     page_config: 'config/page_config.yaml'
     templates_config: 'config/templates_config.yaml'
     csv_sources_config: 'config/csv_sources_config.yaml'
+    required_columns_definition: 'config/required_columns_definition.yaml'
