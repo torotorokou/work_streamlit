@@ -10,6 +10,7 @@ from logic.manage.utils.load_template import load_master_and_template
 
 # from logic.manage.utils.csv_loader import load_filtered_dataframe
 from utils.config_loader import get_template_config
+from utils.config_loader import get_template_config
 
 
 # 処理の統合
@@ -38,10 +39,10 @@ def process(dfs: dict) -> pd.DataFrame:
         出力対象となる master_csv（Excelテンプレートに埋め込む形式）
     """
     logger = app_logger()
-    template_name = "average_sheet"
+    template_name = get_template_config()["average_sheet"]["key"]
     # 対象CSVの読み込み
-    csv_name = "receive"
-    logger.info("Processの処理に入る")
+    csv_name = get_template_config()[["average_sheet"]["required_files"]]
+    logger.info(f"Processの処理に入る。{csv_name}")
     df_dict = load_all_filtered_dataframes(dfs, [csv_name], template_name)
 
     # 集計処理ステップ（明示的）
