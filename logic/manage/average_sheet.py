@@ -5,9 +5,14 @@ from utils.logger import app_logger
 from utils.date_tools import get_weekday_japanese
 from utils.rounding_tools import round_value_column
 from utils.value_setter import set_value
+from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.utils.load_template import load_master_and_template
-from logic.manage.utils.csv_loader import load_filtered_dataframe
-from utils.config_loader import get_path_config, get_template_config,get_required_columns_definition
+
+# from logic.manage.utils.csv_loader import load_filtered_dataframe
+from utils.config_loader import (
+    get_path_config,
+    get_template_config,
+)
 
 
 # 処理の統合
@@ -35,11 +40,14 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
     pd.DataFrame
         出力対象となる master_csv（Excelテンプレートに埋め込む形式）
     """
+    logger = app_logger()
     # 対象CSVの読み込み
-    for key in ["receive", "shipping", "yard"]:
-        if key in dfs:  # ← dfs に存在するかチェック
-            target_columns = get_required_columns_definition().get(key, [])
-            globals()[f"df_{key}"] = load_filtered_dataframe(dfs, key, target_columns)
+    csv_name = "receive"
+    logger.info("Processの処理に入る")
+    df_dict = load_all_filtered_dataframes(dfs, [csv_name])
+
+    # 集計処理ステップ（明示的）
+    df_receive = df_dict.get(csv_name)
 
     # マスターファイルとテンプレートの読み込み
     master_path = get_template_config()["average_sheet"]["master_csv_path"]
@@ -51,59 +59,58 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
     return master_csv
 
 
-def load_config_and_headers(label_map,key):
-    """
-    コンフィグ設定とヘッダー定義CSVから、指定データセット（例："receive"）の必要カラムリストを取得する。
+# def load_config_and_headers(label_map, key):
+#     """
+#     コンフィグ設定とヘッダー定義CSVから、指定データセット（例："receive"）の必要カラムリストを取得する。
 
-    Parameters:
-        label_map (dict): データ種別（例: "receive"）に対応する日本語ラベル名の辞書。
-                        例: {"receive": "受入一覧"}
+#     Parameters:
+#         label_map (dict): データ種別（例: "receive"）に対応する日本語ラベル名の辞書。
+#                         例: {"receive": "受入一覧"}
 
-    Returns:
-        tuple:
-            - config (dict): 読み込まれた設定情報（JSONファイルベースの辞書）
-            - key (str): 使用するデータのキー（例: "receive"）
-            - target_columns (list): 抽出すべきカラム名のリスト（空欄は除外済）
-    """
-    required_columns_definition = (
-        get_path_config()["csv"]["required_columns_definition"]
-    )
-    df_header = pd.read_csv(required_columns_definition)
+#     Returns:
+#         tuple:
+#             - config (dict): 読み込まれた設定情報（JSONファイルベースの辞書）
+#             - key (str): 使用するデータのキー（例: "receive"）
+#             - target_columns (list): 抽出すべきカラム名のリスト（空欄は除外済）
+#     """
+#     required_columns_definition = get_path_config()(
+#         ["csv"]["required_columns_definition"]
+#     )
+#     df_header = pd.read_csv(required_columns_definition)
 
-    header_name = label_map[key]
-    target_columns = df_header[header_name].dropna().tolist()
+#     header_name = label_map[key]
+#     target_columns = df_header[header_name].dropna().tolist()
 
-    return key, target_columns
+#     return key, target_columns
 
 
-def load_config_and_headers_from_label_map(label_map: dict) -> dict[str, list[str]]:
-    """
-    YAML設定ファイルから、label_map に定義されたデータ種別に対応する必要カラム名リストを取得する。
+# # def load_config_and_headers_from_label_map(label_map: dict) -> dict[str, list[str]]:
+# #     """
+#     YAML設定ファイルから、label_map に定義されたデータ種別に対応する必要カラム名リストを取得する。
 
-    Parameters:
-        label_map (dict): データキーと対応するテンプレート名。
-                          例: {"receive": "receive", "yard": "yard"}
+#     Parameters:
+#         label_map (dict): データキーと対応するテンプレート名。
+#                           例: {"receive": "receive", "yard": "yard"}
 
-    Returns:
-        dict[str, list[str]]: 各データキーに対応するカラムリスト辞書。
-                              例: {"receive": [...], "yard": [...]}
-    # """
-    # # YAMLファイルのパスを取得（任意の方法で取得してOK）
-    # config_path =
+#     Returns:
+#         dict[str, list[str]]: 各データキーに対応するカラムリスト辞書。
+#                               例: {"receive": [...], "yard": [...]}
+#     #"""
+#     # # YAMLファイルのパスを取得（任意の方法で取得してOK）
+#     # config_path =
 
-    # with open(config_path, encoding="utf-8") as f:
-    #     template_config = yaml.safe_load(f)
+# with open(config_path, encoding="utf-8") as f:
+#     template_config = yaml.safe_load(f)
 
-    # result = {}
+# result = {}
 
-    # for key, template_name in label_map.items():
-    #     if template_name not in template_config:
-    #         raise ValueError(f"{template_name} はテンプレート設定に存在しません。")
+# for key, template_name in label_map.items():
+#     if template_name not in template_config:
+#         raise ValueError(f"{template_name} はテンプレート設定に存在しません。")
 
-    #     result[key] = template_config[template_name]
+#     result[key] = template_config[template_name]
 
-    # return result
-
+# return result
 
 
 def load_receive_data(dfs, key, target_columns):
