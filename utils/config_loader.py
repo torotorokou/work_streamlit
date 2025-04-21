@@ -175,6 +175,7 @@ def get_expected_dtypes_by_template(template_key: str) -> dict:
     return config.get(template_key, {})
 
 
-def get_required_columns_definition():
+def get_required_columns_definition(template_name: str) -> dict:
     config_path = get_path_config()["config_files"]["required_columns_definition"]
-    return load_yaml(config_path)
+    all_defs = load_yaml(config_path)
+    return all_defs.get(template_name, {})

@@ -38,16 +38,17 @@ def process(dfs: dict) -> pd.DataFrame:
         出力対象となる master_csv（Excelテンプレートに埋め込む形式）
     """
     logger = app_logger()
+    template_name = "average_sheet"
     # 対象CSVの読み込み
     csv_name = "receive"
     logger.info("Processの処理に入る")
-    df_dict = load_all_filtered_dataframes(dfs, [csv_name])
+    df_dict = load_all_filtered_dataframes(dfs, [csv_name], template_name)
 
     # 集計処理ステップ（明示的）
     df_receive = df_dict.get(csv_name)
 
     # マスターファイルとテンプレートの読み込み
-    master_path = get_template_config()["average_sheet"]["master_csv_path"]
+    master_path = get_template_config()[template_name]["master_csv_path"]
     master_csv = load_master_and_template(master_path)
 
     # 集計処理ステップ

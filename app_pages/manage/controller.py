@@ -100,7 +100,7 @@ def manage_work_controller():
                 update_progress(progress, 40, "🧮 データを計算中...")
 
                 # 個々のprocessにより、dfを取得
-                df = processor_func(dfs, csv_label_map)
+                df = processor_func(dfs)
 
                 update_progress(progress, 70, "📄 テンプレートに書き込み中...")
 
