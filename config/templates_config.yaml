@@ -4,6 +4,7 @@ factory_report:
     label: 工場日報
     description: ヤードと出荷データをもとに、工場内の稼働日報を出力します。
     required_files: [yard, shipping]
+    master_csv_path: data/master/factory_report_shobun_map.csv
 
 balance_sheet:
     key: balance_sheet
@@ -16,7 +17,7 @@ average_sheet:
     label: 集計項目平均表
     description: 受入データをABC分類し、各品目の平均値を算出して出力します。
     required_files: [receive]
-    master_csv_path: data/master/abc_average_write_targets.csv
+    master_csv_path: data/master/average_sheet_map.csv
     template_excel_path: data/templates/average_sheet.xlsx
 
 management_sheet:
