@@ -28,6 +28,7 @@ from logic.manage.utils.file_validator import check_missing_files
 from utils.progress_helper import update_progress
 from utils.logger import app_logger
 from utils.write_excel import write_values_to_template
+from utils.debug_tools import save_debug_parquets
 from utils.config_loader import (
     get_csv_date_columns,
     get_csv_label_map,
@@ -89,6 +90,9 @@ def manage_work_controller():
             )
             extracted_date = extracted_date[0].strftime("%Y%m%d")
             logger.info("dfsの読込完了")
+
+            # デバッグ用に保存
+            save_debug_parquets(dfs)
 
             processor_func = template_processors.get(selected_template)
             # テンプレートに従い、処理実行
