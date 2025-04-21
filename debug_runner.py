@@ -1,14 +1,7 @@
 # %% 準備
-from logic.manage.average_sheet import (
-    load_config_and_headers,
-    load_receive_data,
-    load_master_and_template,
-    aggregate_vehicle_data,
-    calculate_item_summary,
-    calculate_item_summary,
-    calculate_final_totals,
-    apply_rounding,
-)
+from logic.manage.factory_report import(
+    process
+    )
 import pandas as pd
 from utils.debug_tools import save_debug_parquets
 from utils.write_excel import write_values_to_template
@@ -16,8 +9,12 @@ from utils.write_excel import write_values_to_template
 # 表示ラベルマップ（処理対象名として使う）
 csv_label_map = {"yard": "ヤード一覧", "shipping": "出荷一覧", "receive": "受入一覧"}
 
-debug_parquet = "/work/data/input/debug_receive.parquet"
-dfs = {"receive": pd.read_parquet(debug_parquet)}  # テスト用CSV
+debug_shipping = "/work/data/output/debug_shipping.parquet"
+debug_yard = "/work/data/output/debug_yard.parquet"
+
+dfs = {"shipping": pd.read_parquet(debug_shipping),
+       "yard": pd.read_parquet(debug_yard)}  # テスト用CSV
+dfs
 # %%
 # 絞り込みヘッダー情報の読み込み
 config, key, target_columns = load_config_and_headers(csv_label_map)

@@ -19,11 +19,15 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
     df_yard = df_dict.get(csv_name[1])
 
     # マスターファイルとテンプレートの読み込み
-    master_path = get_template_config()["average_sheet"]["master_csv_path"]
+    master_path = get_template_config()["factory_report"]["master_csv_path"]["shobun"]
     master_csv = load_master_and_template(master_path)
 
     # 集計処理ステップ
-    master_csv = process_shipping(df_shipping, master_csv)
-    master_csv = process_yard(df_yard, master_csv)
+    master_csv_shipping = process_shipping(df_shipping, master_csv_shipping)
+    master_csv_yuka = process_yuka(df_yard, master_csv_yuka)
+    master_csv_yard = process_yard(df_yard, master_csv_yard)
 
     return master_csv
+
+
+# CSVごとにプロセスを分ける

@@ -24,7 +24,7 @@ def check_dfs(dfs: dict, rows: int = 5, show_columns: bool = True):
 
 
 def save_debug_parquets(
-    dfs: Dict[str, pd.DataFrame], folder: str = "debug_data"
+    dfs: Dict[str, pd.DataFrame], folder: str = "data/output"
 ) -> None:
     os.makedirs(folder, exist_ok=True)
     for name, df in dfs.items():
