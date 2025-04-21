@@ -91,7 +91,6 @@ def manage_work_controller():
             logger.info("dfsの読込完了")
 
             processor_func = template_processors.get(selected_template)
-
             # テンプレートに従い、処理実行
             if processor_func:
                 update_progress(progress, 40, "🧮 データを計算中...")
