@@ -13,7 +13,7 @@ from utils.config_loader import get_template_config
 
 
 # 処理の統合
-def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
+def process(dfs: dict) -> pd.DataFrame:
     """
     集計項目平均表（average_sheet）を生成するメイン処理関数。
 

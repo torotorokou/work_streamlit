@@ -1,6 +1,7 @@
 # %% 準備
 from logic.manage.factory_report import(
-    process
+    process,
+    process_shobun
     )
 import pandas as pd
 from utils.debug_tools import save_debug_parquets
@@ -14,20 +15,19 @@ debug_yard = "/work/data/output/debug_yard.parquet"
 
 dfs = {"shipping": pd.read_parquet(debug_shipping),
        "yard": pd.read_parquet(debug_yard)}  # テスト用CSV
-dfs
+# dfs
+df_shipping = dfs["shipping"]
+df_shipping
+df_yard = dfs["yard"]
+df_yard
 # %%
-# 絞り込みヘッダー情報の読み込み
-config, key, target_columns = load_config_and_headers(csv_label_map)
-target_columns
-
+# 処分から作業
+master_csv_shobun1 = process(dfs)
+master_csv_shobun1
 # %%
-# 受入データの読み込み
-df_receive = load_receive_data(dfs, key, target_columns)
-df_receive.shape
-# %%
-# マスターとテンプレートの読み込み
-master_csv = load_master_and_template(config)
-master_csv
+# 処理１
+master_csv_shobun1 = process_shobun(master_csv_shobun1, df_shipping)
+master_csv_shobun1
 
 # %%
 master_csv1 = aggregate_vehicle_data(df_receive, master_csv)

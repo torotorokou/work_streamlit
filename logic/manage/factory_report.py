@@ -6,7 +6,7 @@ from logic.manage.utils.load_template import load_master_and_template
 
 
 # 処理の統合
-def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
+def process(dfs: dict) -> pd.DataFrame:
 
     logger = app_logger()
     # 対象CSVの読み込み
@@ -19,15 +19,32 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
     df_yard = df_dict.get(csv_name[1])
 
     # マスターファイルとテンプレートの読み込み
-    master_path = get_template_config()["factory_report"]["master_csv_path"]["shobun"]
-    master_csv = load_master_and_template(master_path)
+    master_path_shobun = get_template_config()["factory_report"]["master_csv_path"]["shobun"]
+    master_csv_shobun = load_master_and_template(master_path_shobun)
 
-    # 集計処理ステップ
-    master_csv_shipping = process_shipping(df_shipping, master_csv_shipping)
-    master_csv_yuka = process_yuka(df_yard, master_csv_yuka)
-    master_csv_yard = process_yard(df_yard, master_csv_yard)
+    # master_path_yard = get_template_config()["factory_report"]["master_csv_path"]["yard"]
+    # master_csv_shobun = load_master_and_template(master_path_shobun)
 
-    return master_csv
+    # master_path_shipping = get_template_config()["factory_report"]["master_csv_path"]["shipping"]
+    # master_csv_shobun = load_master_and_template(master_path_shobun)
+
+
+
+    # # 集計処理ステップ
+    # master_csv_shipping = process_shipping(df_shipping, master_csv_shipping)
+    # master_csv_yuka = process_yuka(df_yard, master_csv_yuka)
+    # master_csv_yard = process_yard(df_yard, master_csv_yard)
+
+    return master_csv_shobun
 
 
 # CSVごとにプロセスを分ける
+
+
+def process_shobun(master_csv, df_shipping):
+    logger = app_logger()
+
+    
+
+
+    return master_csv
