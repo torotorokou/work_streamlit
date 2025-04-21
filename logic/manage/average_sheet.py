@@ -6,6 +6,7 @@ from utils.date_tools import get_weekday_japanese
 from utils.rounding_tools import round_value_column
 from utils.value_setter import set_value
 from logic.manage.utils.load_template import load_master_and_template
+from logic.manage.utils.csv_loader import load_filtered_dataframe
 from utils.config_loader import get_path_config, get_template_config,get_required_columns_definition
 
 
@@ -34,13 +35,11 @@ def process(dfs: dict, csv_label_map: dict) -> pd.DataFrame:
     pd.DataFrame
         出力対象となる master_csv（Excelテンプレートに埋め込む形式）
     """
-    # 必要なヘッダー情報の読み込み
-    key = "receive"
-    target_columns = get_required_columns_definition()[key]
-
-
     # 対象CSVの読み込み
-    df_receive = load_receive_data(dfs, key, target_columns)
+    for key in ["receive", "shipping", "yard"]:
+        if key in dfs:  # ← dfs に存在するかチェック
+            target_columns = get_required_columns_definition().get(key, [])
+            globals()[f"df_{key}"] = load_filtered_dataframe(dfs, key, target_columns)
 
     # マスターファイルとテンプレートの読み込み
     master_path = get_template_config()["average_sheet"]["master_csv_path"]
