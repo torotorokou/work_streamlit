@@ -2,48 +2,28 @@ import pandas as pd
 from utils.logger import app_logger
 from utils.config_loader import get_template_config
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
-from logic.manage.utils.load_template import load_master_and_template
+from logic.manage.processors.factory_report_shobun import process_shobun
 
 
-# 処理の統合
 def process(dfs: dict) -> pd.DataFrame:
-    template = "factory_report"
+    """
+    Streamlitの選択に基づき、工場日報（処分パート）を処理するエントリーポイント関数。
+
+    """
+
+    #  設定の取得
     logger = app_logger()
-    template_name = get_template_config()[template]["key"]
-    # 対象CSVの読み込み
-    csv_name = get_template_config()[template]["required_files"]
-    logger.info(f"Processの処理に入る。{csv_name}")
-    df_dict = load_all_filtered_dataframes(dfs, csv_name, template_name)
+    template_key = "factory_report"
+    template_config = get_template_config()[template_key]
 
-    # 集計処理ステップ（明示的）
-    df_shipping = df_dict.get(csv_name[0])
-    df_yard = df_dict.get(csv_name[1])
+    template_name = template_config["key"]
+    csv_keys = template_config["required_files"]
 
-    # マスターファイルとテンプレートの読み込み
-    master_path_shobun = get_template_config()["factory_report"]["master_csv_path"][
-        "shobun"
-    ]
+    # インポートCSVの取得
+    df_dict = load_all_filtered_dataframes(dfs, csv_keys, template_name)
+    df_shipping = df_dict.get("shipping")
 
-    master_csv_shobun = load_master_and_template(master_path_shobun)
+    # 出荷処分データの処理
+    master_csv_shobun = process_shobun(df_shipping)
 
-    # master_path_yard = get_template_config()["factory_report"]["master_csv_path"]["yard"]
-    # master_csv_shobun = load_master_and_template(master_path_shobun)
-
-    # master_path_shipping = get_template_config()["factory_report"]["master_csv_path"]["shipping"]
-    # master_csv_shobun = load_master_and_template(master_path_shobun)
-
-    # # 集計処理ステップ
-    # master_csv_shipping = process_shipping(df_shipping, master_csv_shipping)
-    # master_csv_yuka = process_yuka(df_yard, master_csv_yuka)
-    # master_csv_yard = process_yard(df_yard, master_csv_yard)
-
-    return df_shipping, df_yard, master_csv_shobun
-
-
-# CSVごとにプロセスを分ける
-
-
-def process_shobun(master_csv, df_shipping):
-    logger = app_logger()
-
-    return master_csv
+    return master_csv_shobun
