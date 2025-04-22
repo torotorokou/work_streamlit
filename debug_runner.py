@@ -28,3 +28,7 @@ dfs = {
 # df_yard
 master_csv_shobun = process(dfs)
 display(master_csv_shobun)
+
+# %% 準備
+master_csv_shobun
+# %%
