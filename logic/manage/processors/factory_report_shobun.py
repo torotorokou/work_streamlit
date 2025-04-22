@@ -64,14 +64,12 @@ def add_label_rows(master_csv: pd.DataFrame) -> pd.DataFrame:
     小項目1をラベルとして追加し、1行下のセルに配置。
     """
 
-
     # master_csvのコピーにラベル列を追加
     df_filtered = master_csv[master_csv["大項目"] != "合計"]
     df_label = create_label_rows(df_filtered, offset=-1)
 
     df_extended = pd.concat([master_csv, df_label], ignore_index=True)
-    df_extended = sort_by_cell_row(df_extended) #ソート
-    
+    df_extended = sort_by_cell_row(df_extended)  # ソート
 
     return df_extended
 

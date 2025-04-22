@@ -6,6 +6,7 @@ from datetime import datetime
 from openpyxl.cell.cell import MergedCell
 from utils.logger import app_logger  # ロガーを使っていれば
 
+
 def safe_excel_value(value):
     """Excelに書き込める形式に変換するユーティリティ関数"""
     if pd.isna(value) or value is pd.NA or value is np.nan:
@@ -15,8 +16,6 @@ def safe_excel_value(value):
     elif hasattr(value, "strftime"):
         return value.strftime("%Y/%m/%d")
     return value
-
-
 
 
 def write_values_to_template(
@@ -41,7 +40,9 @@ def write_values_to_template(
             cell = ws[cell_ref]
 
             if isinstance(cell, MergedCell):
-                logger.warning(f"セル {cell_ref} は結合セル（MergedCell）で書き込み不可。スキップしました。値: {value}")
+                logger.warning(
+                    f"セル {cell_ref} は結合セル（MergedCell）で書き込み不可。スキップしました。値: {value}"
+                )
                 continue
 
             if isinstance(value, (int, float)) and value == 0:
@@ -51,7 +52,9 @@ def write_values_to_template(
                 cell.value = value
 
         except Exception as e:
-            logger.error(f"セル {cell_ref} への書き込みでエラーが発生: 値={value} / エラー={e}")
+            logger.error(
+                f"セル {cell_ref} への書き込みでエラーが発生: 値={value} / エラー={e}"
+            )
 
     # --- シート名を今日の日付に変更（例：20250414） ---
     ws.title = extracted_date

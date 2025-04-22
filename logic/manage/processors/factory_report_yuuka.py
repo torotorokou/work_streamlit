@@ -6,8 +6,8 @@ from logic.manage.utils.load_template import load_master_and_template
 from utils.value_setter import set_value
 
 
-def process_yuka(df_shipping: pd.DataFrame) -> pd.DataFrame:
+def process_yuuka(df_yard, df_shipping) -> pd.DataFrame:
     logger = app_logger()
     # マスターCSVの読込
-    master_path = get_template_config()["factory_report"]["master_csv_path"]["shobun"]
+    master_path = get_template_config()["factory_report"]["master_csv_path"]["yuuka"]
     master_csv = load_master_and_template(master_path)
