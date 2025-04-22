@@ -1,3 +1,5 @@
+import pandas as pd
+
 def set_value(
     master_csv, category_name: str, level1_name: str, level2_name: str, value
 ):
@@ -44,3 +46,21 @@ def set_value(
 
     # --- 値の代入 ---
     master_csv.loc[cond, "値"] = value
+
+
+def set_value_fast(df, keys, values, value, value_col="値"):
+    if len(keys) != len(values):
+        raise ValueError("keysとvaluesの長さが一致していません")
+
+    cond = pd.Series(True, index=df.index)
+    for col, val in zip(keys, values):
+        if val in [None, ""]:
+            cond &= df[col].isna()
+        else:
+            cond &= df[col] == val
+
+    if cond.sum() == 0:
+        print(f"⚠️ 該当行なし: {dict(zip(keys, values))}")
+        return
+
+    df.loc[cond, value_col] = value

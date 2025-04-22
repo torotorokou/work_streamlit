@@ -1,0 +1,23 @@
+average_sheet:
+    ABC業者_その他
+    kg売上平均単価
+    品目_台数他
+    セル
+    値
+
+
+factory_report:
+    syobun:
+        業者CD
+        業者名
+        品名
+        セル
+        値
+    yuka:
+        有価名
+        CSVシート名
+        業者名
+        品名
+        運搬業者名
+        セル
+        値
