@@ -11,6 +11,7 @@ from logic.manage.utils.load_template import load_master_and_template
 from IPython.display import display
 import re
 from logic.manage.factory_report import process
+
 # 表示ラベルマップ（処理対象名として使う）
 csv_label_map = {"yard": "ヤード一覧", "shipping": "出荷一覧", "receive": "受入一覧"}
 
