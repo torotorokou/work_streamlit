@@ -25,7 +25,7 @@ logs:
 # yamlパス
 config_files:
     app_config: 'config/app_config.yaml'
-    expected_dtypes: 'config/expected_dtypes.yaml'
+    expected_dtypes: 'config/expected_import_csv_dtypes.yaml'
     page_config: 'config/page_config.yaml'
     templates_config: 'config/templates_config.yaml'
     csv_sources_config: 'config/csv_sources_config.yaml'

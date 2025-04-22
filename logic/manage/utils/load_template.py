@@ -14,7 +14,7 @@ def load_master_and_template(master_path):
     """
 
     dtype_spec = {
-        "q": str,
+        "大項目": str,
         "小項目1": str,
         "小項目2": str,
         "セル": str,
