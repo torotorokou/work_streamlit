@@ -3,7 +3,8 @@ from io import BytesIO
 import pandas as pd
 import numpy as np
 from datetime import datetime
-
+from openpyxl.cell.cell import MergedCell
+from utils.logger import app_logger  # ロガーを使っていれば
 
 def safe_excel_value(value):
     """Excelに書き込める形式に変換するユーティリティ関数"""
@@ -16,6 +17,8 @@ def safe_excel_value(value):
     return value
 
 
+
+
 def write_values_to_template(
     df: pd.DataFrame, template_path: str, extracted_date
 ) -> BytesIO:
@@ -26,20 +29,29 @@ def write_values_to_template(
     Returns:
         BytesIO: 書き込み済みExcelファイルのメモリデータ（Streamlitダウンロード用など）
     """
+    logger = app_logger()
     wb = load_workbook(template_path)
     ws = wb.active
 
     # --- セルへの書き込み ---
-    for _, row in df.iterrows():
+    for idx, row in df.iterrows():
         cell_ref = row["セル"]
         value = safe_excel_value(row["値"])
-        cell = ws[cell_ref]
+        try:
+            cell = ws[cell_ref]
 
-        if isinstance(value, (int, float)) and value == 0:
-            cell.value = 0
-            cell.number_format = "0"
-        else:
-            cell.value = value
+            if isinstance(cell, MergedCell):
+                logger.warning(f"セル {cell_ref} は結合セル（MergedCell）で書き込み不可。スキップしました。値: {value}")
+                continue
+
+            if isinstance(value, (int, float)) and value == 0:
+                cell.value = 0
+                cell.number_format = "0"
+            else:
+                cell.value = value
+
+        except Exception as e:
+            logger.error(f"セル {cell_ref} への書き込みでエラーが発生: 値={value} / エラー={e}")
 
     # --- シート名を今日の日付に変更（例：20250414） ---
     ws.title = extracted_date
