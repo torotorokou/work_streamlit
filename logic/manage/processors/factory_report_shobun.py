@@ -18,9 +18,9 @@ def process_shobun(df_shipping: pd.DataFrame) -> pd.DataFrame:
     # 各処理を実行
     updated_master_csv = apply_shobun_weight(master_csv, df_shipping)
     updated_master_csv2 = add_label_rows(updated_master_csv)
-    uodated_master_csv3 = sum_syukka_syobun(updated_master_csv2, df_shipping)
+    updated_master_csv3 = sum_syobun(updated_master_csv2, df_shipping)
 
-    return uodated_master_csv3
+    return updated_master_csv3
 
 
 def apply_shobun_weight(
@@ -88,7 +88,7 @@ def add_label_rows(master_csv: pd.DataFrame) -> pd.DataFrame:
     return df_extended
 
 
-def sum_syukka_syobun(master_csv, df_shipping):
+def sum_syobun(master_csv, df_shipping):
 
     total = pd.to_numeric(master_csv["値"], errors="coerce").sum()
     set_value(master_csv, "合計", "処分", "", total)

@@ -28,6 +28,6 @@ def process(dfs: dict) -> pd.DataFrame:
     # 出荷処分データの処理
     master_csv_shobun = process_shobun(df_shipping)
 
-    master_csv_yuka = process_yuka(df_yard, df_shipping)
+    # master_csv_yuka = process_yuka(df_yard, df_shipping)
 
     return master_csv_shobun

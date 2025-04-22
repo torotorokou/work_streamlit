@@ -8,6 +8,7 @@ factory_report:
         shobun: data/master/factory_report_shobun_map.csv
         yuuka: data/master/factory_report_yuuka_map.csv
         yard: data/master/factory_report_yard_map.csv
+    template_excel_path: data/templates/factory_report.xlsx
 
 balance_sheet:
     key: balance_sheet
