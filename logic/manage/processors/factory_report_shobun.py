@@ -3,6 +3,7 @@ from utils.logger import app_logger
 import re
 from utils.config_loader import get_template_config
 from logic.manage.utils.load_template import load_master_and_template
+from utils.value_setter import set_value
 
 
 def process_shobun(df_shipping: pd.DataFrame) -> pd.DataFrame:
@@ -16,12 +17,11 @@ def process_shobun(df_shipping: pd.DataFrame) -> pd.DataFrame:
 
     # 各処理を実行
     updated_master_csv = apply_shobun_weight(master_csv, df_shipping)
-    logger.info(f"業者：{updated_master_csv.head().to_string(index=False)}")
-
     updated_master_csv2 = add_label_rows(updated_master_csv)
-    logger.info(f"業者：{updated_master_csv2.head().to_string(index=False)}")
+    uodated_master_csv3 = sum_syukka_syobun(updated_master_csv2, df_shipping)
 
-    return updated_master_csv2
+
+    return uodated_master_csv3
 
 
 def apply_shobun_weight(
@@ -87,3 +87,10 @@ def add_label_rows(master_csv: pd.DataFrame) -> pd.DataFrame:
     )
 
     return df_extended
+
+def sum_syukka_syobun(master_csv, df_shipping):
+
+    total = pd.to_numeric(master_csv["値"], errors="coerce").sum()
+    set_value(master_csv, "合計", "処分", "", total)
+
+    return master_csv
