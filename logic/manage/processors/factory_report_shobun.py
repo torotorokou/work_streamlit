@@ -4,6 +4,7 @@ import re
 from utils.config_loader import get_template_config
 from logic.manage.utils.load_template import load_master_and_template
 from utils.value_setter import set_value
+from logic.manage.utils.excel_tools import create_label_rows, sort_by_cell_row
 
 
 def process_shobun(df_shipping: pd.DataFrame) -> pd.DataFrame:
@@ -29,6 +30,7 @@ def apply_shobun_weight(
     logger = app_logger()
 
     # --- 初期処理 ---
+    df_shipping = df_shipping.copy()
     df_shipping["業者CD"] = df_shipping["業者CD"].astype(str)
     marugen_num = "8327"
 
@@ -62,28 +64,14 @@ def add_label_rows(master_csv: pd.DataFrame) -> pd.DataFrame:
     小項目1をラベルとして追加し、1行下のセルに配置。
     """
 
-    def shift_cell_row(cell: str, offset: int = 1) -> str:
-        match = re.match(r"([A-Z]+)(\d+)", cell)
-        if match:
-            col, row = match.groups()
-            return f"{col}{int(row) + offset}"
-        return cell
 
-    df_label = master_csv.copy()
-    df_label["セル"] = df_label["セル"].apply(lambda x: shift_cell_row(x, 1))
-    df_label["値"] = master_csv["小項目1"]
-    df_label[["小項目1", "小項目2", "小項目3"]] = ""
-    df_label["大項目"] = None
+    # master_csvのコピーにラベル列を追加
+    df_filtered = master_csv[master_csv["大項目"] != "合計"]
+    df_label = create_label_rows(df_filtered, offset=-1)
 
     df_extended = pd.concat([master_csv, df_label], ignore_index=True)
-    df_extended["セル番号"] = df_extended["セル"].apply(
-        lambda x: int(re.findall(r"\d+", x)[0])
-    )
-    df_extended = (
-        df_extended.sort_values("セル番号")
-        .drop(columns="セル番号")
-        .reset_index(drop=True)
-    )
+    df_extended = sort_by_cell_row(df_extended) #ソート
+    
 
     return df_extended
 
