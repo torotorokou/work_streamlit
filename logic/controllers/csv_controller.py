@@ -7,7 +7,7 @@ from components.ui_message import (
     show_date_mismatch,
 )
 from utils.file_loader import load_uploaded_csv_files
-from utils.cleaners import enforce_dtypes
+from utils.cleaners import enforce_dtypes, strip_whitespace
 from utils.config_loader import get_expected_dtypes_by_template
 from utils.logger import app_logger
 
@@ -32,6 +32,7 @@ def prepare_csv_data(
     expected_dtypes_per_file = get_expected_dtypes_by_template(template_key)
 
     for key in dfs:
+        dfs[key] = strip_whitespace(dfs[key])  # 🔽 空白除去
         dtypes = expected_dtypes_per_file.get(key)
         if dtypes:
             dfs[key] = enforce_dtypes(dfs[key], dtypes)

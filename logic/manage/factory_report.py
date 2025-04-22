@@ -3,7 +3,7 @@ from utils.logger import app_logger
 from utils.config_loader import get_template_config
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.processors.factory_report_shobun import process_shobun
-from logic.manage.processors.factory_report_yuka import process_yuka
+from logic.manage.processors.factory_report_yuuka import process_yuuka
 
 
 def process(dfs: dict) -> pd.DataFrame:
@@ -26,8 +26,9 @@ def process(dfs: dict) -> pd.DataFrame:
     df_yard = df_dict.get("yard")
 
     # 出荷処分データの処理
-    master_csv_shobun = process_shobun(df_shipping)
+    # master_csv_shobun = process_shobun(df_shipping)
 
-    # master_csv_yuka = process_yuka(df_yard, df_shipping)
+       # 各処理を実行
+    updated_master_csv = apply_shipping(master_csv, df_shipping)
 
     return master_csv_shobun
