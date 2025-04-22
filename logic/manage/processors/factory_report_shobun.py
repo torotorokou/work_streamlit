@@ -20,7 +20,6 @@ def process_shobun(df_shipping: pd.DataFrame) -> pd.DataFrame:
     updated_master_csv2 = add_label_rows(updated_master_csv)
     uodated_master_csv3 = sum_syukka_syobun(updated_master_csv2, df_shipping)
 
-
     return uodated_master_csv3
 
 
@@ -87,6 +86,7 @@ def add_label_rows(master_csv: pd.DataFrame) -> pd.DataFrame:
     )
 
     return df_extended
+
 
 def sum_syukka_syobun(master_csv, df_shipping):
 
