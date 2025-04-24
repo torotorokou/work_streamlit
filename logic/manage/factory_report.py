@@ -26,9 +26,9 @@ def process(dfs: dict) -> pd.DataFrame:
     df_yard = df_dict.get("yard")
 
     # 出荷処分データの処理
-    # master_csv_shobun = process_shobun(df_shipping)
+    master_csv_shobun = process_shobun(df_shipping)
 
-       # 各処理を実行
-    updated_master_csv = apply_shipping(master_csv, df_shipping)
+    # 各処理を実行
+    # updated_master_csv = apply_shipping(master_csv, df_shipping)
 
     return master_csv_shobun
