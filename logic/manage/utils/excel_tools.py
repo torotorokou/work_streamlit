@@ -17,7 +17,7 @@ def create_label_rows_generic(
     cell_column: str = "セル",
     label_source_col: str = None,
     offset: int = -1,
-    value_column: str = "値"
+    value_column: str = "値",
 ) -> pd.DataFrame:
     """
     任意のキー列構造に対応したラベル行を作成し、セル位置をずらす。
@@ -34,7 +34,9 @@ def create_label_rows_generic(
         pd.DataFrame: ラベル行だけを含むDataFrame
     """
     df_label = df.copy()
-    df_label[cell_column] = df_label[cell_column].apply(lambda x: shift_cell_row(x, offset))
+    df_label[cell_column] = df_label[cell_column].apply(
+        lambda x: shift_cell_row(x, offset)
+    )
 
     if label_source_col is None:
         label_source_col = key_columns[1]  # 通常は "小項目1"
@@ -47,7 +49,6 @@ def create_label_rows_generic(
     df_label[key_columns[0]] = None  # "大項目" に相当
 
     return df_label
-
 
 
 def sort_by_cell_row(df: pd.DataFrame, cell_col: str = "セル") -> pd.DataFrame:

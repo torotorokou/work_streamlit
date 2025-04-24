@@ -3,30 +3,6 @@ from pathlib import Path
 from utils.type_converter import resolve_dtype
 
 
-# def load_config_json(config_path="config/config.json") -> dict:
-#     """
-#     JSON形式の設定ファイル（config.json）を読み込んで辞書として返す。
-
-#     Parameters:
-#         config_path (str): 設定ファイルへのパス（デフォルト: config/config.json）
-
-#     Returns:
-#         dict: 読み込まれた設定情報
-
-#     Raises:
-#         FileNotFoundError: ファイルが存在しない場合
-#         ValueError: JSONの解析に失敗した場合
-#     """
-#     if not os.path.exists(config_path):
-#         raise FileNotFoundError(f"設定ファイルが見つかりません: {config_path}")
-
-#     with open(config_path, encoding="utf-8") as f:
-#         try:
-#             return json.load(f)
-#         except json.JSONDecodeError as e:
-#             raise ValueError(f"設定ファイルの読み込みに失敗しました: {e}")
-
-
 def load_yaml(filename: str) -> dict:
     """
     指定されたYAMLファイルを辞書形式で読み込む。
