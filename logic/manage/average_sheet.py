@@ -3,13 +3,12 @@ import pandas as pd
 # from utils.config_loader import load_config_json
 from utils.logger import app_logger
 from utils.date_tools import get_weekday_japanese
-from utils.rounding_tools import round_value_column
-from utils.value_setter import set_value
+from utils.rounding_tools import round_value_column_generic
+from utils.value_setter import set_value_fast
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.utils.load_template import load_master_and_template
 
 # from logic.manage.utils.csv_loader import load_filtered_dataframe
-from utils.config_loader import get_template_config
 from utils.config_loader import get_template_config
 
 
@@ -40,13 +39,14 @@ def process(dfs: dict) -> pd.DataFrame:
     """
     logger = app_logger()
     template_name = get_template_config()["average_sheet"]["key"]
+
     # 対象CSVの読み込み
-    csv_name = get_template_config()[["average_sheet"]["required_files"]]
+    csv_name = get_template_config()["average_sheet"]["required_files"]
     logger.info(f"Processの処理に入る。{csv_name}")
-    df_dict = load_all_filtered_dataframes(dfs, [csv_name], template_name)
+    df_dict = load_all_filtered_dataframes(dfs, csv_name, template_name)
 
     # 集計処理ステップ（明示的）
-    df_receive = df_dict.get(csv_name)
+    df_receive = df_dict.get(csv_name[0])
 
     # マスターファイルとテンプレートの読み込み
     master_path = get_template_config()[template_name]["master_csv_path"]
@@ -79,18 +79,21 @@ def process_average_sheet(
     """
     平均表テンプレート用の処理群を順に実行し、マスターCSVを完成形にする。
     """
-    master_csv = aggregate_vehicle_data(df_receive, master_csv)
-    master_csv = calculate_item_summary(df_receive, master_csv)
-    master_csv = summarize_item_and_abc_totals(master_csv)
-    master_csv = calculate_final_totals(df_receive, master_csv)
-    master_csv = set_report_date_info(df_receive, master_csv)
-    master_csv = apply_rounding(master_csv)
+
+    master_columns_keys = ["ABC業者_他", "kg売上平均単価", "品目_台数他"]
+
+    master_csv = aggregate_vehicle_data(df_receive, master_csv, master_columns_keys)
+    master_csv = calculate_item_summary(df_receive, master_csv, master_columns_keys)
+    master_csv = summarize_item_and_abc_totals(master_csv, master_columns_keys)
+    master_csv = calculate_final_totals(df_receive, master_csv, master_columns_keys)
+    master_csv = set_report_date_info(df_receive, master_csv, master_columns_keys)
+    master_csv = apply_rounding(master_csv, master_columns_keys)
     return master_csv
 
 
 # 台数・重量・台数単価をABC区分ごとに集計
 def aggregate_vehicle_data(
-    df_receive: pd.DataFrame, master_csv: pd.DataFrame
+    df_receive: pd.DataFrame, master_csv: pd.DataFrame, master_columns_keys: list
 ) -> pd.DataFrame:
     """
     受入データからABC区分ごとの台数・総重量・台数単価を集計し、
@@ -125,9 +128,15 @@ def aggregate_vehicle_data(
         unit_price = total_weight / total_car if total_car > 0 else 0
 
         # --- 結果を master_csv に反映 ---
-        set_value(master_csv, abc_label, "", "重量", total_weight)
-        set_value(master_csv, abc_label, "", "台数", total_car)
-        set_value(master_csv, abc_label, "", "台数単価", unit_price)
+        set_value_fast(
+            master_csv, master_columns_keys, [abc_label, None, "重量"], total_weight
+        )
+        set_value_fast(
+            master_csv, master_columns_keys, [abc_label, None, "台数"], total_car
+        )
+        set_value_fast(
+            master_csv, master_columns_keys, [abc_label, None, "台数単価"], unit_price
+        )
 
         # --- ログ出力 ---
         logger.info(
@@ -141,7 +150,7 @@ def aggregate_vehicle_data(
 
 
 def calculate_item_summary(
-    df_receive: pd.DataFrame, master_csv: pd.DataFrame
+    df_receive: pd.DataFrame, master_csv: pd.DataFrame, master_columns_keys
 ) -> pd.DataFrame:
     """
     受入データをもとに、ABC区分 × 品目ごとに売上・重量・平均単価を集計し、
@@ -197,9 +206,24 @@ def calculate_item_summary(
             ave_sell = total_sell / total_weight if total_weight > 0 else 0
 
             # master_csv に書き込み
-            set_value(master_csv, abc_key, "平均単価", item_name, ave_sell)
-            set_value(master_csv, abc_key, "kg", item_name, total_weight)
-            set_value(master_csv, abc_key, "売上", item_name, total_sell)
+            set_value_fast(
+                master_csv,
+                master_columns_keys,
+                [abc_key, "平均単価", item_name],
+                ave_sell,
+            )
+            set_value_fast(
+                master_csv,
+                master_columns_keys,
+                [abc_key, "kg", item_name],
+                total_weight,
+            )
+            set_value_fast(
+                master_csv,
+                master_columns_keys,
+                [abc_key, "売上", item_name],
+                total_sell,
+            )
 
             # ログ出力
             logger.info(
@@ -214,7 +238,9 @@ def calculate_item_summary(
     return master_csv
 
 
-def summarize_item_and_abc_totals(master_csv: pd.DataFrame) -> pd.DataFrame:
+def summarize_item_and_abc_totals(
+    master_csv: pd.DataFrame, master_columns_keys
+) -> pd.DataFrame:
     """
     マスターCSVに対して、品目ごと・ABC業者ごと・全体の「3品目合計」を集計し、
     平均単価・総重量・売上をテンプレートに書き込む。
@@ -247,38 +273,59 @@ def summarize_item_and_abc_totals(master_csv: pd.DataFrame) -> pd.DataFrame:
 
     # --- ① 品目ごとの合計（行: 合計 / 品目列）---
     for item_name in item_to_cd.keys():
-        filtered = master_csv[master_csv["小項目2"] == item_name]
+        filtered = master_csv[master_csv["品目_台数他"] == item_name]
 
-        total_weight = filtered[filtered["小項目1"] == "kg"]["値"].sum()
-        total_sell = filtered[filtered["小項目1"] == "売上"]["値"].sum()
+        total_weight = filtered[filtered["kg売上平均単価"] == "kg"]["値"].sum()
+        total_sell = filtered[filtered["kg売上平均単価"] == "売上"]["値"].sum()
         ave_sell = total_sell / total_weight if total_weight > 0 else 0
 
-        set_value(master_csv, "合計", "平均単価", item_name, ave_sell)
-        set_value(master_csv, "合計", "kg", item_name, total_weight)
-        set_value(master_csv, "合計", "売上", item_name, total_sell)
+        set_value_fast(
+            master_csv, master_columns_keys, ["合計", "平均単価", item_name], ave_sell
+        )
+        set_value_fast(
+            master_csv, master_columns_keys, ["合計", "kg", item_name], total_weight
+        )
+        set_value_fast(
+            master_csv, master_columns_keys, ["合計", "売上", item_name], total_sell
+        )
 
     # --- ② ABC業者ごとの "3品目合計" ---
     for abc_key in abc_to_cd.keys():
-        filtered = master_csv[master_csv["大項目"] == abc_key]
+        filtered = master_csv[master_csv["ABC業者_他"] == abc_key]
 
-        total_weight = filtered[filtered["小項目1"] == "kg"]["値"].sum()
-        total_sell = filtered[filtered["小項目1"] == "売上"]["値"].sum()
+        total_weight = filtered[filtered["kg売上平均単価"] == "kg"]["値"].sum()
+        total_sell = filtered[filtered["kg売上平均単価"] == "売上"]["値"].sum()
         ave_sell = total_sell / total_weight if total_weight > 0 else 0
 
-        set_value(master_csv, abc_key, "平均単価", "3品目合計", ave_sell)
-        set_value(master_csv, abc_key, "kg", "3品目合計", total_weight)
-        set_value(master_csv, abc_key, "売上", "3品目合計", total_sell)
+        set_value_fast(
+            master_csv,
+            master_columns_keys,
+            [abc_key, "平均単価", "3品目合計"],
+            ave_sell,
+        )
+        set_value_fast(
+            master_csv, master_columns_keys, [abc_key, "kg", "3品目合計"], total_weight
+        )
+        set_value_fast(
+            master_csv, master_columns_keys, [abc_key, "売上", "3品目合計"], total_sell
+        )
 
     # --- ③ 全体の "3品目合計" ---
-    filtered = master_csv[master_csv["小項目2"] == "3品目合計"]
+    filtered = master_csv[master_csv["品目_台数他"] == "3品目合計"]
 
-    total_weight = filtered[filtered["小項目1"] == "kg"]["値"].sum()
-    total_sell = filtered[filtered["小項目1"] == "売上"]["値"].sum()
+    total_weight = filtered[filtered["kg売上平均単価"] == "kg"]["値"].sum()
+    total_sell = filtered[filtered["kg売上平均単価"] == "売上"]["値"].sum()
     ave_sell = total_sell / total_weight if total_weight > 0 else 0
 
-    set_value(master_csv, "合計", "平均単価", "3品目合計", ave_sell)
-    set_value(master_csv, "合計", "kg", "3品目合計", total_weight)
-    set_value(master_csv, "合計", "売上", "3品目合計", total_sell)
+    set_value_fast(
+        master_csv, master_columns_keys, ["合計", "平均単価", "3品目合計"], ave_sell
+    )
+    set_value_fast(
+        master_csv, master_columns_keys, ["合計", "kg", "3品目合計"], total_weight
+    )
+    set_value_fast(
+        master_csv, master_columns_keys, ["合計", "売上", "3品目合計"], total_sell
+    )
 
     logger.info("✅ 品目ごとの合計およびABC業者別3品目合計を集計しました。")
 
@@ -286,7 +333,7 @@ def summarize_item_and_abc_totals(master_csv: pd.DataFrame) -> pd.DataFrame:
 
 
 def calculate_final_totals(
-    df_receive: pd.DataFrame, master_csv: pd.DataFrame
+    df_receive: pd.DataFrame, master_csv: pd.DataFrame, master_columns_keys
 ) -> pd.DataFrame:
     """
     テンプレート用マスターCSVに対し、全体の台数・重量・単価・売上情報を集計し、
@@ -321,13 +368,17 @@ def calculate_final_totals(
     logger = app_logger()
 
     # --- 台数・重量・台数単価の全体合計 ---
-    total_car = master_csv[master_csv["小項目2"] == "台数"]["値"].sum()
-    total_weight = master_csv[master_csv["小項目2"] == "重量"]["値"].sum()
+    total_car = master_csv[master_csv["品目_台数他"] == "台数"]["値"].sum()
+    total_weight = master_csv[master_csv["品目_台数他"] == "重量"]["値"].sum()
     unit_price = total_weight / total_car if total_car > 0 else 0
 
-    set_value(master_csv, "合計", "", "台数", total_car)
-    set_value(master_csv, "合計", "", "重量", total_weight)
-    set_value(master_csv, "合計", "", "台数単価", unit_price)
+    set_value_fast(master_csv, master_columns_keys, ["合計", None, "台数"], total_car)
+    set_value_fast(
+        master_csv, master_columns_keys, ["合計", None, "重量"], total_weight
+    )
+    set_value_fast(
+        master_csv, master_columns_keys, ["合計", None, "台数単価"], unit_price
+    )
 
     logger.info(
         f"📊 全体合計 → 台数: {total_car}, 重量: {total_weight:.2f}, 単価: {unit_price:.2f}"
@@ -341,36 +392,54 @@ def calculate_final_totals(
     total_sell_all = pd.to_numeric(filtered["金額"], errors="coerce").sum()
     average_price_all = total_sell_all / total_weight_all if total_sell_all > 0 else 0
 
-    set_value(master_csv, "総品目㎏", "", "", total_weight_all)
-    set_value(master_csv, "総品目売上", "", "", total_sell_all)
-    set_value(master_csv, "総品目平均単価", "", "", average_price_all)
+    set_value_fast(
+        master_csv, master_columns_keys, ["総品目㎏", None, None], total_weight_all
+    )
+    set_value_fast(
+        master_csv, master_columns_keys, ["総品目売上", None, None], total_sell_all
+    )
+    set_value_fast(
+        master_csv,
+        master_columns_keys,
+        ["総品目平均単価", None, None],
+        average_price_all,
+    )
 
     # --- その他品目 = 総品目 － 3品目合計 ---
     total_sell_3items = master_csv[
-        (master_csv["大項目"] == "合計")
-        & (master_csv["小項目1"] == "売上")
-        & (master_csv["小項目2"] == "3品目合計")
+        (master_csv["ABC業者_他"] == "合計")
+        & (master_csv["kg売上平均単価"] == "売上")
+        & (master_csv["品目_台数他"] == "3品目合計")
     ]["値"].sum()
 
     total_weight_3items = master_csv[
-        (master_csv["大項目"] == "合計")
-        & (master_csv["小項目1"] == "kg")
-        & (master_csv["小項目2"] == "3品目合計")
+        (master_csv["ABC業者_他"] == "合計")
+        & (master_csv["kg売上平均単価"] == "kg")
+        & (master_csv["品目_台数他"] == "3品目合計")
     ]["値"].sum()
 
     other_sell = total_sell_all - total_sell_3items
     other_weight = total_weight_all - total_weight_3items
     other_avg_price = other_sell / other_weight if other_sell > 0 else 0
 
-    set_value(master_csv, "その他品目㎏", "", "", other_weight)
-    set_value(master_csv, "その他品目売上", "", "", other_sell)
-    set_value(master_csv, "その他品目平均単価", "", "", other_avg_price)
+    set_value_fast(
+        master_csv, master_columns_keys, ["その他品目㎏", None, None], other_weight
+    )
+    set_value_fast(
+        master_csv, master_columns_keys, ["その他品目売上", None, None], other_sell
+    )
+    set_value_fast(
+        master_csv,
+        master_columns_keys,
+        ["その他品目平均単価", None, None],
+        other_avg_price,
+    )
 
     return master_csv
 
 
 def set_report_date_info(
-    df_receive: pd.DataFrame, master_csv: pd.DataFrame
+    df_receive: pd.DataFrame, master_csv: pd.DataFrame, master_columns_keys
 ) -> pd.DataFrame:
     """
     受入データから最初の日付を抽出し、帳票テンプレートに「月/日」と対応する曜日を記録する。
@@ -387,18 +456,20 @@ def set_report_date_info(
     weekday = get_weekday_japanese(today)
 
     formatted_date = today.strftime("%m/%d")
-    set_value(master_csv, "日付", "", "", formatted_date)
-    set_value(master_csv, "曜日", "", "", weekday)
+    set_value_fast(
+        master_csv, master_columns_keys, ["日付", None, None], formatted_date
+    )
+    set_value_fast(master_csv, master_columns_keys, ["曜日", None, None], weekday)
 
     logger.info(f"日付: {formatted_date}（{weekday}）")
 
     return master_csv
 
 
-def apply_rounding(master_csv: pd.DataFrame) -> pd.DataFrame:
+def apply_rounding(master_csv: pd.DataFrame, master_columns_keys) -> pd.DataFrame:
     """
     値列に丸め処理を適用：
     - 「単価」の場合は小数点第2位まで
     - その他は整数
     """
-    return round_value_column(master_csv)
+    return round_value_column_generic(master_csv, master_columns_keys)

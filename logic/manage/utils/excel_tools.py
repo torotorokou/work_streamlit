@@ -11,30 +11,43 @@ def shift_cell_row(cell: str, offset: int) -> str:
     return cell
 
 
-def create_label_rows(df: pd.DataFrame, offset: int = -1) -> pd.DataFrame:
+def create_label_rows_generic(
+    df: pd.DataFrame,
+    key_columns: list[str],
+    cell_column: str = "セル",
+    label_source_col: str = None,
+    offset: int = -1,
+    value_column: str = "値"
+) -> pd.DataFrame:
     """
-    マスターCSVからラベル行（小項目1の内容をセルに記入）を作成し、セル位置を行方向にずらす。
+    任意のキー列構造に対応したラベル行を作成し、セル位置をずらす。
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        元のマスターCSV
-    offset : int
-        セルの行をずらす量（-1 で上に、+1 で下に追加）
+    Parameters:
+        df (pd.DataFrame): 元のテンプレートDataFrame
+        key_columns (list[str]): ["大項目", "小項目1", "小項目2"] など、テンプレートのキー列
+        cell_column (str): セル位置を記載した列名（例: "セル"）
+        label_source_col (str): "値" に転記する元の列名（例: "小項目1"）※Noneなら key_columns[1] を使う
+        offset (int): セルの行をずらす量（例: -1で上に）
+        value_column (str): 値を書き込む対象列（デフォルト: "値"）
 
-    Returns
-    -------
-    pd.DataFrame
-        生成されたラベル行だけのDataFrame
+    Returns:
+        pd.DataFrame: ラベル行だけを含むDataFrame
     """
-
     df_label = df.copy()
-    df_label["セル"] = df_label["セル"].apply(lambda x: shift_cell_row(x, offset))
-    df_label["値"] = df["小項目1"]
-    df_label[["小項目1", "小項目2", "小項目3"]] = ""
-    df_label["大項目"] = None
+    df_label[cell_column] = df_label[cell_column].apply(lambda x: shift_cell_row(x, offset))
+
+    if label_source_col is None:
+        label_source_col = key_columns[1]  # 通常は "小項目1"
+
+    df_label[value_column] = df[label_source_col]
+
+    # キー列の一部を初期化
+    for col in key_columns[1:]:
+        df_label[col] = ""
+    df_label[key_columns[0]] = None  # "大項目" に相当
 
     return df_label
+
 
 
 def sort_by_cell_row(df: pd.DataFrame, cell_col: str = "セル") -> pd.DataFrame:
