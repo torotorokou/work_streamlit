@@ -14,17 +14,14 @@ def process_yuuka(df_yard, df_shipping) -> pd.DataFrame:
     master_csv = load_master_and_template(master_path)
 
     # 各処理を実行
-    updated_master_csv = apply_yula(master_csv,df_yard, df_shipping)
+    updated_master_csv = apply_yula(master_csv, df_yard, df_shipping)
 
     display(master_csv)
     return updated_master_csv
 
 
 def apply_yula(master_csv, df_yard, df_shipping):
-    df_map = {
-        "ヤード": df_yard,
-        "出荷": df_shipping
-    }
+    df_map = {"ヤード": df_yard, "出荷": df_shipping}
 
     sheet_key_pairs = [
         ("ヤード", ["品名"]),
@@ -42,12 +39,10 @@ def apply_yula(master_csv, df_yard, df_shipping):
             master_csv=master_csv_updated,
             data_df=data_df,
             sheet_name=sheet_name,
-            key_cols=key_cols
+            key_cols=key_cols,
         )
-    
+
     return master_csv_updated
-
-
 
 
 def merge_safely_with_keys(
@@ -156,4 +151,3 @@ def apply_summary_by_sheetname(
     final_df = pd.concat([master_others, merged_df], ignore_index=True)
 
     return final_df
-

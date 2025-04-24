@@ -60,26 +60,29 @@ def apply_shobun_weight(
     return updated_master
 
 
-def add_label_rows(master_csv: pd.DataFrame, columns_key) -> pd.DataFrame:
+def add_label_rows(
+    master_csv: pd.DataFrame, columns_key: list[str], label_source_col: str = "業者名"
+) -> pd.DataFrame:
     """
-    小項目1をラベルとして追加し、1行下のセルに配置。
+    マスターCSVにラベル行（業者名など）を追加する。
+
+    Parameters:
+        master_csv : pd.DataFrame
+        columns_key : ラベル化対象の構造列（例：["小項目1", "小項目2"]）
+        label_source_col : ラベル元の列（例："業者名"）
+
+    Returns:
+        pd.DataFrame : ラベル行を追加し、セル順にソートしたDataFrame
     """
-
-    # master_csvのコピーにラベル列を追加
-    df_filtered = master_csv[master_csv["業者CD"] != "合計"]
-    df_label = create_label_rows_generic(
-        df_filtered, columns_key, label_source_col="業者名", offset=-1
-    )
-
+    df_label = create_label_rows_generic(master_csv, "業者名", offset=-1)
     df_extended = pd.concat([master_csv, df_label], ignore_index=True)
-    df_extended = sort_by_cell_row(df_extended)  # ソート
-
+    df_extended = sort_by_cell_row(df_extended)
     return df_extended
 
 
 def sum_syobun(master_csv, df_shipping, columns_key):
 
     total = pd.to_numeric(master_csv["値"], errors="coerce").sum()
-    set_value_fast(master_csv, columns_key, ["合計", "処分", None], total)
+    set_value_fast(master_csv, columns_key, ["合計_処分", None, None], total)
 
     return master_csv
