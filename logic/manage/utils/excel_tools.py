@@ -13,40 +13,44 @@ def shift_cell_row(cell: str, offset: int) -> str:
 
 def create_label_rows_generic(
     df: pd.DataFrame,
-    key_columns: list[str],
-    cell_column: str = "セル",
-    label_source_col: str = None,
+    label_source_col: str,
     offset: int = -1,
+    cell_column: str = "セル",
     value_column: str = "値",
 ) -> pd.DataFrame:
     """
-    任意のキー列構造に対応したラベル行を作成し、セル位置をずらす。
+    任意の列の値をラベルとして使用し、セル位置を指定行だけずらしてラベル行を生成する。
 
     Parameters:
-        df (pd.DataFrame): 元のテンプレートDataFrame
-        key_columns (list[str]): ["大項目", "小項目1", "小項目2"] など、テンプレートのキー列
-        cell_column (str): セル位置を記載した列名（例: "セル"）
-        label_source_col (str): "値" に転記する元の列名（例: "小項目1"）※Noneなら key_columns[1] を使う
-        offset (int): セルの行をずらす量（例: -1で上に）
-        value_column (str): 値を書き込む対象列（デフォルト: "値"）
+        df : pd.DataFrame
+            元のテンプレートDataFrame
+        cell_column : str
+            セル位置を記載した列名（例: "セル"）
+        label_source_col : str
+            ラベルとして "値" に転記する元の列名（例: "業者名", "有価名"）
+        offset : int
+            セルの行をずらす量（例: -1で上に）
+        value_column : str
+            ラベルを書き込む対象列（デフォルト: "値"）
 
     Returns:
-        pd.DataFrame: ラベル行だけを含むDataFrame
+        pd.DataFrame
+            ラベル行だけを含むDataFrame（他の列はすべて空欄）
     """
     df_label = df.copy()
+
+    # セルをオフセット行だけずらす
     df_label[cell_column] = df_label[cell_column].apply(
         lambda x: shift_cell_row(x, offset)
     )
 
-    if label_source_col is None:
-        label_source_col = key_columns[1]  # 通常は "小項目1"
-
+    # ラベル値を値列にコピー
     df_label[value_column] = df[label_source_col]
 
-    # キー列の一部を初期化
-    for col in key_columns[1:]:
-        df_label[col] = ""
-    df_label[key_columns[0]] = None  # "大項目" に相当
+    # 値・セル以外の列は空にする
+    for col in df_label.columns:
+        if col not in [cell_column, value_column]:
+            df_label[col] = ""
 
     return df_label
 
