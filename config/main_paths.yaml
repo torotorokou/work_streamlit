@@ -21,6 +21,7 @@ directories:
 logs:
     app: 'logs/app.log'
     error: 'logs/error.log'
+    debug: 'logs/debug.log'
 
 # yamlパス
 config_files:
