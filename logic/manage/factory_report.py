@@ -31,12 +31,15 @@ def process(dfs: dict) -> pd.DataFrame:
     # --- 個別処理 ---
     logger.info("▶️ 出荷処分データ処理開始")
     master_csv_shobun = process_shobun(df_shipping)
+    logger.info(f"処分：{master_csv_shobun}")
 
     logger.info("▶️ 出荷有価データ処理開始")
     master_csv_yuka = process_yuuka(df_yard, df_shipping)
+    logger.info(f"有価：{master_csv_yuka}")
 
     logger.info("▶️ 出荷ヤードデータ処理開始")
     master_csv_yard = process_yard(df_yard, df_shipping)
+    logger.info(f"ヤード：{master_csv_yard}")
 
     # --- 結合 ---
     logger.info("🧩 各処理結果を結合中...")

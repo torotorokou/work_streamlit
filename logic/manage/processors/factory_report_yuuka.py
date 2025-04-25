@@ -36,12 +36,12 @@ def process_yuuka(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFr
     # --- ② 有価の値集計処理（df_yard + df_shippingを使用） ---
     updated_master_csv = apply_yuuka_summary(master_csv, df_yard, df_shipping)
 
-    # --- ③ セル単位で有価名をマージし、合計を計算 ---
+    # --- ③ 品目単位で有価名をマージし、合計を計算 ---
     updated_with_sum = summarize_value_by_cell_with_label(
         updated_master_csv, label_col="有価名"
     )
 
-    # --- ④ 合計行などを追加集計（業者CD×業者名×品名） ---
+    # --- ④ 合計行などを追加集計 ---
     target_keys = ["有価名"]
     target_values = ["合計_有価"]
     updated_with_sum2 = write_sum_to_target_cell(
