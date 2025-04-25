@@ -48,3 +48,36 @@ def app_logger(to_console=True) -> logging.Logger:
         logger.addHandler(stream_handler)
 
     return logger
+
+
+def debug_logger(to_console=True) -> logging.Logger:
+    config = get_path_config()
+    log_path = config["logs"]["debug"]  # config.yaml内で debug.log を別定義
+
+    # ログフォルダがなければ作成
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+
+    logger = logging.getLogger("debug_logger")
+    logger.setLevel(logging.DEBUG)
+
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    hostname = socket.gethostname()
+    username = getpass.getuser()
+
+    formatter = logging.Formatter(
+        f"%(asctime)s [%(levelname)s] (%(filename)s:%(lineno)d) [{hostname}/{username}] %(message)s"
+    )
+    formatter.converter = jst_time
+
+    file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    if to_console:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+
+    return logger
