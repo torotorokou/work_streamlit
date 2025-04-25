@@ -23,14 +23,11 @@ def process_yard(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFra
     # --- ② ヤードの値集計処理（df_yard + df_shippingを使用） ---
     updated_master_csv = apply_yard_summary(master_csv, df_yard, df_shipping)
     updated_master_csv = negate_template_values(updated_master_csv)
-    logger.info(f"ヤード1：{updated_master_csv}")
 
     # # --- ③ 品目名単位でマージし、合計を計算 ---
     updated_with_sum = summarize_value_by_cell_with_label(
         updated_master_csv, label_col="品目名"
     )
-    logger.info(f"ヤード2：{updated_with_sum}")
-
 
     # # --- ④ 合計行などを追加集計 ---
     target_keys = ["品目名"]
@@ -43,6 +40,9 @@ def process_yard(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFra
     final_df = add_label_rows_and_restore_sum(
         updated_with_sum2, label_col="品目名", offset=-1
     )
+
+    # フォーマット修正
+    final_df = format_table(final_df)
 
     logger.info("✅ 出荷ヤードの帳票生成が完了しました。")
     return final_df

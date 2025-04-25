@@ -44,9 +44,9 @@ def process(dfs: dict) -> pd.DataFrame:
     # --- 結合 ---
     logger.info("🧩 各処理結果を結合中...")
     combined_df = pd.concat(
-        [master_csv_yuka, master_csv_shobun, master_csv_yard],
-        ignore_index=True
+        [master_csv_yuka, master_csv_shobun, master_csv_yard], ignore_index=True
     )
+    logger.info(f"combined_df：{combined_df}")
 
     # --- セル行順にソート ---
     combined_df = sort_by_cell_row(combined_df, cell_col="セル")
@@ -78,7 +78,7 @@ def upsert_summary_row(
     label: str,
     value: float,
     value_col: str = "値",
-    label_col: str = "大項目"
+    label_col: str = "大項目",
 ) -> pd.DataFrame:
     """
     指定ラベルの行が存在すれば値を更新し、存在しなければセル列は空のまま新規行として追加する。

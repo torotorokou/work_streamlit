@@ -36,6 +36,12 @@ def write_values_to_template(
     for idx, row in df.iterrows():
         cell_ref = row["セル"]
         value = safe_excel_value(row["値"])
+
+        # --- スキップ条件を追加 ---
+        if pd.isna(cell_ref) or str(cell_ref).strip() in ["", "未設定"]:
+            logger.info(f"空欄または未設定のセルはスキップされました。行 {idx}")
+            continue
+
         try:
             cell = ws[cell_ref]
 
