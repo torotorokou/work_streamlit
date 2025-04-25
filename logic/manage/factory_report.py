@@ -1,5 +1,5 @@
 import pandas as pd
-from utils.logger import app_logger
+from utils.logger import app_logger, debug_logger
 from utils.config_loader import get_template_config
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.processors.factory_report_shobun import process_shobun
@@ -15,6 +15,7 @@ def process(dfs: dict) -> pd.DataFrame:
     """
 
     logger = app_logger()
+    deb_logger = debug_logger()
 
     # --- テンプレート設定の取得 ---
     template_key = "factory_report"
@@ -46,13 +47,14 @@ def process(dfs: dict) -> pd.DataFrame:
     combined_df = pd.concat(
         [master_csv_yuka, master_csv_shobun, master_csv_yard], ignore_index=True
     )
-    logger.info(f"combined_df：{combined_df}")
+    logger.debug("\n[DataFrame全文表示]\n" + combined_df.to_string())
 
     # --- セル行順にソート ---
     combined_df = sort_by_cell_row(combined_df, cell_col="セル")
 
     # --- 合計・総合計行の追加/更新 ---
     combined_df = sum_array(combined_df)
+    logger.debug("\n[DataFrame全文表示]\n" + combined_df.to_string())
 
     # --- インデックスをリセットして返す ---
     return combined_df.reset_index(drop=True)
