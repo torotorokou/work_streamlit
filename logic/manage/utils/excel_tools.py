@@ -58,6 +58,7 @@ def create_label_rows_generic(
 def sort_by_cell_row(df: pd.DataFrame, cell_col: str = "セル") -> pd.DataFrame:
     """
     セル番地列の「行番号（数字部分）」をもとに DataFrame をソートする。
+    非文字列や欠損値があってもエラーを出さずに処理する。
 
     Parameters
     ----------
@@ -72,8 +73,19 @@ def sort_by_cell_row(df: pd.DataFrame, cell_col: str = "セル") -> pd.DataFrame
         行番号で昇順にソートされたDataFrame（インデックスはリセットされる）
     """
     df = df.copy()
-    df["_セル行"] = df[cell_col].apply(lambda x: int(re.findall(r"\d+", x)[0]))
-    df = df.sort_values("_セル行").drop(columns="_セル行").reset_index(drop=True)
+
+    def extract_row_number(x):
+        if isinstance(x, str):
+            match = re.findall(r"\d+", x)
+            return int(match[0]) if match else None
+        return None
+
+    df["_セル行"] = df[cell_col].apply(extract_row_number)
+    df = (
+        df.sort_values("_セル行", na_position="last")
+        .drop(columns="_セル行")
+        .reset_index(drop=True)
+    )
     return df
 
 
@@ -99,14 +111,8 @@ def add_label_rows(
     return df_extended
 
 
-
-
-
 def add_label_rows_and_restore_sum(
-    df: pd.DataFrame,
-    label_col: str,
-    offset: int = -1,
-    sum_keyword: str = "合計"
+    df: pd.DataFrame, label_col: str, offset: int = -1, sum_keyword: str = "合計"
 ) -> pd.DataFrame:
     """
     指定列でラベル行を追加し、"合計"行を除外→ラベル付加→合計行を復元して整形。
@@ -125,6 +131,3 @@ def add_label_rows_and_restore_sum(
     labeled = add_label_rows(filtered, label_source_col=label_col, offset=offset)
     combined = pd.concat([labeled, sum_rows], ignore_index=True)
     return sort_by_cell_row(combined)
-
-
-

@@ -66,11 +66,15 @@ def process_shobun(df_shipping: pd.DataFrame) -> pd.DataFrame:
     # --- ④ 合計行などを追加集計（業者CD） ---
     target_keys = ["業者名"]
     target_values = ["合計_処分"]
-    updated_master_csv2 = write_sum_to_target_cell(updated_master_csv, target_keys, target_values)
+    updated_master_csv2 = write_sum_to_target_cell(
+        updated_master_csv, target_keys, target_values
+    )
     logger.info(f"updated_mater_csv2:{updated_master_csv2}")
 
     # ラベル行追加
-    updated_master_csv3 = add_label_rows_and_restore_sum(updated_master_csv2, label_col="業者名", offset=-1)
+    updated_master_csv3 = add_label_rows_and_restore_sum(
+        updated_master_csv2, label_col="業者名", offset=-1
+    )
     logger.info(f"updated_mater_csv3:{updated_master_csv3}")
 
     # --- ⑤ 表全体を整形（列順・カテゴリ追加など） ---
@@ -108,7 +112,6 @@ def apply_shobun_weight(
 
     master_csv["値"] = pd.to_numeric(master_csv["値"], errors="coerce").fillna(0)
 
-
     # master_csv, aggregated の両方で文字列型に揃える
     master_csv["業者CD"] = master_csv["業者CD"].astype(str)
     aggregated["業者CD"] = aggregated["業者CD"].astype(str)
@@ -142,5 +145,6 @@ def format_shobun_table(master_csv: pd.DataFrame) -> pd.DataFrame:
     shobun_df["カテゴリ"] = "処分"
 
     return shobun_df
+
 
 # %%
