@@ -99,14 +99,8 @@ def add_label_rows(
     return df_extended
 
 
-
-
-
 def add_label_rows_and_restore_sum(
-    df: pd.DataFrame,
-    label_col: str,
-    offset: int = -1,
-    sum_keyword: str = "合計"
+    df: pd.DataFrame, label_col: str, offset: int = -1, sum_keyword: str = "合計"
 ) -> pd.DataFrame:
     """
     指定列でラベル行を追加し、"合計"行を除外→ラベル付加→合計行を復元して整形。
@@ -125,6 +119,3 @@ def add_label_rows_and_restore_sum(
     labeled = add_label_rows(filtered, label_source_col=label_col, offset=offset)
     combined = pd.concat([labeled, sum_rows], ignore_index=True)
     return sort_by_cell_row(combined)
-
-
-
