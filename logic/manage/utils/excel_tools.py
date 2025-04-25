@@ -76,8 +76,11 @@ def sort_by_cell_row(df: pd.DataFrame, cell_col: str = "セル") -> pd.DataFrame
     df = df.sort_values("_セル行").drop(columns="_セル行").reset_index(drop=True)
     return df
 
+
 def add_label_rows(
-    master_csv: pd.DataFrame, label_source_col: str, offset
+    master_csv: pd.DataFrame,
+    label_source_col: str = "業者名",
+    offset: int = -1,
 ) -> pd.DataFrame:
     """
     マスターCSVにラベル行（業者名など）を追加する。
@@ -85,19 +88,17 @@ def add_label_rows(
     Parameters:
         master_csv : pd.DataFrame
         label_source_col : ラベル元の列（例："業者名"）
-        offset : 何行ずらすか（例：-1で上に追加）
+        offset : ラベルを入れる位置（-1 で1行上など）
 
     Returns:
         pd.DataFrame : ラベル行を追加し、セル順にソートしたDataFrame
     """
-    df_label = create_label_rows_generic(
-        df=master_csv,
-        label_source_col=label_source_col,
-        offset=offset
-    )
+    df_label = create_label_rows_generic(master_csv, label_source_col, offset=offset)
     df_extended = pd.concat([master_csv, df_label], ignore_index=True)
     df_extended = sort_by_cell_row(df_extended)
     return df_extended
+
+
 
 
 
