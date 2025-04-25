@@ -33,16 +33,16 @@ def process_shobun(df_shipping: pd.DataFrame) -> pd.DataFrame:
     # logger.info(f"updated_mater_csv:{updated_master_csv}")
 
     # --- ④ 合計行などを追加集計（業者CD） ---
-    target_keys = ["業者名"]
-    target_values = ["合計_処分"]
-    updated_master_csv2 = write_sum_to_target_cell(
-        updated_master_csv, target_keys, target_values
-    )
-    # logger.info(f"updated_mater_csv2:{updated_master_csv2}")
+    # target_keys = ["業者名"]
+    # target_values = ["合計_処分"]
+    # updated_master_csv2 = write_sum_to_target_cell(
+    #     updated_master_csv, target_keys, target_values
+    # )
+    # # logger.info(f"updated_mater_csv2:{updated_master_csv2}")
 
     # ラベル行追加
     updated_master_csv3 = add_label_rows_and_restore_sum(
-        updated_master_csv2, label_col="業者名", offset=-1
+        updated_master_csv, label_col="業者名", offset=-1
     )
     # logger.info(f"updated_mater_csv3:{updated_master_csv3}")
 
