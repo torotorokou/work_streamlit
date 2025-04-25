@@ -7,6 +7,7 @@ from logic.manage.processors.factory_report_yuuka import process_yuuka
 from logic.manage.processors.factory_report_yard import process_yard
 from logic.manage.utils.excel_tools import sort_by_cell_row
 from logic.manage.utils.load_template import load_master_and_template
+from utils.date_tools import to_japanese_era, to_japanese_month_day
 from utils.value_setter import set_value_fast
 from logic.manage.utils.summary_tools import (
     write_sum_to_target_cell,
@@ -111,9 +112,6 @@ def generate_summary_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     return df_combined
 
 
-
-
-
 def upsert_summary_row(
     df: pd.DataFrame,
     label: str,
@@ -155,11 +153,13 @@ def date_format(master_csv, df_shipping):
     today = pd.to_datetime(df_shipping["伝票日付"].dropna().iloc[0])
 
     master_columns_keys = ["大項目"]
-    key_name = ["日付1"]
-    set_value_fast(master_csv, master_columns_keys, key_name, today)
+    key_name = ["和暦"]
+    set_value_fast(master_csv, master_columns_keys, key_name, to_japanese_era(today))
 
     master_columns_keys = ["大項目"]
-    key_name = ["日付2"]
-    set_value_fast(master_csv, master_columns_keys, key_name, today)
+    key_name = ["月日"]
+    set_value_fast(
+        master_csv, master_columns_keys, key_name, to_japanese_month_day(today)
+    )
 
     return master_csv
