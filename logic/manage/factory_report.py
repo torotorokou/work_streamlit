@@ -4,6 +4,7 @@ from utils.config_loader import get_template_config
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.processors.factory_report_shobun import process_shobun
 from logic.manage.processors.factory_report_yuuka import process_yuuka
+from logic.manage.processors.factory_report_yard import process_yard
 
 
 def process(dfs: dict) -> pd.DataFrame:
@@ -35,5 +36,7 @@ def process(dfs: dict) -> pd.DataFrame:
     # 出荷ヤード
     master_csv_yard = process_yard(df_yard, df_shipping)
     # 結合
-    combined_df = pd.concat([master_csv_yuka, master_csv_shobun], ignore_index=True)
+    combined_df = pd.concat(
+        [master_csv_yuka, master_csv_shobun, master_csv_yard], ignore_index=True
+    )
     return combined_df
