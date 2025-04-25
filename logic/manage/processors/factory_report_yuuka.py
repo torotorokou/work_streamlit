@@ -46,7 +46,9 @@ def process_yuuka(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFr
     )
 
     # ラベル行追加
-    final_df = add_label_rows_and_restore_sum(updated_with_sum2, label_col="有価名", offset=-1)
+    final_df = add_label_rows_and_restore_sum(
+        updated_with_sum2, label_col="有価名", offset=-1
+    )
 
     logger.info("✅ 出荷有価の帳票生成が完了しました。")
     return final_df
