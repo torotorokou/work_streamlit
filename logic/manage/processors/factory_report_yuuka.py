@@ -53,6 +53,9 @@ def process_yuuka(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFr
         updated_with_sum2, label_col="有価名", offset=-1
     )
 
+    # フォーマット修正
+    final_df = format_table(final_df)
+
     logger.info("✅ 出荷有価の帳票生成が完了しました。")
     return final_df
 
