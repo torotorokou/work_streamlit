@@ -6,7 +6,12 @@ from logic.manage.processors.factory_report_shobun import process_shobun
 from logic.manage.processors.factory_report_yuuka import process_yuuka
 from logic.manage.processors.factory_report_yard import process_yard
 from logic.manage.utils.excel_tools import sort_by_cell_row
+from logic.manage.utils.load_template import load_master_and_template
 from utils.value_setter import set_value_fast
+from logic.manage.utils.summary_tools import (
+    write_sum_to_target_cell,
+    summarize_value_by_cell_with_label,
+)
 from typing import Optional
 
 
@@ -47,7 +52,7 @@ def process(dfs: dict) -> pd.DataFrame:
     )
 
     # --- 合計・総合計行の追加/更新 ---
-    combined_df = sum_array(combined_df)
+    combined_df = generate_summary_dataframe(combined_df)
 
     # 日付の挿入
     combined_df = date_format(combined_df, df_shipping)
@@ -61,19 +66,52 @@ def process(dfs: dict) -> pd.DataFrame:
     return combined_df.reset_index(drop=True)
 
 
-def sum_array(df: pd.DataFrame) -> pd.DataFrame:
-    disposal = df.loc[df["大項目"] == "合計_処分", "値"].sum()
-    yard = df.loc[df["大項目"] == "合計_ヤード", "値"].sum()
-    value_disposal_yard = disposal + yard
+def generate_summary_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    config = get_template_config()["factory_report"]
+    etc_path = config["master_csv_path"]["etc"]
+    etc_csv = load_master_and_template(etc_path)
 
-    df = upsert_summary_row(df, "合計_処分ヤード", value_disposal_yard)
+    # 1. コピーして元dfを保護
+    df_sum = df.copy()
 
-    valuable = df.loc[df["大項目"] == "合計_有価", "値"].sum()
-    total = value_disposal_yard + valuable
+    # 2. 値列を数値に変換（NaN対応）
+    df_sum["値"] = pd.to_numeric(df_sum["値"], errors="coerce")
 
-    df = upsert_summary_row(df, "総合計", total)
+    # 3. カテゴリ別の合計
+    category_sum = df_sum.groupby("カテゴリ")["値"].sum()
 
-    return df
+    # 4. 総合計
+    total_sum = df_sum["値"].sum()
+
+    # 5. テンプレに合計をマージ
+    def assign_sum(row):
+        if "ヤード" in row["大項目"] and "処分" not in row["大項目"]:
+            return category_sum.get("ヤード", 0.0)
+        elif "処分" in row["大項目"] and "ヤード" not in row["大項目"]:
+            return category_sum.get("処分", 0.0)
+        elif "有価" in row["大項目"]:
+            return category_sum.get("有価", 0.0)
+        elif "総合計" in row["大項目"]:
+            return total_sum
+        return row["値"]
+
+    etc_csv["値"] = etc_csv.apply(assign_sum, axis=1)
+
+    # 6. 合計_処分ヤード = 処分 + ヤード の合算
+    mask_shobun_yard = etc_csv["大項目"] == "合計_処分ヤード"
+    val_shobun = etc_csv.loc[etc_csv["大項目"] == "合計_処分", "値"].values
+    val_yard = etc_csv.loc[etc_csv["大項目"] == "合計_ヤード", "値"].values
+
+    if val_shobun.size > 0 and val_yard.size > 0:
+        etc_csv.loc[mask_shobun_yard, "値"] = val_shobun[0] + val_yard[0]
+
+    # 7. 元dfとetcの結合（縦方向）
+    df_combined = pd.concat([df, etc_csv], ignore_index=True)
+
+    return df_combined
+
+
+
 
 
 def upsert_summary_row(

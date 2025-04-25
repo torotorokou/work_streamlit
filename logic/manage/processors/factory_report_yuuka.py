@@ -41,16 +41,16 @@ def process_yuuka(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFr
         updated_master_csv, label_col="有価名"
     )
 
-    # --- ④ 合計行などを追加集計 ---
-    target_keys = ["有価名"]
-    target_values = ["合計_有価"]
-    updated_with_sum2 = write_sum_to_target_cell(
-        updated_with_sum, target_keys, target_values
-    )
+    # # --- ④ 合計行などを追加集計 ---
+    # target_keys = ["有価名"]
+    # target_values = ["合計_有価"]
+    # updated_with_sum2 = write_sum_to_target_cell(
+    #     updated_with_sum, target_keys, target_values
+    # )
 
     # ラベル行追加
     final_df = add_label_rows_and_restore_sum(
-        updated_with_sum2, label_col="有価名", offset=-1
+        updated_with_sum, label_col="有価名", offset=-1
     )
 
     # フォーマット修正
