@@ -6,6 +6,7 @@ from logic.manage.processors.factory_report_shobun import process_shobun
 from logic.manage.processors.factory_report_yuuka import process_yuuka
 from logic.manage.processors.factory_report_yard import process_yard
 from logic.manage.utils.excel_tools import sort_by_cell_row
+from utils.value_setter import set_value_fast
 from typing import Optional
 
 
@@ -32,29 +33,30 @@ def process(dfs: dict) -> pd.DataFrame:
     # --- 個別処理 ---
     logger.info("▶️ 出荷処分データ処理開始")
     master_csv_shobun = process_shobun(df_shipping)
-    logger.info(f"処分：{master_csv_shobun}")
 
     logger.info("▶️ 出荷有価データ処理開始")
     master_csv_yuka = process_yuuka(df_yard, df_shipping)
-    logger.info(f"有価：{master_csv_yuka}")
 
     logger.info("▶️ 出荷ヤードデータ処理開始")
     master_csv_yard = process_yard(df_yard, df_shipping)
-    logger.info(f"ヤード：{master_csv_yard}")
 
     # --- 結合 ---
     logger.info("🧩 各処理結果を結合中...")
     combined_df = pd.concat(
         [master_csv_yuka, master_csv_shobun, master_csv_yard], ignore_index=True
     )
-    logger.debug("\n[DataFrame全文表示]\n" + combined_df.to_string())
+
+    # --- 合計・総合計行の追加/更新 ---
+    combined_df = sum_array(combined_df)
+
+    # 日付の挿入
+    combined_df = date_format(combined_df,df_shipping)
 
     # --- セル行順にソート ---
     combined_df = sort_by_cell_row(combined_df, cell_col="セル")
 
-    # --- 合計・総合計行の追加/更新 ---
-    combined_df = sum_array(combined_df)
-    logger.debug("\n[DataFrame全文表示]\n" + combined_df.to_string())
+    logger.debug("\n" + combined_df.to_string())
+
 
     # --- インデックスをリセットして返す ---
     return combined_df.reset_index(drop=True)
@@ -71,6 +73,8 @@ def sum_array(df: pd.DataFrame) -> pd.DataFrame:
     total = value_disposal_yard + valuable
 
     df = upsert_summary_row(df, "総合計", total)
+
+    
 
     return df
 
@@ -110,3 +114,16 @@ def upsert_summary_row(
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
 
     return df
+
+def date_format(master_csv, df_shipping):
+    today = pd.to_datetime(df_shipping["伝票日付"].dropna().iloc[0])
+
+    master_columns_keys=["大項目"]
+    key_name = ["日付1"]
+    set_value_fast(master_csv, master_columns_keys, key_name, today)
+
+    master_columns_keys=["大項目"]
+    key_name = ["日付2"]
+    set_value_fast(master_csv, master_columns_keys, key_name, today)
+
+    return master_csv
