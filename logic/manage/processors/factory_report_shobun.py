@@ -6,6 +6,7 @@ from utils.value_setter import set_value_fast
 from logic.manage.utils.excel_tools import create_label_rows_generic, sort_by_cell_row
 from logic.manage.utils.summary_tools import write_sum_to_target_cell
 from logic.manage.utils.excel_tools import add_label_rows_and_restore_sum
+from utils.data_cleaning import clean_cd_column
 
 
 def process_shobun(df_shipping: pd.DataFrame) -> pd.DataFrame:
@@ -29,18 +30,20 @@ def process_shobun(df_shipping: pd.DataFrame) -> pd.DataFrame:
 
     # --- ② 処分重量を加算（業者別）---
     updated_master_csv = apply_shobun_weight(master_csv, df_shipping)
+    # logger.info(f"updated_mater_csv:{updated_master_csv}")
 
     # --- ④ 合計行などを追加集計（業者CD） ---
-    target_keys = ["業者CD"]
+    target_keys = ["業者名"]
     target_values = ["合計_処分"]
-    aggregated_df = write_sum_to_target_cell(updated_master_csv, target_keys, target_values)
+    updated_master_csv2 = write_sum_to_target_cell(updated_master_csv, target_keys, target_values)
+    # logger.info(f"updated_mater_csv2:{updated_master_csv2}")
 
     # ラベル行追加
-    aggregated_df2 = add_label_rows_and_restore_sum(aggregated_df, label_col="業者名", offset=-1)
-
+    updated_master_csv3 = add_label_rows_and_restore_sum(updated_master_csv2, label_col="業者名", offset=-1)
+    # logger.info(f"updated_mater_csv3:{updated_master_csv3}")
 
     # --- ⑤ 表全体を整形（列順・カテゴリ追加など） ---
-    final_df = format_shobun_table(aggregated_df2)
+    final_df = format_shobun_table(updated_master_csv3)
 
     logger.info("✅ 出荷処分の帳票生成が完了しました。")
 
@@ -72,13 +75,13 @@ def apply_shobun_weight(
     aggregated = pd.concat([agg_others, agg_marugen], ignore_index=True)
     aggregated.rename(columns={"業者CD": "業者CD", "品名": "品名"}, inplace=True)
 
+    # master_csv, aggregated の型整理
     master_csv["値"] = pd.to_numeric(master_csv["値"], errors="coerce").fillna(0)
+    master_csv = clean_cd_column(master_csv,col = "業者CD")
+    aggregated = clean_cd_column(aggregated,col = "業者CD")
 
 
-    # master_csv, aggregated の両方で文字列型に揃える
-    master_csv["業者CD"] = master_csv["業者CD"].astype(str)
-    aggregated["業者CD"] = aggregated["業者CD"].astype(str)
-
+    # 元master_csvとのマージ
     updated_master = master_csv.merge(aggregated, on=["業者CD", "品名"], how="left")
     updated_master["正味重量"] = updated_master["正味重量"].fillna(0)
     updated_master["値"] += updated_master["正味重量"]
