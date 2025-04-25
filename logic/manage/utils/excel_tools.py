@@ -75,3 +75,55 @@ def sort_by_cell_row(df: pd.DataFrame, cell_col: str = "セル") -> pd.DataFrame
     df["_セル行"] = df[cell_col].apply(lambda x: int(re.findall(r"\d+", x)[0]))
     df = df.sort_values("_セル行").drop(columns="_セル行").reset_index(drop=True)
     return df
+
+def add_label_rows(
+    master_csv: pd.DataFrame, label_source_col: str, offset
+) -> pd.DataFrame:
+    """
+    マスターCSVにラベル行（業者名など）を追加する。
+
+    Parameters:
+        master_csv : pd.DataFrame
+        label_source_col : ラベル元の列（例："業者名"）
+        offset : 何行ずらすか（例：-1で上に追加）
+
+    Returns:
+        pd.DataFrame : ラベル行を追加し、セル順にソートしたDataFrame
+    """
+    df_label = create_label_rows_generic(
+        df=master_csv,
+        label_source_col=label_source_col,
+        offset=offset
+    )
+    df_extended = pd.concat([master_csv, df_label], ignore_index=True)
+    df_extended = sort_by_cell_row(df_extended)
+    return df_extended
+
+
+
+def add_label_rows_and_restore_sum(
+    df: pd.DataFrame,
+    label_col: str,
+    offset: int = -1,
+    sum_keyword: str = "合計"
+) -> pd.DataFrame:
+    """
+    指定列でラベル行を追加し、"合計"行を除外→ラベル付加→合計行を復元して整形。
+
+    Parameters:
+        df : pd.DataFrame
+        label_col : ラベル元となる列名（例: "業者名", "有価名" など）
+        offset : セルの挿入位置（例: -1 → 1行上にラベル）
+        sum_keyword : "合計"として検出するキーワード
+
+    Returns:
+        pd.DataFrame
+    """
+    sum_rows = df[df[label_col].str.contains(sum_keyword, na=False)]
+    filtered = df[~df[label_col].str.contains(sum_keyword, na=False)]
+    labeled = add_label_rows(filtered, label_source_col=label_col, offset=offset)
+    combined = pd.concat([labeled, sum_rows], ignore_index=True)
+    return sort_by_cell_row(combined)
+
+
+

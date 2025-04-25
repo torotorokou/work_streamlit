@@ -2,25 +2,57 @@ import pandas as pd
 from utils.logger import app_logger
 from utils.config_loader import get_template_config
 from logic.manage.utils.load_template import load_master_and_template
+from logic.manage.utils.excel_tools import add_label_rows_and_restore_sum
+from logic.manage.utils.summary_merge import summary_apply_by_sheet
+from logic.manage.utils.summary_tools import write_sum_to_target_cell
 from utils.value_setter import set_value
 from IPython.display import display
 
 
-def process_yuuka(df_yard, df_shipping) -> pd.DataFrame:
+def process_yuuka(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFrame:
+    """
+    出荷有価パートの帳票生成処理。
+
+    Parameters:
+        df_yard : pd.DataFrame
+            ヤード一覧のDataFrame
+        df_shipping : pd.DataFrame
+            出荷一覧のDataFrame
+
+    Returns:
+        pd.DataFrame
+            整形された出荷有価帳票のDataFrame
+    """
     logger = app_logger()
 
-    # マスターCSVの読込
-    master_path = get_template_config()["factory_report"]["master_csv_path"]["yuuka"]
+    # --- ① マスターCSVの読み込み ---
+    config = get_template_config()["factory_report"]
+    master_path = config["master_csv_path"]["yuuka"]
     master_csv = load_master_and_template(master_path)
 
-    # 各処理を実行
-    updated_master_csv = apply_yula(master_csv, df_yard, df_shipping)
+    # --- ② 有価の値集計処理（df_yard + df_shippingを使用） ---
+    updated_master_csv = apply_yuuka_summary(master_csv, df_yard, df_shipping)
 
-    display(master_csv)
-    return updated_master_csv
+    # --- ③ セル単位で有価名をマージし、合計を計算 ---
+    updated_with_sum = summarize_value_by_cell_with_label(
+        updated_master_csv, label_col="有価名"
+    )
+
+    # --- ④ 合計行などを追加集計（業者CD×業者名×品名） ---
+    target_keys = ["有価名"]
+    target_values = ["合計_有価"]
+    updated_with_sum2 = write_sum_to_target_cell(
+        updated_with_sum, target_keys, target_values
+    )
+
+    # ラベル行追加
+    final_df = add_label_rows_and_restore_sum(updated_with_sum2, label_col="有価名", offset=-1)
+
+    logger.info("✅ 出荷有価の帳票生成が完了しました。")
+    return final_df
 
 
-def apply_yula(master_csv, df_yard, df_shipping):
+def apply_yuuka_summary(master_csv, df_yard, df_shipping):
     df_map = {"ヤード": df_yard, "出荷": df_shipping}
 
     sheet_key_pairs = [
@@ -35,7 +67,7 @@ def apply_yula(master_csv, df_yard, df_shipping):
     for sheet_name, key_cols in sheet_key_pairs:
         data_df = df_map[sheet_name]
 
-        master_csv_updated = apply_summary_by_sheetname(
+        master_csv_updated = summary_apply_by_sheet(
             master_csv=master_csv_updated,
             data_df=data_df,
             sheet_name=sheet_name,
@@ -45,109 +77,64 @@ def apply_yula(master_csv, df_yard, df_shipping):
     return master_csv_updated
 
 
-def merge_safely_with_keys(
-    master_df: pd.DataFrame,
-    data_df: pd.DataFrame,
-    key_cols: list[str],
-    how: str = "left",
+def summarize_value_by_cell_with_label(
+    df: pd.DataFrame,
+    value_col: str = "値",
+    cell_col: str = "セル",
+    label_col: str = "有価名",
 ) -> pd.DataFrame:
     """
-    指定した複数のキー列を使って、安全にマージする関数。
-    マスター側のキー列に欠損値（NaN）がある行はマージ対象から除外される。
+    セル単位で値を集計し、対応するラベル列（例：有価名）を付加した集計結果を返す。
 
     Parameters
     ----------
-    master_df : pd.DataFrame
-        マージ元（テンプレート）
-    data_df : pd.DataFrame
-        マージ対象のデータ
-    key_cols : list[str]
-        結合に使用するキー列（1〜3列想定）
-    how : str
-        マージ方法（デフォルト: "left"）
+    df : pd.DataFrame
+        元のデータフレーム（テンプレート含む）
+    value_col : str
+        数値に変換して合計する列名（例: "値"）
+    cell_col : str
+        セル位置を示す列名（例: "セル"）
+    label_col : str
+        ラベル（名前）を示す列名（例: "有価名"）
 
     Returns
     -------
     pd.DataFrame
-        マージ済みのDataFrame（未マージ行も含まれる）
+        集計された「セル + 値 + ラベル」形式のDataFrame
     """
+    # ① 数値変換（混在対応）
+    df[value_col] = pd.to_numeric(df[value_col], errors="coerce")
 
-    # ① キーに空欄がある行を除外してマージ
-    master_valid = master_df.dropna(subset=key_cols)
-    data_valid = data_df.dropna(subset=key_cols)
+    # ② セル単位で合計
+    grouped = df.groupby(cell_col, as_index=False)[value_col].sum()
 
-    merged = pd.merge(master_valid, data_valid, on=key_cols, how=how)
+    # ③ セルとラベルの対応表を作成（重複除外）
+    cell_to_label = df[[cell_col, label_col]].drop_duplicates()
 
-    # ② キーが不完全（NaN含む）な行を保持して復元
-    master_skipped = master_df[master_df[key_cols].isna().any(axis=1)]
+    # ④ マージ
+    grouped_named = pd.merge(grouped, cell_to_label, on=cell_col, how="left")
 
-    # ③ マージしたものと未マージのものを結合して返す
-    final_df = pd.concat([merged, master_skipped], ignore_index=True)
-
-    return final_df
-
-
-def update_column_if_present(df, source_col: str, target_col: str) -> pd.DataFrame:
-    mask = df[source_col].notna()
-    df.loc[mask, target_col] = df.loc[mask, source_col]
-    return df
+    return grouped_named
 
 
-def apply_summary_by_sheetname(
-    master_csv: pd.DataFrame,
-    data_df: pd.DataFrame,
-    sheet_name: str,
-    key_cols: list[str],
-    source_col: str = "正味重量",
-    target_col: str = "値",
-) -> pd.DataFrame:
+def format_table(master_csv: pd.DataFrame) -> pd.DataFrame:
     """
-    マスターCSVの特定シート部分に対して、外部データをgroupby集計してマージし、値を書き込む汎用関数。
+    出荷処分のマスターCSVから必要な列を整形し、カテゴリを付与する。
 
-    Parameters
-    ----------
-    master_csv : pd.DataFrame
-        全体のテンプレートCSV（複数シートを含む）
-    data_df : pd.DataFrame
-        処理対象のデータ（例：df_shipping）
-    sheet_name : str
-        処理対象とする "CSVシート名"（例："出荷"）
-    key_cols : list[str]
-        groupbyキー ＝ マージキー（例：["品名"], ["業者名", "品名"]）
-    source_col : str
-        集計対象の列（例："正味重量"）
-    target_col : str
-        書き込み先の列（例："値"）
+    Parameters:
+        master_csv : pd.DataFrame
+            出荷処分の帳票CSV（"業者名", "セル", "値" を含む）
 
-    Returns
-    -------
-    pd.DataFrame
-        処理済みのマスターCSV（"CSVシート名"以外も含む）
+    Returns:
+        pd.DataFrame : 整形後の出荷処分データ
     """
-    logger = app_logger()
-    logger.info(
-        f"▶️ 処理対象シート: {sheet_name}, キー: {key_cols}, 集計列: {source_col}"
-    )
+    # 必要列を抽出
+    format_df = master_csv[["有価名", "セル", "値"]].copy()
 
-    # ① 該当シート部分を取り出す
-    target_df = master_csv[master_csv["CSVシート名"] == sheet_name].copy()
+    # 不要な列を除外・置換
+    format_df.rename(columns={"有価名": "大項目"}, inplace=True)
 
-    # ② groupbyで合計
-    agg_df = data_df.groupby(key_cols, as_index=False)[[source_col]].sum()
+    # カテゴリ列を追加
+    format_df["カテゴリ"] = "有価"
 
-    # ③ 安全にマージ
-    merged_df = merge_safely_with_keys(
-        master_df=target_df, data_df=agg_df, key_cols=key_cols
-    )
-
-    # ④ 値を書き込み（NaN以外）
-    merged_df = update_column_if_present(merged_df, source_col, target_col)
-
-    # ⑤ 不要列を削除
-    merged_df.drop(columns=[source_col], inplace=True)
-
-    # ⑥ 元に戻す：シート以外はそのまま
-    master_others = master_csv[master_csv["CSVシート名"] != sheet_name]
-    final_df = pd.concat([master_others, merged_df], ignore_index=True)
-
-    return final_df
+    return format_df
