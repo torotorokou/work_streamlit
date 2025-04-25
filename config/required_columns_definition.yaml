@@ -21,3 +21,4 @@ factory_report:
     yard:
         - 品名
         - 正味重量
+        - 種類名

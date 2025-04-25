@@ -10,7 +10,7 @@ def write_sum_to_target_cell(
     value_column: str = "値",
 ) -> pd.DataFrame:
     """
-    テンプレートの「合計」セルに値を書き込みたい。
+    テンプレートの「合計」セルに値を書き込む。
     指定したキー構成に対応するセルに、合計値を設定する汎用関数。
 
     Parameters:
@@ -72,6 +72,7 @@ def summarize_value_by_cell_with_label(
 
     return grouped_named
 
+
 def summary_apply_by_sheet(
     master_csv: pd.DataFrame,
     data_df: pd.DataFrame,
@@ -115,7 +116,7 @@ def summary_apply_by_sheet(
     agg_df = data_df.groupby(key_cols, as_index=False)[[source_col]].sum()
 
     # ③ 安全にマージ
-    merged_df = summary_tools_by_keys(
+    merged_df = safe_merge_by_keys(
         master_df=target_df, data_df=agg_df, key_cols=key_cols
     )
 
@@ -132,7 +133,7 @@ def summary_apply_by_sheet(
     return final_df
 
 
-def summary_tools_by_keys(
+def safe_merge_by_keys(
     master_df: pd.DataFrame,
     data_df: pd.DataFrame,
     key_cols: list[str],

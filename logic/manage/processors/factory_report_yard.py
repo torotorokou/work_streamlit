@@ -20,10 +20,12 @@ def process_yard(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFra
     master_path = config["master_csv_path"]["yard"]
     master_csv = load_master_and_template(master_path)
 
-    # --- ② 有価の値集計処理（df_yard + df_shippingを使用） ---
+    # --- ② ヤードの値集計処理（df_yard + df_shippingを使用） ---
     updated_master_csv = apply_yard_summary(master_csv, df_yard, df_shipping)
 
-    # # --- ③ セル単位で有価名をマージし、合計を計算 ---
+    updated_master_csv = negate_template_values(updated_master_csv)
+
+    # # --- ③ セル単位でヤード名をマージし、合計を計算 ---
     updated_with_sum = summarize_value_by_cell_with_label(
         updated_master_csv, label_col="品目名"
     )
@@ -49,7 +51,7 @@ def apply_yard_summary(master_csv, df_yard, df_shipping):
 
     sheet_key_pairs = [
         ("ヤード", ["種類名"]),
-        ("ヤード", ["種類名"], ["品名"]),
+        ("ヤード", ["種類名", "品名"]),
         ("出荷", ["業者名", "品名"]),
     ]
 
@@ -89,3 +91,20 @@ def format_table(master_csv: pd.DataFrame) -> pd.DataFrame:
     format_df["カテゴリ"] = "ヤード"
 
     return format_df
+
+
+def negate_template_values(master_csv: pd.DataFrame) -> pd.DataFrame:
+    # --- 条件フィルター：対象は「品目名=その他」かつ「種類名=処分費」
+    condition = (master_csv["品目名"] == "その他") & (master_csv["種類名"] == "処分費")
+
+    # --- 品名ごとにマイナス処理
+    mask_sentubetsu = condition & (master_csv["品名"] == "選別")
+    mask_kinko = condition & (master_csv["品名"] == "金庫")
+    mask_gc = condition & (master_csv["品名"] == "GC軽鉄・ｽﾁｰﾙ類")
+
+    # --- 対象の値をマイナスに（符号反転）
+    master_csv.loc[mask_sentubetsu, "値"] = -master_csv.loc[mask_sentubetsu, "値"]
+    master_csv.loc[mask_kinko, "値"] = -master_csv.loc[mask_kinko, "値"]
+    master_csv.loc[mask_gc, "値"] = -master_csv.loc[mask_gc, "値"]
+
+    return master_csv
