@@ -25,10 +25,17 @@ def process(dfs: dict) -> pd.DataFrame:
     df_shipping = df_dict.get("shipping")
     df_yard = df_dict.get("yard")
 
-    # 出荷処分データの処理
-    master_csv_shobun = process_shobun(df_shipping)
+    logger.info(f"[debug] df_shipping columns: {df_shipping.columns.tolist()}")
+    logger.info(f"[debug] df_yard columns: {df_yard.columns.tolist()}")
 
     # 各処理を実行
-    # updated_master_csv = apply_shipping(master_csv, df_shipping)
+    # 出荷処分
+    master_csv_shobun = process_shobun(df_shipping)
+    logger.info(f"出荷処分;{master_csv_shobun}")
+    # 出荷有価
+    master_csv_yuka = process_yuuka(df_yard, df_shipping)
+    logger.info(f"出荷有価;{master_csv_yuka}")
 
-    return master_csv_shobun
+    # 結合
+    combined_df = pd.concat([master_csv_yuka, master_csv_shobun], ignore_index=True)
+    return combined_df

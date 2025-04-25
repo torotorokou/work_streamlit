@@ -15,3 +15,6 @@ factory_report:
         業者CD: str
         品名: str
         正味重量: int
+    yard:
+        品名: str
+        正味重量: int
