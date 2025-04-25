@@ -3,7 +3,7 @@ from utils.logger import app_logger
 from utils.config_loader import get_template_config
 from logic.manage.utils.load_template import load_master_and_template
 from logic.manage.utils.excel_tools import add_label_rows_and_restore_sum
-from logic.manage.utils.summary_merge import summary_apply_by_sheet
+from logic.manage.utils.summary_tools import summary_apply_by_sheet
 from logic.manage.utils.summary_tools import (
     write_sum_to_target_cell,
     summarize_value_by_cell_with_label,

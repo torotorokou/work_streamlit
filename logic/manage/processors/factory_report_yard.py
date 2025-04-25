@@ -7,7 +7,7 @@ from logic.manage.utils.summary_tools import (
     write_sum_to_target_cell,
     summarize_value_by_cell_with_label,
 )
-from logic.manage.utils.summary_merge import summary_apply_by_sheet
+from logic.manage.utils.summary_tools import summary_apply_by_sheet
 from utils.value_setter import set_value
 from IPython.display import display
 
