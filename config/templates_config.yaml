@@ -20,6 +20,7 @@ balance_sheet:
         factory: data/master/balance_sheet/factory_report.csv
         shobun_cost: data/master/balance_sheet/syobun_cost.csv
         syobun_cost_kinko: data/master/balance_sheet/syobun_cost_kinko.csv
+        syobun_cost_kinko_yard: data/master/balance_sheet/syobun_cost_kinko_yard.csv
 
 average_sheet:
     key: average_sheet
