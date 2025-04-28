@@ -19,14 +19,14 @@ def apply_expected_dtypes(
 ) -> dict[str, pd.DataFrame]:
     """
     アップロードされた各CSVに対して、テンプレート定義に基づきデータ型を強制適用する。
-    
+
     Parameters
     ----------
     dfs : dict[str, pd.DataFrame]
         読み込んだCSVファイル群
     template_key : str
         テンプレート名（例: average_sheet）
-    
+
     Returns
     -------
     dict[str, pd.DataFrame]
@@ -44,7 +44,6 @@ def apply_expected_dtypes(
             logger.info(f"✅ 型を適用しました: {key}")
 
     return dfs
-
 
 
 def prepare_csv_data(
@@ -82,4 +81,3 @@ def prepare_csv_data(
 
     logger.info(f"✅ すべてのCSVで日付が一致しています：{result['dates']}")
     return dfs, result["dates"]
-

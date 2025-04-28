@@ -25,8 +25,8 @@ average_sheet:
     label: 集計項目平均表
     description: 受入データをABC分類し、各品目の平均値を算出して出力します。
     required_files: [receive]
-    master_csv_path: data/master/average_sheet_map.csv
-    template_excel_path: data/templates/average_sheet/average_sheet.xlsx
+    master_csv_path: data/master/average_sheet/average_sheet_map.csv
+    template_excel_path: data/templates/average_sheet.xlsx
 
 management_sheet:
     key: management_sheet
