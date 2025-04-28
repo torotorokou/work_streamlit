@@ -34,6 +34,10 @@ def process(dfs: dict) -> pd.DataFrame:
     df_shipping = df_dict.get("shipping")
     df_yard = df_dict.get("yard")
 
+    # --- 個別処理 ---
+    logger.info("▶️ 搬出量データ処理開始")
+    master_csv_shobun = process_shobun(df_shipping)
+
     # # --- 個別処理 ---
     # logger.info("▶️ 工場日報からの読込")
     # master_csv_shobun = process_factory_report(dfs)
