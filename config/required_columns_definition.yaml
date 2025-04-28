@@ -12,6 +12,7 @@ average_sheet:
 
 factory_report:
     shipping:
+        - 伝票日付
         - 業者CD
         - 業者名
         - 現場名
@@ -19,6 +20,7 @@ factory_report:
         - 運搬業者名
         - 正味重量
     yard:
+        - 伝票日付
         - 品名
         - 正味重量
         - 種類名
