@@ -64,6 +64,56 @@ def summarize_value_by_cell_with_label(
     return grouped_named
 
 
+def summary_apply(
+    master_csv: pd.DataFrame,
+    data_df: pd.DataFrame,
+    key_cols: list[str],
+    source_col: str = "正味重量",
+    target_col: str = "値",
+) -> pd.DataFrame:
+    """
+    インポートCSVをgroupby＆sumし、マスターCSVにマージ＆更新する汎用関数（シート名なし版）。
+
+    Parameters
+    ----------
+    master_csv : pd.DataFrame
+        全体のマスターCSV
+    data_df : pd.DataFrame
+        処理対象データ（例：出荷データ）
+    key_cols : list[str]
+        groupbyキー ＝ マージキー（例：["品名"], ["業者名", "品名"]）
+    source_col : str
+        集計対象の列（例："正味重量"）
+    target_col : str
+        書き込み先の列（例："値"）
+
+    Returns
+    -------
+    pd.DataFrame
+        処理済みのマスターCSV
+    """
+    logger = app_logger()
+    logger.info(
+        f"▶️ マスター更新処理: キー={key_cols}, 集計列={source_col} ➡ 書き込み列={target_col}"
+    )
+
+    # ① groupbyで合計
+    agg_df = data_df.groupby(key_cols, as_index=False)[[source_col]].sum()
+
+    # ② 安全にマージ
+    merged_df = safe_merge_by_keys(
+        master_df=master_csv.copy(), data_df=agg_df, key_cols=key_cols
+    )
+
+    # ③ 値を書き込み（NaN以外）
+    updated_df = summary_update_column_if_notna(merged_df, source_col, target_col)
+
+    # ④ 不要列を削除
+    updated_df.drop(columns=[source_col], inplace=True)
+
+    return updated_df
+
+
 def summary_apply_by_sheet(
     master_csv: pd.DataFrame,
     data_df: pd.DataFrame,
