@@ -54,7 +54,7 @@ def to_japanese_month_day(dt) -> str:
     """
     任意の日付オブジェクトから「3月1日」の形式に変換する。
     pandas.Timestamp / datetime.date 両対応。
-    
+
     Parameters
     ----------
     dt : datetime.date, datetime.datetime, pandas.Timestamp

@@ -9,6 +9,7 @@ from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from copy import copy  # ← 追加
 
+
 def safe_excel_value(value):
     """Excelに書き込める形式に変換するユーティリティ関数"""
     if pd.isna(value) or value is pd.NA or value is np.nan:
