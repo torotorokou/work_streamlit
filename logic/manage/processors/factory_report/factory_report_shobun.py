@@ -2,9 +2,6 @@ import pandas as pd
 from utils.logger import app_logger
 from utils.config_loader import get_template_config
 from logic.manage.utils.load_template import load_master_and_template
-from utils.value_setter import set_value_fast
-from logic.manage.utils.excel_tools import create_label_rows_generic, sort_by_cell_row
-from logic.manage.utils.summary_tools import write_sum_to_target_cell
 from logic.manage.utils.excel_tools import add_label_rows_and_restore_sum
 from utils.data_cleaning import clean_cd_column
 
@@ -30,15 +27,6 @@ def process_shobun(df_shipping: pd.DataFrame) -> pd.DataFrame:
 
     # --- ② 処分重量を加算（業者別）---
     updated_master_csv = apply_shobun_weight(master_csv, df_shipping)
-    # logger.info(f"updated_mater_csv:{updated_master_csv}")
-
-    # --- ④ 合計行などを追加集計（業者CD） ---
-    # target_keys = ["業者名"]
-    # target_values = ["合計_処分"]
-    # updated_master_csv2 = write_sum_to_target_cell(
-    #     updated_master_csv, target_keys, target_values
-    # )
-    # # logger.info(f"updated_mater_csv2:{updated_master_csv2}")
 
     # ラベル行追加
     updated_master_csv3 = add_label_rows_and_restore_sum(

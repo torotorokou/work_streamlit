@@ -2,18 +2,13 @@ import pandas as pd
 from utils.logger import app_logger, debug_logger
 from utils.config_loader import get_template_config
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
-from logic.manage.processors.factory_report_shobun import process_shobun
-from logic.manage.processors.factory_report_yuuka import process_yuuka
-from logic.manage.processors.factory_report_yard import process_yard
+from logic.manage.processors.factory_report.factory_report_shobun import process_shobun
+from logic.manage.processors.factory_report.factory_report_yuuka import process_yuuka
+from logic.manage.processors.factory_report.factory_report_yard import process_yard
 from logic.manage.utils.excel_tools import sort_by_cell_row
 from logic.manage.utils.load_template import load_master_and_template
 from utils.date_tools import to_japanese_era, to_japanese_month_day
 from utils.value_setter import set_value_fast
-from logic.manage.utils.summary_tools import (
-    write_sum_to_target_cell,
-    summarize_value_by_cell_with_label,
-)
-from typing import Optional
 
 
 def process(dfs: dict) -> pd.DataFrame:
@@ -152,14 +147,14 @@ def upsert_summary_row(
 def date_format(master_csv, df_shipping):
     today = pd.to_datetime(df_shipping["伝票日付"].dropna().iloc[0])
 
-    master_columns_keys = ["大項目"]
-    key_name = ["和暦"]
-    set_value_fast(master_csv, master_columns_keys, key_name, to_japanese_era(today))
+    match_columns  = ["大項目"]
+    match_value = ["和暦"]
+    set_value_fast(master_csv, match_columns , match_value, to_japanese_era(today))
 
-    master_columns_keys = ["大項目"]
-    key_name = ["月日"]
+    match_columns  = ["大項目"]
+    match_value = ["月日"]
     set_value_fast(
-        master_csv, master_columns_keys, key_name, to_japanese_month_day(today)
+        master_csv, match_columns , match_value, to_japanese_month_day(today)
     )
 
     return master_csv

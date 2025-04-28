@@ -4,10 +4,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from openpyxl.cell.cell import MergedCell
-from utils.logger import app_logger  # ロガーを使っていれば
+from utils.logger import app_logger
 from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
-
+from copy import copy  # ← 追加
 
 def safe_excel_value(value):
     """Excelに書き込める形式に変換するユーティリティ関数"""
@@ -43,11 +43,20 @@ def write_dataframe_to_worksheet(df: pd.DataFrame, ws: Worksheet, logger=None):
                 logger.warning(f"セル {cell_ref} は結合セルで書き込み不可。値: {value}")
                 continue
 
-            # --- 書式を保持 ---
+            # --- 書式をdeep copyで保持 ---
+            original_font = copy(cell.font)
+            original_fill = copy(cell.fill)
+            original_border = copy(cell.border)
             original_format = cell.number_format
 
+            # 値の上書き
             cell.value = value
-            cell.number_format = original_format  # 上書き後に戻す！
+
+            # --- 書式の復元 ---
+            cell.font = original_font
+            cell.fill = original_fill
+            cell.border = original_border
+            cell.number_format = original_format
 
         except Exception as e:
             logger.error(f"セル {cell_ref} 書き込み失敗: {e} / 値: {value}")
