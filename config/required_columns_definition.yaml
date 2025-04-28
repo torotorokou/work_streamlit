@@ -28,4 +28,7 @@ factory_report:
 balance_sheet:
     shipping:
         - 業者CD
+        - 業者名
         - 金額
+        - 品名
+        - 正味重量

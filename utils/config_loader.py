@@ -1,4 +1,5 @@
 import yaml
+import pandas as pd
 from pathlib import Path
 from utils.type_converter import resolve_dtype
 
@@ -58,6 +59,14 @@ def get_page_config() -> list:
     config_path = get_path_config()["config_files"]["page_config"]
     return load_yaml(config_path)["pages"]
 
+
+def get_unit_price_table_csv() -> pd.DataFrame:
+    """
+    単価表CSVを読み込んでDataFrameとして返す。
+    """
+    csv_path = get_path_config()["csv"]["unit_price_table"]
+    df = pd.read_csv(csv_path, encoding="utf-8-sig")
+    return df
 
 def get_page_dicts():
     """
