@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from logic.models.csv_processor import process_csv_by_date, check_date_alignment
 from components.ui_message import (
     show_success,
@@ -12,32 +13,53 @@ from utils.config_loader import get_expected_dtypes_by_template
 from utils.logger import app_logger
 
 
-def prepare_csv_data(
-    uploaded_files: dict, date_columns: dict, template_key: str
-) -> dict:
+def apply_expected_dtypes(
+    dfs: dict[str, pd.DataFrame],
+    template_key: str,
+) -> dict[str, pd.DataFrame]:
     """
-    アップロードされた CSV ファイル群を読み込み、データ型と日付をチェックする。
-    Parameters:
-        uploaded_files (dict): key = receive, yard など / value = UploadedFile
-        date_columns (dict): 各ファイルに対する日付カラム名
-        template_key (str): テンプレート名（例: average_sheet）
-    Returns:
-        dict: 正常に読み込めた DataFrame 群
+    アップロードされた各CSVに対して、テンプレート定義に基づきデータ型を強制適用する。
+    
+    Parameters
+    ----------
+    dfs : dict[str, pd.DataFrame]
+        読み込んだCSVファイル群
+    template_key : str
+        テンプレート名（例: average_sheet）
+    
+    Returns
+    -------
+    dict[str, pd.DataFrame]
+        型強制後のDataFrame群
     """
     logger = app_logger()
-    logger.info("📄 これからCSVの書類を作成します...")
-    dfs = load_uploaded_csv_files(uploaded_files)
-
-    # ✅ テンプレート用の型定義を取得
     expected_dtypes_per_file = get_expected_dtypes_by_template(template_key)
 
     for key in dfs:
         dfs[key] = strip_whitespace(dfs[key])  # 🔽 空白除去
+
         dtypes = expected_dtypes_per_file.get(key)
         if dtypes:
             dfs[key] = enforce_dtypes(dfs[key], dtypes)
+            logger.info(f"✅ 型を適用しました: {key}")
+
+    return dfs
+
+
+
+def prepare_csv_data(
+    uploaded_files: dict, date_columns: dict, template_key: str
+) -> dict:
+    logger = app_logger()
+    logger.info("📄 これからCSVの書類を作成します...")
+
+    dfs = load_uploaded_csv_files(uploaded_files)
+
+    # 型適用処理を独立関数で実施
+    dfs = apply_expected_dtypes(dfs, template_key)
 
     logger.info("📄 CSVの日付を確認中です...")
+
     for key, df in dfs.items():
         date_col = date_columns.get(key)
 
@@ -60,3 +82,4 @@ def prepare_csv_data(
 
     logger.info(f"✅ すべてのCSVで日付が一致しています：{result['dates']}")
     return dfs, result["dates"]
+
