@@ -73,24 +73,6 @@ def summary_apply(
 ) -> pd.DataFrame:
     """
     インポートCSVをgroupby＆sumし、マスターCSVにマージ＆更新する汎用関数（シート名なし版）。
-
-    Parameters
-    ----------
-    master_csv : pd.DataFrame
-        全体のマスターCSV
-    data_df : pd.DataFrame
-        処理対象データ（例：出荷データ）
-    key_cols : list[str]
-        groupbyキー ＝ マージキー（例：["品名"], ["業者名", "品名"]）
-    source_col : str
-        集計対象の列（例："正味重量"）
-    target_col : str
-        書き込み先の列（例："値"）
-
-    Returns
-    -------
-    pd.DataFrame
-        処理済みのマスターCSV
     """
     logger = app_logger()
     logger.info(
@@ -108,8 +90,9 @@ def summary_apply(
     # ③ 値を書き込み（NaN以外）
     updated_df = summary_update_column_if_notna(merged_df, source_col, target_col)
 
-    # ④ 不要列を削除
-    updated_df.drop(columns=[source_col], inplace=True)
+    # ④ source_colとtarget_colが違う場合だけ削除
+    if source_col != target_col:
+        updated_df.drop(columns=[source_col], inplace=True)
 
     return updated_df
 

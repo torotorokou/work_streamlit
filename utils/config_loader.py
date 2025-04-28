@@ -68,6 +68,7 @@ def get_unit_price_table_csv() -> pd.DataFrame:
     df = pd.read_csv(csv_path, encoding="utf-8-sig")
     return df
 
+
 def get_page_dicts():
     """
     ページ設定（page_config.yaml）から
