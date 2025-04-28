@@ -18,6 +18,7 @@ balance_sheet:
     required_files: [receive, yard, shipping]
     master_csv_path:
         factory: data/master/balance_sheet/factory_report.csv
+        shobun_cost: data/master/balance_sheet/syobun_cost.csv
 
 average_sheet:
     key: average_sheet
