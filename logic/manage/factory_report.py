@@ -2,11 +2,13 @@ import pandas as pd
 from utils.logger import app_logger, debug_logger
 from utils.config_loader import get_template_config
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
-from logic.manage.processors.factory_report_shobun import process_shobun
-from logic.manage.processors.factory_report_yuuka import process_yuuka
-from logic.manage.processors.factory_report_yard import process_yard
+from logic.manage.processors.factory_report.factory_report_shobun import process_shobun
+from logic.manage.processors.factory_report.factory_report_yuuka import process_yuuka
+from logic.manage.processors.factory_report.factory_report_yard import process_yard
 from logic.manage.utils.excel_tools import sort_by_cell_row
-from typing import Optional
+from logic.manage.utils.load_template import load_master_and_template
+from utils.date_tools import to_japanese_era, to_japanese_month_day
+from utils.value_setter import set_value_fast
 
 
 def process(dfs: dict) -> pd.DataFrame:
@@ -32,47 +34,77 @@ def process(dfs: dict) -> pd.DataFrame:
     # --- 個別処理 ---
     logger.info("▶️ 出荷処分データ処理開始")
     master_csv_shobun = process_shobun(df_shipping)
-    logger.info(f"処分：{master_csv_shobun}")
 
     logger.info("▶️ 出荷有価データ処理開始")
     master_csv_yuka = process_yuuka(df_yard, df_shipping)
-    logger.info(f"有価：{master_csv_yuka}")
 
     logger.info("▶️ 出荷ヤードデータ処理開始")
     master_csv_yard = process_yard(df_yard, df_shipping)
-    logger.info(f"ヤード：{master_csv_yard}")
 
     # --- 結合 ---
     logger.info("🧩 各処理結果を結合中...")
     combined_df = pd.concat(
         [master_csv_yuka, master_csv_shobun, master_csv_yard], ignore_index=True
     )
-    logger.debug("\n[DataFrame全文表示]\n" + combined_df.to_string())
+
+    # --- 合計・総合計行の追加/更新 ---
+    combined_df = generate_summary_dataframe(combined_df)
+
+    # 日付の挿入
+    combined_df = date_format(combined_df, df_shipping)
 
     # --- セル行順にソート ---
     combined_df = sort_by_cell_row(combined_df, cell_col="セル")
 
-    # --- 合計・総合計行の追加/更新 ---
-    combined_df = sum_array(combined_df)
-    logger.debug("\n[DataFrame全文表示]\n" + combined_df.to_string())
+    logger.debug("\n" + combined_df.to_string())
 
     # --- インデックスをリセットして返す ---
     return combined_df.reset_index(drop=True)
 
 
-def sum_array(df: pd.DataFrame) -> pd.DataFrame:
-    disposal = df.loc[df["大項目"] == "合計_処分", "値"].sum()
-    yard = df.loc[df["大項目"] == "合計_ヤード", "値"].sum()
-    value_disposal_yard = disposal + yard
+def generate_summary_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    config = get_template_config()["factory_report"]
+    etc_path = config["master_csv_path"]["etc"]
+    etc_csv = load_master_and_template(etc_path)
 
-    df = upsert_summary_row(df, "合計_処分ヤード", value_disposal_yard)
+    # 1. コピーして元dfを保護
+    df_sum = df.copy()
 
-    valuable = df.loc[df["大項目"] == "合計_有価", "値"].sum()
-    total = value_disposal_yard + valuable
+    # 2. 値列を数値に変換（NaN対応）
+    df_sum["値"] = pd.to_numeric(df_sum["値"], errors="coerce")
 
-    df = upsert_summary_row(df, "総合計", total)
+    # 3. カテゴリ別の合計
+    category_sum = df_sum.groupby("カテゴリ")["値"].sum()
 
-    return df
+    # 4. 総合計
+    total_sum = df_sum["値"].sum()
+
+    # 5. テンプレに合計をマージ
+    def assign_sum(row):
+        if "ヤード" in row["大項目"] and "処分" not in row["大項目"]:
+            return category_sum.get("ヤード", 0.0)
+        elif "処分" in row["大項目"] and "ヤード" not in row["大項目"]:
+            return category_sum.get("処分", 0.0)
+        elif "有価" in row["大項目"]:
+            return category_sum.get("有価", 0.0)
+        elif "総合計" in row["大項目"]:
+            return total_sum
+        return row["値"]
+
+    etc_csv["値"] = etc_csv.apply(assign_sum, axis=1)
+
+    # 6. 合計_処分ヤード = 処分 + ヤード の合算
+    mask_shobun_yard = etc_csv["大項目"] == "合計_処分ヤード"
+    val_shobun = etc_csv.loc[etc_csv["大項目"] == "合計_処分", "値"].values
+    val_yard = etc_csv.loc[etc_csv["大項目"] == "合計_ヤード", "値"].values
+
+    if val_shobun.size > 0 and val_yard.size > 0:
+        etc_csv.loc[mask_shobun_yard, "値"] = val_shobun[0] + val_yard[0]
+
+    # 7. 元dfとetcの結合（縦方向）
+    df_combined = pd.concat([df, etc_csv], ignore_index=True)
+
+    return df_combined
 
 
 def upsert_summary_row(
@@ -110,3 +142,19 @@ def upsert_summary_row(
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
 
     return df
+
+
+def date_format(master_csv, df_shipping):
+    today = pd.to_datetime(df_shipping["伝票日付"].dropna().iloc[0])
+
+    match_columns  = ["大項目"]
+    match_value = ["和暦"]
+    set_value_fast(master_csv, match_columns , match_value, to_japanese_era(today))
+
+    match_columns  = ["大項目"]
+    match_value = ["月日"]
+    set_value_fast(
+        master_csv, match_columns , match_value, to_japanese_month_day(today)
+    )
+
+    return master_csv
