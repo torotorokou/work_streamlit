@@ -2,7 +2,9 @@ import pandas as pd
 
 # from utils.config_loader import load_config_json
 from utils.logger import app_logger
-from logic.manage.processors.balance_sheet.balance_sheet_fact import process_factory_report
+from logic.manage.processors.balance_sheet.balance_sheet_fact import (
+    process_factory_report,
+)
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.utils.load_template import load_master_and_template
 
@@ -18,7 +20,6 @@ def process(dfs: dict) -> pd.DataFrame:
     """
 
     logger = app_logger()
-
 
     # --- テンプレート設定の取得 ---
     template_key = "balance_sheet"

@@ -147,14 +147,12 @@ def upsert_summary_row(
 def date_format(master_csv, df_shipping):
     today = pd.to_datetime(df_shipping["伝票日付"].dropna().iloc[0])
 
-    match_columns  = ["大項目"]
+    match_columns = ["大項目"]
     match_value = ["和暦"]
-    set_value_fast(master_csv, match_columns , match_value, to_japanese_era(today))
+    set_value_fast(master_csv, match_columns, match_value, to_japanese_era(today))
 
-    match_columns  = ["大項目"]
+    match_columns = ["大項目"]
     match_value = ["月日"]
-    set_value_fast(
-        master_csv, match_columns , match_value, to_japanese_month_day(today)
-    )
+    set_value_fast(master_csv, match_columns, match_value, to_japanese_month_day(today))
 
     return master_csv
