@@ -49,19 +49,19 @@ def set_value(
     master_csv.loc[cond, "値"] = value
 
 
-def set_value_fast(df, keys, values, value, value_col="値"):
-    if len(keys) != len(values):
+def set_value_fast(df, match_columns, match_values, value, value_col="値"):
+    if len(match_columns) != len(match_values):
         raise ValueError("keysとvaluesの長さが一致していません")
 
     cond = pd.Series(True, index=df.index)
-    for col, val in zip(keys, values):
+    for col, val in zip(match_columns, match_values):
         if val in [None, ""]:
             cond &= df[col].isna()
         else:
             cond &= df[col] == val
 
     if cond.sum() == 0:
-        print(f"⚠️ 該当行なし: {dict(zip(keys, values))}")
+        print(f"⚠️ 該当行なし: {dict(zip(match_columns, match_values))}")
         return
 
     df.loc[cond, value_col] = value

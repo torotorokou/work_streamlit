@@ -58,19 +58,19 @@ def process(dfs: dict) -> pd.DataFrame:
     return master_csv
 
 
-def load_receive_data(dfs, key, target_columns):
-    """
-    指定された辞書型DataFrameから、対象キーのDataFrameを取得し、必要なカラムのみを抽出して返す。
+# def load_receive_data(dfs, key, target_columns):
+#     """
+#     指定された辞書型DataFrameから、対象キーのDataFrameを取得し、必要なカラムのみを抽出して返す。
 
-    Parameters:
-        dfs (dict): 複数のDataFrameを格納した辞書。例: {"receive": df1, "yard": df2}
-        key (str): 対象となるDataFrameのキー名。例: "receive"
-        target_columns (list): 抽出するカラム名のリスト。例: ["伝票日付", "品名", "正味重量"]
+#     Parameters:
+#         dfs (dict): 複数のDataFrameを格納した辞書。例: {"receive": df1, "yard": df2}
+#         key (str): 対象となるDataFrameのキー名。例: "receive"
+#         target_columns (list): 抽出するカラム名のリスト。例: ["伝票日付", "品名", "正味重量"]
 
-    Returns:
-        pd.DataFrame: 指定されたカラムのみを持つDataFrame（フィルタ済み）
-    """
-    return dfs[key][target_columns]
+#     Returns:
+#         pd.DataFrame: 指定されたカラムのみを持つDataFrame（フィルタ済み）
+#     """
+#     return dfs[key][target_columns]
 
 
 def process_average_sheet(

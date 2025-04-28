@@ -35,16 +35,16 @@ def show_top_page():
         for msg in chat:
             with st.chat_message("assistant"):
                 typewriter_chat(msg)
-            time.sleep(random.uniform(0.4, 0.6))  # 吹き出し間隔にゆらぎ
+            time.sleep(random.uniform(0.2, 0.3))  # 吹き出し間隔にゆらぎ
 
         # ✅ サイドバー誘導チャット（typewriter）
-        sidebar_msg = (
-            "では、左の **サイドバー** にあるメニューから出力したい帳票を選んでみてくださいね。CSVファイルのアップロードもそちらから行えます！  \n"
-            "何を選べばいいか迷ったら、操作マニュアルも見てみてください📄"
-        )
-        with st.chat_message("assistant"):
-            typewriter_chat(sidebar_msg)
-        time.sleep(random.uniform(0.2, 0.6))
+        # sidebar_msg = (
+        #     "では、左の **サイドバー** にあるメニューから出力したい帳票を選んでみてくださいね。CSVファイルのアップロードもそちらから行えます！  \n"
+        #     "何を選べばいいか迷ったら、操作マニュアルも見てみてください📄"
+        # )
+        # with st.chat_message("assistant"):
+        #     typewriter_chat(sidebar_msg)
+        # time.sleep(random.uniform(0.2, 0.6))
 
         # ✅ サポート案内リンク（HTMLは一括表示！）
         with st.chat_message("assistant"):

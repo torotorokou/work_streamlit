@@ -16,6 +16,8 @@ balance_sheet:
     label: 工場搬出入収支表
     description: 受入・ヤード・出荷一覧から収支表を自動集計します。
     required_files: [receive, yard, shipping]
+    master_csv_path:
+        factory: data/master/balance_sheet/factory_report.csv
 
 average_sheet:
     key: average_sheet
