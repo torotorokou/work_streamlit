@@ -1,0 +1,17 @@
+version: '3'
+services:
+  sambou_streamlit_app_dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    ports:
+      - '8503:8503'
+    volumes:
+      - ../app:/work/app        # appフォルダだけマウント
+      - ../requirements.txt:/work/requirements.txt
+      - ../theme.css:/work/theme.css
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/work/app
+    working_dir: /work
+    command: streamlit run app/app.py --server.port=8503 --server.address=0.0.0.0

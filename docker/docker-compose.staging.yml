@@ -1,0 +1,13 @@
+version: '3'
+services:
+  sambou_streamlit_app_staging:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.staging
+    ports:
+      - '8502:8502'
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/work/app
+    working_dir: /work
+    command: streamlit run app/app.py --server.port=8502 --server.address=0.0.0.0 --server.headless=true --server.enableCORS=false

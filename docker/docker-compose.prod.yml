@@ -1,0 +1,13 @@
+version: '3'
+services:
+  sambou_streamlit_app_prod:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.prod
+    ports:
+      - '8501:8501'
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/work/app
+    working_dir: /work
+    command: streamlit run app/app.py --server.port=8501 --server.address=0.0.0.0 --server.headless=true --server.enableCORS=false
