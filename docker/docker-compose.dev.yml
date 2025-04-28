@@ -7,7 +7,8 @@ services:
     ports:
       - '8503:8503'
     volumes:
-      - ../:/work        # appフォルダだけマウント
+      - ../:/work        
+      - ~/.ssh:/root/.ssh #git用
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/work/app
