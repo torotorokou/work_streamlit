@@ -26,9 +26,9 @@ logs:
 
 # yamlパス
 config_files:
-    app_setting: 'config/app_setting.yaml'
-    csv_column_dtypes: 'config/csv_column_dtypes.yaml'
-    page_config: 'config/page_config.yaml'
-    templates_config: 'config/templates_config.yaml'
-    csv_sources: 'config/csv_sources.yaml'
-    required_columns_definition: 'config/required_columns_definition.yaml'
+    app_setting: 'config/app/app_setting.yaml'
+    csv_column_dtypes: 'config/csv_definitions/csv_column_dtypes.yaml'
+    page_config: 'config/app/page_config.yaml'
+    templates_config: 'config/templates/templates_config.yaml'
+    csv_sources: 'config/csv_definitions/csv_sources.yaml'
+    csv_required_columns: 'config/csv_definitions/csv_required_columns.yaml'
