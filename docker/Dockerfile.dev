@@ -30,4 +30,4 @@ RUN pip install --no-cache-dir \
 EXPOSE 8503
 
 # コンテナ起動時のコマンド（Streamlitアプリ起動）
-CMD ["streamlit", "run", "app/app.py", "--server.port=8503", "--server.address=0.0.0.0", "--server.headless=true", "--server.enableCORS=false"]
+CMD ["streamlit", "run", "app/app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.enableCORS=false"]

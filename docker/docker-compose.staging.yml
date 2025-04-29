@@ -1,8 +1,24 @@
-version: '3'
+version: '3.8'
+
 services:
-  sambou_streamlit_app:
-    container_name: sanbou_app_staging  # ★ここを追加
+  app:
+    container_name: sanbou_staging
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile.staging
+    working_dir: /work
     ports:
       - "8502:8501"
     environment:
       - APP_ENV=staging
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/work/app
+    restart: unless-stopped
+    command:
+      - streamlit
+      - run
+      - app/app.py
+      - --server.port=8501
+      - --server.address=0.0.0.0
+      - --server.headless=true
+      - --server.enableCORS=false
