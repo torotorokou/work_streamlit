@@ -25,3 +25,9 @@ clean:
 	docker-compose -p $(PROJECT_NAME) -f docker/docker-compose.dev.yml down --volumes --rmi local
 	docker-compose -p $(PROJECT_NAME) -f docker/docker-compose.prod.yml down --volumes --rmi local
 	docker system prune -a -f
+
+# --- Streamlit管理 ---
+
+# 開発コンテナ内でStreamlit起動
+st-up:
+	streamlit run app/app.py --server.port=8504 --server.address=0.0.0.0 --server.headless=false --server.enableCORS=false

@@ -8,17 +8,17 @@ services:
       dockerfile: docker/Dockerfile.staging
     working_dir: /work
     ports:
-      - "8502:8501"
+      - "8502:8502"
     environment:
       - APP_ENV=staging
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/work/app
-    restart: unless-stopped
+
     command:
       - streamlit
       - run
       - app/app.py
-      - --server.port=8501
+      - --server.port=8502
       - --server.address=0.0.0.0
       - --server.headless=true
       - --server.enableCORS=false

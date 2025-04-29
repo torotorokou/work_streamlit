@@ -1,33 +1,26 @@
-# 開発用Dockerfile
 FROM python:3.10-slim
 
-# 作業ディレクトリ設定
 WORKDIR /work
 
-# 必要パッケージ（日本語フォント・git）インストール
+# 必要パッケージ追加（日本語フォント・git・make・pkill用のprocps）
 RUN apt-get update && \
     apt-get install -y \
     fonts-noto-cjk \
     fonts-noto \
-    git && \
+    git \
+    make \
+    procps && \
     rm -rf /var/lib/apt/lists/*
 
-# Pythonパッケージインストール（requirements.txtベース）
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 開発用ツールインストール（black, ruff, isort, pre-commit）
 RUN pip install --no-cache-dir \
     black \
     ruff \
     isort \
     pre-commit
 
-# コードはローカルからvolumesマウントするためCOPYしない
-# (開発中はリアルタイムでホストファイルを反映する)
-
-# ポート開放（Streamlitの開発ポート 8503）
 EXPOSE 8503
 
-# コンテナ起動時のコマンド（Streamlitアプリ起動）
-CMD ["streamlit", "run", "app/app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.enableCORS=false"]
+CMD ["streamlit", "run", "app/app.py", "--server.port=8503", "--server.address=0.0.0.0", "--server.headless=true", "--server.enableCORS=false"]

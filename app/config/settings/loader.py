@@ -5,16 +5,15 @@ def load_settings():
     app_env = os.getenv("APP_ENV", "dev")
 
     if app_env == "prod":
-        from config.settings.prod import *
+        from config.settings import prod as settings_module
     elif app_env == "staging":
-        from config.settings.staging import *
+        from config.settings import staging as settings_module
     else:
-        from config.settings.dev import *
+        from config.settings import dev as settings_module
 
-    # ここでモジュールスコープから設定を取り出して返す
     settings = {
-        "ENV_NAME": ENV_NAME,
-        "DEBUG": DEBUG,
-        "STREAMLIT_SERVER_PORT": STREAMLIT_SERVER_PORT,
+        "ENV_NAME": settings_module.ENV_NAME,
+        "DEBUG": settings_module.DEBUG,
+        "STREAMLIT_SERVER_PORT": settings_module.STREAMLIT_SERVER_PORT,
     }
     return settings
