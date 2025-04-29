@@ -31,3 +31,7 @@ clean:
 # 開発コンテナ内でStreamlit起動
 st-up:
 	streamlit run app/app.py --server.port=8504 --server.address=0.0.0.0 --server.headless=false --server.enableCORS=false
+
+# ポート8504を使ってるプロセスをkillする（確実）
+st-kill:
+	@fuser -k 8504/tcp || true
