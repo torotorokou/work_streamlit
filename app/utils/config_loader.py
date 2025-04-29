@@ -23,7 +23,7 @@ def load_yaml(filename: str) -> dict:
 
 def get_path_config() -> dict:
     """main_paths.yamlを辞書として取得"""
-    return load_yaml("config/main_paths.yaml")
+    return load_yaml("app/config/main_paths.yaml")
 
 
 def get_app_config() -> dict:
