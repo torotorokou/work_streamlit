@@ -2,7 +2,7 @@ import yaml
 import pandas as pd
 from pathlib import Path
 from utils.type_converter import resolve_dtype
-
+import os
 # from utils.logger import app_logger
 
 
@@ -16,14 +16,15 @@ def load_yaml(filename: str) -> dict:
     Returns:
         dict: YAMLから読み込まれた辞書データ
     """
-    path = Path(filename)
+    base_dir = os.getenv("BASE_DIR", "/work/app")  # ← デフォルトもつけると安心
+    path = Path(base_dir) / filename
     with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
 def get_path_config() -> dict:
     """main_paths.yamlを辞書として取得"""
-    return load_yaml("app/config/main_paths.yaml")
+    return load_yaml("config/main_paths.yaml")
 
 
 def get_app_config() -> dict:

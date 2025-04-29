@@ -1,5 +1,5 @@
 class BaseConfigLoader:
-    def __init__(self, path_config_file="app/config/main_paths.yaml"):
+    def __init__(self, path_config_file="config/main_paths.yaml"):
         self.paths = self.load_yaml(path_config_file)
 
     def _load_yaml(self, path: str) -> dict:
