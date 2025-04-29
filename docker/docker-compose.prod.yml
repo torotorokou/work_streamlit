@@ -11,6 +11,7 @@ services:
       - APP_ENV=prod
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/work/app
+      - BASE_DIR=/work/app  # ← YAMLで使うベースパス
     restart: unless-stopped  # ←追加
     command:
       - streamlit

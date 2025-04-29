@@ -1,10 +1,10 @@
-# app/app/config/main_paths.yaml
+# app/config/main_paths.yaml
 
 # 📄 CSVファイル関連パス
 csv:
-    receive_header_definition: 'app/config/input_header_info.csv' # 種別判定用ヘッダー
-    required_columns_definition: 'app/config/required_columns_definition.csv' # 必須カラムの定義
-    expected_dtypes: 'app/config/expected_dtypes.json' # データ型の期待定義
+    receive_header_definition: 'config/input_header_info.csv' # 種別判定用ヘッダー
+    required_columns_definition: 'config/required_columns_definition.csv' # 必須カラムの定義
+    expected_dtypes: 'config/expected_dtypes.json' # データ型の期待定義
     unit_price_table: '/work/app/data/master/unit_price_table.csv' # 単価
 
 # # excelテンプレートパス
@@ -26,9 +26,9 @@ logs:
 
 # yamlパス
 config_files:
-    app_config: 'app/config/app_config.yaml'
-    expected_dtypes: 'app/config/expected_import_csv_dtypes.yaml'
-    page_config: 'app/config/page_config.yaml'
-    templates_config: 'app/config/templates_config.yaml'
-    csv_sources_config: 'app/config/csv_sources_config.yaml'
-    required_columns_definition: 'app/config/required_columns_definition.yaml'
+    app_config: 'config/app_config.yaml'
+    expected_dtypes: 'config/expected_import_csv_dtypes.yaml'
+    page_config: 'config/page_config.yaml'
+    templates_config: 'config/templates_config.yaml'
+    csv_sources_config: 'config/csv_sources_config.yaml'
+    required_columns_definition: 'config/required_columns_definition.yaml'
