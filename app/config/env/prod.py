@@ -1,4 +1,4 @@
-from config.settings.base import *
+from config.env.base import *
 
 # --- 本番環境用設定 ---
 

@@ -2,7 +2,7 @@ import streamlit as st
 from app_pages.page_router import route_page
 from components.ui_style import apply_global_style
 from utils.config_loader import get_app_config
-from config.settings.loader import load_settings
+from config.env.loader import load_settings
 
 
 # ページ設定

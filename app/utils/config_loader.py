@@ -62,11 +62,10 @@ def get_page_config() -> list:
 
 
 def get_unit_price_table_csv() -> pd.DataFrame:
-    """
-    単価表CSVを読み込んでDataFrameとして返す。
-    """
+    base_dir = os.getenv("BASE_DIR", "/work/app")
     csv_path = get_path_config()["csv"]["unit_price_table"]
-    df = pd.read_csv(csv_path, encoding="utf-8-sig")
+    full_path = Path(base_dir) / csv_path
+    df = pd.read_csv(full_path, encoding="utf-8-sig")
     return df
 
 
