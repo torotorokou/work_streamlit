@@ -1,0 +1,12 @@
+version: '3'
+services:
+  app:
+    container_name: sanbou_app_dev  # ★ここを追加
+    volumes:
+      - ../:/work
+      - ~/.ssh:/root/.ssh:ro
+    ports:
+      - "8503:8503"
+    environment:
+      - APP_ENV=dev
+    command: streamlit run app/app.py --server.port=8503 --server.address=0.0.0.0

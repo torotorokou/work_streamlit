@@ -7,7 +7,7 @@ services:
     ports:
       - '8503:8503'
     volumes:
-      - ../:/work        
+      - ../:/work
       - ~/.ssh:/root/.ssh #git用
     environment:
       - PYTHONUNBUFFERED=1

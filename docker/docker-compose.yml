@@ -1,14 +1,25 @@
-version: '3'
+version: '3.8'
+
 services:
-  sambou_streamlit_app:
-    build: .
-    ports:
-      - '8501:8501'
-    volumes:
-      - C:\Users\synth\Desktop\works_env\21.Work_Streamlit\Sanbou_app:/work
-      - C:\Users\synth\.ssh:/root/.ssh  # ホストの鍵をコンテナに共有（read-only）
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/work
+  app:
+    container_name: sanbou_dev
+    build:
+      context:  ${PWD}/..
+      dockerfile: docker/Dockerfile.dev
     working_dir: /work
-    command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0
+    volumes:
+      - .:/work
+    ports:
+      - "8503:8503"
+    environment:
+      - APP_ENV=dev
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/work/app
+    command:
+      - streamlit
+      - run
+      - app/app.py
+      - --server.port=8503
+      - --server.address=0.0.0.0
+      - --server.headless=true
+      - --server.enableCORS=false
