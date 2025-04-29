@@ -1,11 +1,11 @@
 version: '3'
 services:
-  sambou_streamlit_app_dev:
+  app:
     build:
       context: ..
       dockerfile: docker/Dockerfile.dev
     ports:
-      - '8503:8503'
+      - '8503:8501'
     volumes:
       - ../:/work
       - ~/.ssh:/root/.ssh #git用
@@ -14,4 +14,4 @@ services:
       - PYTHONPATH=/work/app
       - APP_ENV=dev
     working_dir: /work
-    command: streamlit run app/app.py --server.port=8503 --server.address=0.0.0.0
+    command: streamlit run app/app.py --server.port=8501 --server.address=0.0.0.0

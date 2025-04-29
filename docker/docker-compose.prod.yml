@@ -1,14 +1,22 @@
-version: '3'
 services:
   app:
+    container_name: sanbou_prod
     build:
-      context: ..
+      context: ../
       dockerfile: docker/Dockerfile.prod
+    working_dir: /work
     ports:
-      - '8501:8501'
+      - "8501:8501"
     environment:
+      - APP_ENV=prod
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/work/app
-      - APP_ENV=prod
-    working_dir: /work
-    command: streamlit run app/app.py --server.port=8501 --server.address=0.0.0.0 --server.headless=true --server.enableCORS=false
+    restart: unless-stopped  # ←追加
+    command:
+      - streamlit
+      - run
+      - app/app.py
+      - --server.port=8501
+      - --server.address=0.0.0.0
+      - --server.headless=true
+      - --server.enableCORS=false
