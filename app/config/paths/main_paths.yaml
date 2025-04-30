@@ -3,7 +3,7 @@
 # 📄 CSVファイル関連パス
 csv:
     receive_header_definition: 'data/master/input_header_info.csv' # 種別判定用ヘッダー
-    required_columns_definition: 'config/required_columns_definition.csv' # 必須カラムの定義
+    csv_required_columns: 'config/csv_required_columns.csv' # 必須カラムの定義
     expected_dtypes: 'config/expected_dtypes.json' # データ型の期待定義
     unit_price_table: 'data/master/unit_price_table.csv' # 単価
 

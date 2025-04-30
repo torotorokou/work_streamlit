@@ -1,7 +1,7 @@
 import streamlit as st
 
 # from config.page_config import page_dict, page_dict_reverse, page_labels
-from utils.config_loader import get_page_dicts, get_app_config
+from utils.config_loader import get_page_dicts, get_app_setting
 from app_pages.top_page import show_top_page
 from app_pages.manage.controller import manage_work_controller
 from components.manual_links import show_manual_links
@@ -54,7 +54,7 @@ def _render_sidebar(page_labels):
 
 
 def _render_selected_page():
-    title = get_app_config()["title"]
+    title = get_app_setting()["title"]
     selected_label = st.session_state.selected_page
     pages = get_page_config()
 

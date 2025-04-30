@@ -1,4 +1,4 @@
-from utils.config_loader import get_required_columns_definition
+from utils.config_loader import get_csv_required_columns
 from utils.logger import app_logger
 
 
@@ -53,10 +53,10 @@ def load_all_filtered_dataframes(
     dict
         フィルタ済みDataFrameの辞書（key: str → df: pd.DataFrame）
     """
-    from utils.config_loader import get_required_columns_definition
+    from utils.config_loader import get_csv_required_columns
 
     df_dict = {}
-    column_defs = get_required_columns_definition(template_name)
+    column_defs = get_csv_required_columns(template_name)
 
     for key in keys:
         if key in dfs:

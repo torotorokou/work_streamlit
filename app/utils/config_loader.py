@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 from utils.type_converter import resolve_dtype
 import os
+
 # from utils.logger import app_logger
 
 
@@ -27,9 +28,9 @@ def get_path_config() -> dict:
     return load_yaml("config/main_paths.yaml")
 
 
-def get_app_config() -> dict:
-    """main_paths.yaml 経由で app_config を読み込む"""
-    config_path = get_path_config()["config_files"]["app_config"]
+def get_app_setting() -> dict:
+    """main_paths.yaml 経由で app_setting を読み込む"""
+    config_path = get_path_config()["config_files"]["app_setting"]
     return load_yaml(config_path)
 
 
@@ -163,7 +164,7 @@ def get_expected_dtypes_by_template(template_key: str) -> dict:
     return config.get(template_key, {})
 
 
-def get_required_columns_definition(template_name: str) -> dict:
-    config_path = get_path_config()["config_files"]["required_columns_definition"]
+def get_csv_required_columns(template_name: str) -> dict:
+    config_path = get_path_config()["config_files"]["csv_required_columns"]
     all_defs = load_yaml(config_path)
     return all_defs.get(template_name, {})
