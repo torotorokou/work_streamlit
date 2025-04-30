@@ -4,8 +4,6 @@ from pathlib import Path
 from utils.type_converter import resolve_dtype
 import os
 
-# from utils.logger import app_logger
-
 
 def load_yaml(filename: str) -> dict:
     """
@@ -17,10 +15,15 @@ def load_yaml(filename: str) -> dict:
     Returns:
         dict: YAMLから読み込まれた辞書データ
     """
-    base_dir = os.getenv("BASE_DIR", "/work/app")  # ← デフォルトもつけると安心
+    base_dir = os.getenv("BASE_DIR", "/work/app")
     path = Path(base_dir) / filename
-    with open(path, encoding="utf-8") as f:
+
+    if not path.exists():
+        raise FileNotFoundError(f"指定されたYAMLファイルが存在しません: {path}")
+
+    with path.open(encoding="utf-8") as f:
         return yaml.safe_load(f)
+
 
 
 def get_path_config() -> dict:
@@ -30,13 +33,13 @@ def get_path_config() -> dict:
 
 def get_app_setting() -> dict:
     """main_paths.yaml 経由で app_setting を読み込む"""
-    config_path = get_path_config()["config_files"]["app_setting"]
+    config_path = get_path_config()["yaml_files"]["app_setting"]
     return load_yaml(config_path)
 
 
 def get_expected_dtypes() -> dict:
     """main_paths.yaml 経由で expected_dtypes.yaml を読み込み、型を解決する"""
-    config_path = get_path_config()["config_files"]["expected_dtypes"]
+    config_path = get_path_config()["yaml_files"]["expected_dtypes"]
     raw_yaml = load_yaml(config_path)
 
     resolved = {}
@@ -52,13 +55,13 @@ def get_expected_dtypes() -> dict:
 
 def get_template_config() -> dict:
     """main_paths.yaml 経由で templates_config.yaml を読み込む"""
-    config_path = get_path_config()["config_files"]["templates_config"]
+    config_path = get_path_config()["yaml_files"]["templates_config"]
     return load_yaml(config_path)
 
 
 def get_page_config() -> list:
     """main_paths.yaml 経由で page_config.yaml のページ定義を取得"""
-    config_path = get_path_config()["config_files"]["page_config"]
+    config_path = get_path_config()["yaml_files"]["page_config"]
     return load_yaml(config_path)["pages"]
 
 
@@ -86,7 +89,7 @@ def get_page_dicts():
 
 
 def get_csv_sources_config() -> dict:
-    config_path = get_path_config()["config_files"]["csv_sources_config"]
+    config_path = get_path_config()["yaml_files"]["csv_sources_config"]
     return load_yaml(config_path)
 
 
@@ -165,6 +168,6 @@ def get_expected_dtypes_by_template(template_key: str) -> dict:
 
 
 def get_csv_required_columns(template_name: str) -> dict:
-    config_path = get_path_config()["config_files"]["csv_required_columns"]
+    config_path = get_path_config()["yaml_files"]["csv_required_columns"]
     all_defs = load_yaml(config_path)
     return all_defs.get(template_name, {})

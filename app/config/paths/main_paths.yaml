@@ -25,7 +25,7 @@ logs:
     debug: 'logs/debug.log'
 
 # yamlパス
-config_files:
+yaml_files:
     app_setting: 'config/app/app_setting.yaml'
     csv_column_dtypes: 'config/csv_definitions/csv_column_dtypes.yaml'
     page_config: 'config/app/page_config.yaml'
