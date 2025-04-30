@@ -10,13 +10,16 @@ services:
     environment:
       - APP_ENV=prod
       - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/work/app
-      - BASE_DIR=/work/app  # ← YAMLで使うベースパス
-    restart: unless-stopped  # ←追加
+      # - PYTHONPATH=/work/app
+      # - BASE_DIR=/work/app
+    env_file:
+      - ../.env   # ← GITHUB_TOKEN や REPO_TAG, REPO_URL をここから読み込む
+    restart: unless-stopped
     command:
       - streamlit
       - run
-      - app/app.py
+      # - app/app.py
+      - app.py
       - --server.port=8501
       - --server.address=0.0.0.0
       - --server.headless=true
