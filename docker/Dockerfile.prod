@@ -2,16 +2,28 @@ FROM python:3.10-slim
 
 WORKDIR /work
 
+# 必要パッケージのインストール（git とフォント）
 RUN apt-get update && \
-    apt-get install -y fonts-noto-cjk fonts-noto && \
+    apt-get install -y git fonts-noto-cjk fonts-noto && \
     rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+# --- ビルド時引数 ---
+ARG GITHUB_TOKEN
+ARG REPO_TAG=main
+ENV REPO_URL=https://$GITHUB_TOKEN@github.com/torotorokou/SanbouKun.git
+
+# --- sparse-checkoutで app/ と requirements.txt のみ取得 ---
+RUN git clone --filter=blob:none --no-checkout $REPO_URL /work && \
+    cd /work && \
+    git sparse-checkout init --cone && \
+    git sparse-checkout set app requirements.txt && \
+    git checkout $REPO_TAG && \
+    rm -rf .git
+
+# --- 依存ライブラリのインストール ---
 RUN pip install --no-cache-dir -r requirements.txt
 
-# コード取り込み
-COPY ./app /work/app
-
+# --- Streamlit アプリ起動 ---
 EXPOSE 8501
 
 CMD ["streamlit", "run", "app/app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.enableCORS=false"]

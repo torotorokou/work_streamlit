@@ -25,7 +25,6 @@ def load_yaml(filename: str) -> dict:
         return yaml.safe_load(f)
 
 
-
 def get_path_config() -> dict:
     """main_paths.yamlを辞書として取得"""
     return load_yaml("config/main_paths.yaml")

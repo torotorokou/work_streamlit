@@ -31,27 +31,36 @@ class PathAccessor:
     def as_dict(self) -> dict[str, Path]:
         return self._paths
 
+    def __repr__(self) -> str:
+        lines = [f"  {k}: {v}" for k, v in self._paths.items()]
+        return "PathAccessor:\n" + "\n".join(lines)
+
 
 # --- 3. 全体をまとめて扱うファサードクラス ---
 class MainPaths:
-    def __init__(self, config_path: str | Path = "config/paths/main_paths.yaml"):
+    def __init__(self):
+        config_path = Path("config/paths/main_paths.yaml")
         loader = MainPathsLoader(config_path)
 
         self.csv = PathAccessor(PathConverter.convert(loader.get_section("csv")))
-        self.directories = PathAccessor(PathConverter.convert(loader.get_section("directories")))
+        self.directories = PathAccessor(
+            PathConverter.convert(loader.get_section("directories"))
+        )
         self.logs = PathAccessor(PathConverter.convert(loader.get_section("logs")))
-        self.config_files = PathAccessor(PathConverter.convert(loader.get_section("config_files")))
+        self.yaml_files = PathAccessor(
+            PathConverter.convert(loader.get_section("yaml_files"))
+        )
 
-    def get(self, category: str, key: str) -> Path:
-        section = getattr(self, category, None)
-        if section is None:
-            raise ValueError(f"カテゴリー {category} は存在しません")
-        return section.get(key)
+    # def get(self, category: str, key: str) -> Path:
+    #     section = getattr(self, category, None)
+    #     if section is None:
+    #         raise ValueError(f"カテゴリー {category} は存在しません")
+    #     return section.get(key)
 
-    def as_dict(self) -> dict:
-        return {
-            "csv": self.csv.as_dict(),
-            "directories": self.directories.as_dict(),
-            "logs": self.logs.as_dict(),
-            "config_files": self.config_files.as_dict(),
-        }
+    # def as_dict(self) -> dict:
+    #     return {
+    #         "csv": self.csv.as_dict(),
+    #         "directories": self.directories.as_dict(),
+    #         "logs": self.logs.as_dict(),
+    #         "config_files": self.config_files.as_dict(),
+    #     }

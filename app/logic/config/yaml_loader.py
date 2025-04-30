@@ -1,5 +1,6 @@
 import yaml
 
+
 class YamlConfigLoader:
     def __init__(self, path_loader):
         self.path_loader = path_loader

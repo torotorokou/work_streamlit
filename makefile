@@ -12,9 +12,35 @@ staging:
 	docker-compose -p sanbou_staging -f docker/docker-compose.staging.yml up
 
 # 本番環境起動
+# .envファイルから環境変数を読み込んで本番環境起動
+
+# 環境ファイルのパス
+ENV_FILE=.env
+
+# プロジェクト名
+PROJECT_NAME=sanbou_prod
+
+# Docker Composeファイル
+COMPOSE_FILE=docker/docker-compose.prod.yml
+
+# Dockerfileの場所（buildに使う）
+DOCKERFILE=docker/prod.Dockerfile
+
+# Dockerイメージ名
+IMAGE_NAME=sanboukun:prod
+
 prod:
-	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml down || true
-	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up
+	@echo "🔄 本番環境を再構築して起動します..."
+	@echo "📦 .env を読み込み中..."
+	@set -a && . $(ENV_FILE) && set +a && \
+	docker build \
+		--build-arg GITHUB_TOKEN=$$GITHUB_TOKEN \
+		--build-arg REPO_TAG=$$REPO_TAG \
+		-f $(DOCKERFILE) \
+		-t $(IMAGE_NAME) .
+
+	docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) down || true
+	docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) up -d
 
 # コンテナ停止（sanbou_app系）
 down:
