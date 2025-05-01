@@ -26,7 +26,7 @@ prod:
 	docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) up -d
 
 # 再ビルド（キャッシュ無効化）
-rebuild:
+prod_rebuild:
 	@echo "Starting full rebuild with --no-cache..."
 	@echo "Reloading .env with PowerShell..."
 
@@ -83,3 +83,7 @@ status-staging:
 
 restart-staging:
 	docker-compose -p sanbou_staging -f docker/docker-compose.staging.yml restart
+
+
+push-all-tags:
+	git push origin --tags
