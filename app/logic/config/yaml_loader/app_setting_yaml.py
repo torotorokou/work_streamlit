@@ -1,5 +1,9 @@
 from logic.config.main_paths import MainPaths
-from logic.config.yaml_loader import YamlConfigLoader, YamlPathResolver,YamlLoaderInterface
+from logic.config.yaml_loader import (
+    YamlConfigLoader,
+    YamlPathResolver,
+    YamlLoaderInterface,
+)
 
 
 class AppSettingLoader(YamlLoaderInterface):

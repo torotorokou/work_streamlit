@@ -2,9 +2,9 @@
 
 # 📄 CSVファイル関連パス
 csv:
-    csv_required_columns: 'config/csv_required_columns.csv' # 必須カラムの定義
-    expected_dtypes: 'config/expected_dtypes.json' # データ型の期待定義
-    receive_header_definition: 'data/master/input_header_info.csv' # 種別判定用ヘッダー
+    # csv_required_columns: 'config/csv_required_columns.csv' # 必須カラムの定義
+    # expected_dtypes: 'config/expected_dtypes.json' # データ型の期待定義
+    receive_header_definition: 'data/master/receive_header_definition.csv' # 種別判定用ヘッダー
     unit_price_table: 'data/master/unit_price_table.csv' # 単価
 
 # # excelテンプレートパス
@@ -13,7 +13,7 @@ csv:
 
 # 📁 ディレクトリ構成
 directories:
-    master_data: 'app/data/master' # マスターCSVの格納場所
+    # master_data: 'app/data/master' # マスターCSVの格納場所
     output: 'app/data/output' # 出力結果の保存先
     temp: 'app/data/temp' # 一時ファイル格納
     template: 'app/data/template'

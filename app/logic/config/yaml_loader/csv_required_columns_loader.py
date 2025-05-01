@@ -1,5 +1,9 @@
 from logic.config.main_paths import MainPaths
-from logic.config.yaml_loader import YamlConfigLoader, YamlPathResolver, YamlLoaderInterface
+from logic.config.yaml_loader import (
+    YamlConfigLoader,
+    YamlPathResolver,
+    YamlLoaderInterface,
+)
 
 
 class CsvRequiredColumnsLoader(YamlLoaderInterface):
@@ -18,7 +22,9 @@ class CsvRequiredColumnsResolver:
     """テンプレート名に応じて必要なCSV列定義を解決するクラス"""
 
     def __init__(self):
-        self._all_defs = CsvRequiredColumnsLoader().get()  # ← .get() を使うことでInterfaceに依存
+        self._all_defs = (
+            CsvRequiredColumnsLoader().get()
+        )  # ← .get() を使うことでInterfaceに依存
 
     def get(self, template_name: str) -> dict:
         return self._all_defs.get(template_name, {})

@@ -64,12 +64,12 @@ import os
 #     return load_yaml(config_path)["pages"]
 
 
-def get_unit_price_table_csv() -> pd.DataFrame:
-    base_dir = os.getenv("BASE_DIR", "/work/app")
-    csv_path = get_path_config()["csv"]["unit_price_table"]
-    full_path = Path(base_dir) / csv_path
-    df = pd.read_csv(full_path, encoding="utf-8-sig")
-    return df
+# def get_unit_price_table_csv() -> pd.DataFrame:
+#     base_dir = os.getenv("BASE_DIR", "/work/app")
+#     csv_path = get_path_config()["csv"]["unit_price_table"]
+#     full_path = Path(base_dir) / csv_path
+#     df = pd.read_csv(full_path, encoding="utf-8-sig")
+#     return df
 
 
 def get_page_dicts():
