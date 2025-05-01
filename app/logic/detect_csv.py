@@ -1,4 +1,3 @@
-
 from utils.logger import app_logger  # ← Streamlit環境用のロガー取得
 from utils.file_loader import read_csv
 from utils.config_loader import receive_header_definition
@@ -19,7 +18,6 @@ def load_template_signatures(df) -> dict:
     return templates
 
 
-
 def detect_csv_type(file) -> str:
     logger = app_logger()
     try:
@@ -27,7 +25,9 @@ def detect_csv_type(file) -> str:
 
         # 判別ルール読み込み
         df_csv = receive_header_definition()
-        logger.info(f"🧾 ヘッダー定義DataFrame（先頭5行）:\n{df_csv.head().to_string(index=False)}")
+        logger.info(
+            f"🧾 ヘッダー定義DataFrame（先頭5行）:\n{df_csv.head().to_string(index=False)}"
+        )
 
         signatures = load_template_signatures(df_csv)
         logger.info(f"📌 判別ルール（signatures）: {signatures}")
@@ -40,7 +40,7 @@ def detect_csv_type(file) -> str:
 
         for name, expected in signatures.items():
             logger.info(f"🔍 比較中: 種別 = {name}, 期待ヘッダー = {expected}")
-            if cols[:len(expected)] == expected:
+            if cols[: len(expected)] == expected:
                 logger.info(f"✅ 種別判定成功: {name}")
                 return name
 

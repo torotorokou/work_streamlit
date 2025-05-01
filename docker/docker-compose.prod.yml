@@ -1,22 +1,28 @@
+version: "3.9"
+
 services:
   app:
     container_name: sanbou_prod
     build:
       context: ../
       dockerfile: docker/Dockerfile.prod
+      args:
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
+        REPO_TAG: ${REPO_TAG}
+        REPO_URL: ${REPO_URL}
     working_dir: /work
     ports:
       - "8501:8501"
     environment:
       - APP_ENV=prod
       - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/work/app
-      - BASE_DIR=/work/app  # ← YAMLで使うベースパス
-    restart: unless-stopped  # ←追加
+    env_file:
+      - ../.env
+    restart: unless-stopped
     command:
       - streamlit
       - run
-      - app/app.py
+      - app.py
       - --server.port=8501
       - --server.address=0.0.0.0
       - --server.headless=true

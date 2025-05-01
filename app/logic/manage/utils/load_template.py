@@ -1,6 +1,7 @@
 from pathlib import Path
 import pandas as pd
-import os 
+import os
+
 
 def load_master_and_template(master_path: str | Path) -> pd.DataFrame:
     """

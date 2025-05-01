@@ -1,37 +1,85 @@
-# --- 環境設定 ---
-PROJECT_NAME=sanbou_app
+# --- 共通設定 ---
+ENV_FILE=.env
+PROJECT_NAME=sanbou_prod
+COMPOSE_FILE=docker/docker-compose.prod.yml
+DOCKERFILE=docker/prod.Dockerfile
+IMAGE_NAME=sanboukun:prod
 
-# --- コマンド ---
+# --- 環境起動 ---
 
-# 開発環境起動
 dev:
 	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml up
 
-# ステージング環境起動
 staging:
 	docker-compose -p sanbou_staging -f docker/docker-compose.staging.yml up
 
-# 本番環境起動
-prod:
-	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml down || true
-	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up
 
-# コンテナ停止（sanbou_app系）
+# 本番ビルド＆起動
+prod:
+	@echo "Starting production environment rebuild..."
+	@echo "Loading .env with PowerShell..."
+
+	powershell -Command "Get-Content $(ENV_FILE) | Where-Object { \$_.Trim() -match '^[^#].*=.*' } | ForEach-Object { \$kv = \$_.Split('=', 2); Set-Item -Path Env:\$kv[0].Trim() -Value \$kv[1].Trim() }; \
+	docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) build --build-arg GITHUB_TOKEN=\$env:GITHUB_TOKEN --build-arg REPO_TAG=\$env:REPO_TAG --build-arg REPO_URL=\$env:REPO_URL"
+
+	docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) down || true
+	docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) up -d
+
+# 再ビルド（キャッシュ無効化）
+rebuild:
+	@echo "Starting full rebuild with --no-cache..."
+	@echo "Reloading .env with PowerShell..."
+
+	powershell -Command "Get-Content .env | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
+	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml build --no-cache --build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN --build-arg REPO_TAG=$$env:REPO_TAG --build-arg REPO_URL=$$env:REPO_URL"
+
+	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml down || true
+	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up -d
+
+# --- 停止・削除 ---
+
 down:
 	docker-compose -p $(PROJECT_NAME) down
 
-# sanbou_app系のコンテナ・ボリューム・イメージを削除
 clean:
-	docker-compose -p $(PROJECT_NAME) -f docker/docker-compose.dev.yml down --volumes --rmi local
-	docker-compose -p $(PROJECT_NAME) -f docker/docker-compose.prod.yml down --volumes --rmi local
+	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml down --volumes --rmi local
+	docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) down --volumes --rmi local
 	docker system prune -a -f
 
-# --- Streamlit管理 ---
+# --- Streamlit操作 ---
 
-# 開発コンテナ内でStreamlit起動
 st-up:
 	streamlit run app/app.py --server.port=8504 --server.address=0.0.0.0 --server.headless=false --server.enableCORS=false
 
-# ポート8504を使ってるプロセスをkillする（確実）
 st-kill:
 	@fuser -k 8504/tcp || true
+
+
+# --- モニタリング・ログ用ユーティリティ ---
+
+logs-prod:
+	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml logs -f
+
+status-prod:
+	docker ps --filter "name=sanbou_prod"
+
+restart-prod:
+	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml restart
+
+logs-dev:
+	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml logs -f
+
+status-dev:
+	docker ps --filter "name=sanbou_dev"
+
+restart-dev:
+	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml restart
+
+logs-staging:
+	docker-compose -p sanbou_staging -f docker/docker-compose.staging.yml logs -f
+
+status-staging:
+	docker ps --filter "name=sanbou_staging"
+
+restart-staging:
+	docker-compose -p sanbou_staging -f docker/docker-compose.staging.yml restart

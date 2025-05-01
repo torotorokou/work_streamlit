@@ -28,6 +28,7 @@ def load_template_workbook(template_path: str | Path) -> Workbook:
     full_path = base_dir / Path(template_path)
     return load_workbook(full_path)
 
+
 def write_dataframe_to_worksheet(df: pd.DataFrame, ws: Worksheet, logger=None):
     if logger is None:
         logger = app_logger()
