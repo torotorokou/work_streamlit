@@ -5,24 +5,24 @@ from utils.type_converter import resolve_dtype
 import os
 
 
-def load_yaml(filename: str) -> dict:
-    """
-    指定されたYAMLファイルを辞書形式で読み込む。
+# def load_yaml(filename: str) -> dict:
+#     """
+#     指定されたYAMLファイルを辞書形式で読み込む。
 
-    Parameters:
-        filename (str): 読み込むYAMLファイル名（config/からの相対パス）
+#     Parameters:
+#         filename (str): 読み込むYAMLファイル名（config/からの相対パス）
 
-    Returns:
-        dict: YAMLから読み込まれた辞書データ
-    """
-    base_dir = os.getenv("BASE_DIR", "/work/app")
-    path = Path(base_dir) / filename
+#     Returns:
+#         dict: YAMLから読み込まれた辞書データ
+#     """
+#     base_dir = os.getenv("BASE_DIR", "/work/app")
+#     path = Path(base_dir) / filename
 
-    if not path.exists():
-        raise FileNotFoundError(f"指定されたYAMLファイルが存在しません: {path}")
+#     if not path.exists():
+#         raise FileNotFoundError(f"指定されたYAMLファイルが存在しません: {path}")
 
-    with path.open(encoding="utf-8") as f:
-        return yaml.safe_load(f)
+#     with path.open(encoding="utf-8") as f:
+#         return yaml.safe_load(f)
 
 
 # def get_path_config() -> dict:
@@ -52,10 +52,10 @@ def load_yaml(filename: str) -> dict:
 #     return resolved
 
 
-def get_template_config() -> dict:
-    """main_paths.yaml 経由で templates_config.yaml を読み込む"""
-    config_path = get_path_config()["yaml_files"]["templates_config"]
-    return load_yaml(config_path)
+# def get_template_config() -> dict:
+#     """main_paths.yaml 経由で templates_config.yaml を読み込む"""
+#     config_path = get_path_config()["yaml_files"]["templates_config"]
+#     return load_yaml(config_path)
 
 
 # def get_page_config() -> list:

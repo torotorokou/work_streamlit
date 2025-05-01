@@ -1,7 +1,7 @@
 # logic/config/expected_dtypes_loader.py
 
 from logic.config.main_paths import MainPaths
-from logic.config.yaml_loader import YamlConfigLoader,YamlPathResolver
+from logic.config.yaml_loader import YamlConfigLoader, YamlPathResolver
 from utils.type_converter import resolve_dtype  # dtype変換ユーティリティ関数を想定
 
 
@@ -29,6 +29,7 @@ class ExpectedDtypesResolver:
             resolved[template_key] = {}
             for file_key, dtype_map in file_map.items():
                 resolved[template_key][file_key] = {
-                    col: resolve_dtype(dtype_str) for col, dtype_str in dtype_map.items()
+                    col: resolve_dtype(dtype_str)
+                    for col, dtype_str in dtype_map.items()
                 }
         return resolved

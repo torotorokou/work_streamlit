@@ -1,8 +1,8 @@
 from logic.config.main_paths import MainPaths
-from logic.config.yaml_loader import YamlConfigLoader,YamlPathResolver
+from logic.config.yaml_loader import YamlConfigLoader, YamlPathResolver,YamlLoaderInterface
 
 
-class TemplatesConfig:
+class TemplatesConfig(YamlLoaderInterface):
     """main_paths.yaml 経由で templates_config.yaml を読み込むクラス"""
 
     def __init__(self):
