@@ -58,10 +58,10 @@ def get_template_config() -> dict:
     return load_yaml(config_path)
 
 
-def get_page_config() -> list:
-    """main_paths.yaml 経由で page_config.yaml のページ定義を取得"""
-    config_path = get_path_config()["yaml_files"]["page_config"]
-    return load_yaml(config_path)["pages"]
+# def get_page_config() -> list:
+#     """main_paths.yaml 経由で page_config.yaml のページ定義を取得"""
+#     config_path = get_path_config()["yaml_files"]["page_config"]
+#     return load_yaml(config_path)["pages"]
 
 
 def get_unit_price_table_csv() -> pd.DataFrame:
@@ -87,9 +87,9 @@ def get_page_dicts():
     return page_dict, reverse_dict, labels
 
 
-def get_csv_sources_config() -> dict:
-    config_path = get_path_config()["yaml_files"]["csv_sources_config"]
-    return load_yaml(config_path)
+# def get_csv_sources_config() -> dict:
+#     config_path = get_path_config()["yaml_files"]["csv_sources_config"]
+#     return load_yaml(config_path)
 
 
 def get_csv_label_map() -> dict:
