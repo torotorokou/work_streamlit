@@ -8,6 +8,8 @@ from utils.logger import app_logger
 from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from copy import copy  # ← 追加
+from pathlib import Path
+import os
 
 
 def safe_excel_value(value):
@@ -21,9 +23,10 @@ def safe_excel_value(value):
     return value
 
 
-def load_template_workbook(template_path: str) -> Workbook:
-    return load_workbook(template_path)
-
+def load_template_workbook(template_path: str | Path) -> Workbook:
+    base_dir = Path(os.getenv("BASE_DIR", "/work/app"))
+    full_path = base_dir / Path(template_path)
+    return load_workbook(full_path)
 
 def write_dataframe_to_worksheet(df: pd.DataFrame, ws: Worksheet, logger=None):
     if logger is None:

@@ -1,5 +1,6 @@
 import os
 
+
 def load_settings():
     """環境に応じた設定をロードして返す"""
     app_env = os.getenv("APP_ENV", "dev")
