@@ -3,7 +3,7 @@ import os
 import socket
 import getpass
 import time
-from logic.config.main_paths import MainPathsLoader
+from logic.config.main_paths import MainPathsLoader, MainPaths
 
 
 # 日本時間に変換する関数（UTC + 9時間）
@@ -12,7 +12,8 @@ def jst_time(*args):
 
 
 def app_logger(to_console=True) -> logging.Logger:
-    config = get_path_config()
+    config = MainPaths().logs()
+    get_path_config()
     log_path = config["logs"]["app"]
 
     # ログフォルダがなければ作成
