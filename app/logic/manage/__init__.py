@@ -2,7 +2,7 @@
 import sys
 import os
 import importlib
-from utils.config_loader import get_template_config
+from logic.config.templates.templates_config import TemplatesConfig
 from utils.logger import app_logger
 
 

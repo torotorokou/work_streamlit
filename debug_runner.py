@@ -5,7 +5,7 @@ os.chdir("/work")
 # %% 準備
 import pandas as pd
 from utils.logger import app_logger
-from utils.config_loader import get_template_config
+from logic.config.templates.templates_config import TemplatesConfig
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.utils.load_template import load_master_and_template
 from IPython.display import display
@@ -32,7 +32,8 @@ display(master_csv_shobun)
 
 import pandas as pd
 from utils.logger import app_logger
-from utils.config_loader import get_template_config
+from 
+from logic.config.templates.templates_config import TemplatesConfig
 from logic.manage.utils.load_template import load_master_and_template
 from utils.value_setter import set_value_fast
 from logic.manage.utils.excel_tools import create_label_rows_generic, sort_by_cell_row

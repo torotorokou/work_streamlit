@@ -1,4 +1,4 @@
-from logic.config.templates_config import TemplatesConfig
+from logic.config.templates.templates_config import TemplatesConfig
 
 class TemplateFileRequirementResolver:
     def __init__(self):

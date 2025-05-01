@@ -9,7 +9,7 @@ from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.utils.load_template import load_master_and_template
 
 # from logic.manage.utils.csv_loader import load_filtered_dataframe
-from utils.config_loader import get_template_config
+from logic.config.templates.templates_config import TemplatesConfig
 
 
 # 処理の統合

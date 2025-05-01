@@ -135,35 +135,35 @@ import os
 #     return {value["label"]: key for key, value in config.items()}
 
 
-def get_expected_dtypes_by_template(template_key: str) -> dict:
-    """
-    指定されたテンプレートキーに対応するCSVファイルごとの
-    カラム型定義（expected_dtypes）を返す。
+# def get_expected_dtypes_by_template(template_key: str) -> dict:
+#     """
+#     指定されたテンプレートキーに対応するCSVファイルごとの
+#     カラム型定義（expected_dtypes）を返す。
 
-    この関数は expected_dtypes.yaml を読み込んだ結果から、
-    指定テンプレートに対応する型定義だけを抽出して返します。
+#     この関数は expected_dtypes.yaml を読み込んだ結果から、
+#     指定テンプレートに対応する型定義だけを抽出して返します。
 
-    Parameters:
-        template_key (str): テンプレート名（例: "average_sheet", "factory_report"）
+#     Parameters:
+#         template_key (str): テンプレート名（例: "average_sheet", "factory_report"）
 
-    Returns:
-        dict: ファイルキーごとのカラム名と型の辞書。
-              例:
-              {
-                  "receive": {
-                      "金額": float,
-                      "正味重量": int,
-                      "伝票日付": "datetime64[ns]"
-                  },
-                  "yard": {
-                      "品名": str,
-                      ...
-                  }
-              }
-              対応テンプレートが存在しない場合は空の辞書を返します。
-    """
-    config = get_expected_dtypes()
-    return config.get(template_key, {})
+#     Returns:
+#         dict: ファイルキーごとのカラム名と型の辞書。
+#               例:
+#               {
+#                   "receive": {
+#                       "金額": float,
+#                       "正味重量": int,
+#                       "伝票日付": "datetime64[ns]"
+#                   },
+#                   "yard": {
+#                       "品名": str,
+#                       ...
+#                   }
+#               }
+#               対応テンプレートが存在しない場合は空の辞書を返します。
+#     """
+#     config = get_expected_dtypes()
+#     return config.get(template_key, {})
 
 
 # def get_csv_required_columns(template_name: str) -> dict:

@@ -1,7 +1,8 @@
 import streamlit as st
 from app_pages.page_router import route_page
 from components.ui_style import apply_global_style
-from utils.config_loader import get_app_setting
+from logic.config.yaml_loader.app_setting_yaml import AppSettingLoader
+from utils.config_loader import get_app_setting 
 from config.env.loader import load_settings
 
 

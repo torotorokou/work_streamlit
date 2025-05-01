@@ -1,6 +1,6 @@
 import pandas as pd
 from utils.logger import app_logger
-from utils.config_loader import get_template_config
+from logic.config.templates.templates_config import TemplatesConfig
 from logic.manage.utils.load_template import load_master_and_template
 from logic.manage.utils.excel_tools import add_label_rows_and_restore_sum
 from logic.manage.utils.summary_tools import (

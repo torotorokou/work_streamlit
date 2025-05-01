@@ -1,19 +1,23 @@
 # main_paths.py
 
 from pathlib import Path
-from utils.config_loader import load_yaml
+from logic.config.yaml_loader import YamlConfigLoader, YamlPathResolver
 
 
-# --- 1. YAMLローダー（読み込みだけ担当） ---
+# --- 1. YAMLローダー（構造化された読み込み） ---
 class MainPathsLoader:
-    def __init__(self, path: str | Path):
-        self._raw_data = load_yaml(path)
+    def __init__(self):
+        # ここでYAMLファイルのパスを解決
+        path_dict = {"main_paths": Path("config/paths/main_paths.yaml")}
+        path_loader = YamlPathResolver(path_dict)
+        self._loader = YamlConfigLoader(path_loader)
 
     def get_section(self, key: str) -> dict:
-        return self._raw_data.get(key, {})
+        data = self._loader.load_yaml_by_key("main_paths")
+        return data.get(key, {})
 
 
-# --- 2-1. 文字列→Path変換だけを担当するクラス（SRPに沿った分離） ---
+# --- 2-1. 文字列→Path変換だけを担当するクラス ---
 class PathConverter:
     @staticmethod
     def convert(section_data: dict) -> dict[str, Path]:
@@ -39,14 +43,9 @@ class PathAccessor:
 # --- 3. 全体をまとめて扱うファサードクラス ---
 class MainPaths:
     def __init__(self):
-        config_path = Path("config/paths/main_paths.yaml")
-        loader = MainPathsLoader(config_path)
+        loader = MainPathsLoader()
 
         self.csv = PathAccessor(PathConverter.convert(loader.get_section("csv")))
-        self.directories = PathAccessor(
-            PathConverter.convert(loader.get_section("directories"))
-        )
+        self.directories = PathAccessor(PathConverter.convert(loader.get_section("directories")))
         self.logs = PathAccessor(PathConverter.convert(loader.get_section("logs")))
-        self.yaml_files = PathAccessor(
-            PathConverter.convert(loader.get_section("yaml_files"))
-        )
+        self.yaml_files = PathAccessor(PathConverter.convert(loader.get_section("yaml_files")))

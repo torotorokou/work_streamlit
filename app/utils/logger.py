@@ -3,7 +3,7 @@ import os
 import socket
 import getpass
 import time
-from utils.config_loader import get_path_config
+from logic.config.main_paths import MainPathsLoader
 
 
 # 日本時間に変換する関数（UTC + 9時間）

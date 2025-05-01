@@ -1,7 +1,11 @@
 import streamlit as st
 
 # from config.page_config import page_dict, page_dict_reverse, page_labels
-from utils.config_loader import get_page_dicts, get_app_setting
+# from utils.config_loader import get_page_dicts, get_app_setting
+from logic.config.templates.template_config_resolver import TemplateLabelResolver
+from logic.config.yaml_config.app_setting_yaml import AppSettingLoader
+
+
 from app_pages.top_page import show_top_page
 from app_pages.manage.controller import manage_work_controller
 from components.manual_links import show_manual_links
@@ -26,7 +30,9 @@ def route_page():
     MVC構成のController的役割を担う。
     """
     # ページ構成情報を取得（ラベルとURL ID）
-    page_dict, page_dict_reverse, page_labels = get_page_dicts()
+    page_dict= TemplateLabelResolver.required_files_map()
+    page_dict_reverse= TemplateLabelResolver.key_to_label_dict()
+    page_labels= TemplateLabelResolver.all_labels()
 
     # URLパラメータとセッションの同期
     _handle_query_params(page_dict, page_dict_reverse)

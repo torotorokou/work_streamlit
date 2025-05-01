@@ -1,6 +1,6 @@
 # logic/config/expected_dtypes_loader.py
 
-from logic.config.main_paths import MainPaths
+from logic.config.main_paths import MainPathsLoader
 from logic.config.yaml_loader import YamlConfigLoader, YamlPathResolver
 from utils.type_converter import resolve_dtype  # dtype変換ユーティリティ関数を想定
 
@@ -9,7 +9,7 @@ class ExpectedDtypesLoader:
     """expected_dtypes.yaml の読み込みクラス"""
 
     def __init__(self):
-        path_dict = MainPaths().yaml_files.as_dict()
+        path_dict = MainPathsLoader().yaml_files.as_dict()
         resolver = YamlPathResolver(path_dict)
         self.loader = YamlConfigLoader(resolver)
 

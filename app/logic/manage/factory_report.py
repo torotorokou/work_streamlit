@@ -1,6 +1,6 @@
 import pandas as pd
 from utils.logger import app_logger, debug_logger
-from utils.config_loader import get_template_config
+from logic.config.templates.templates_config import TemplatesConfig
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.processors.factory_report.factory_report_shobun import process_shobun
 from logic.manage.processors.factory_report.factory_report_yuuka import process_yuuka
