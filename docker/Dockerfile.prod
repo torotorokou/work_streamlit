@@ -7,27 +7,22 @@ RUN apt-get update && \
     apt-get install -y git fonts-noto-cjk fonts-noto && \
     rm -rf /var/lib/apt/lists/*
 
-# --- ビルド時引数（すべて .env 経由で受け取る） ---
+# --- ビルド時引数（.envから渡される） ---
 ARG GITHUB_TOKEN
 ARG REPO_TAG=main
 ARG REPO_URL
 ENV REPO_URL=${REPO_URL}
 
-# --- sparse-checkoutで app/ と requirements.txt のみ取得 ---
+# --- sparse-checkoutでルート直下すべて取得 ---
 RUN git clone --filter=blob:none --no-checkout $REPO_URL /work && \
     cd /work && \
     git sparse-checkout init --cone && \
-    # git sparse-checkout set app requirements.txt && \
     git sparse-checkout set . && \
     git checkout $REPO_TAG && \
     rm -rf .git
 
 # --- 依存ライブラリのインストール ---
 RUN pip install --no-cache-dir -r requirements.txt
-
-# --- Streamlit アプリ起動 ---
-# EXPOSE 8501
-# CMD ["streamlit", "run", "app/app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.enableCORS=false"]
 
 # --- Streamlit アプリ起動 ---
 EXPOSE 8501
