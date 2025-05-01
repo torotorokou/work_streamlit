@@ -85,9 +85,7 @@ def show_manage_work():
 
             # 🔍 自動判別チェック
             if uploaded_files[file_key] is not None:
-                detected_name = detect_csv_type(
-                    uploaded_files[file_key], header_csv_path
-                )
+                detected_name = detect_csv_type(uploaded_files[file_key])
                 expected_name = label
                 if detected_name != expected_name:
                     show_warning_bubble(expected_name, detected_name)

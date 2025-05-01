@@ -3,7 +3,9 @@ import os
 # --- 共通設定 ---
 
 # アプリのベースディレクトリ
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # /work/app/
+BASE_DIR = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)  # /work/app/
 
 # よく使うパス
 CONFIG_DIR = os.path.join(BASE_DIR, "config")

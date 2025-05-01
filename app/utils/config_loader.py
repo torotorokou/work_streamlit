@@ -3,23 +3,8 @@ import pandas as pd
 from pathlib import Path
 from utils.type_converter import resolve_dtype
 import os
+
 # from utils.logger import app_logger
-
-
-def load_yaml(filename: str) -> dict:
-    """
-    指定されたYAMLファイルを辞書形式で読み込む。
-
-    Parameters:
-        filename (str): 読み込むYAMLファイル名（config/からの相対パス）
-
-    Returns:
-        dict: YAMLから読み込まれた辞書データ
-    """
-    base_dir = os.getenv("BASE_DIR", "/work/app")  # ← デフォルトもつけると安心
-    path = Path(base_dir) / filename
-    with open(path, encoding="utf-8") as f:
-        return yaml.safe_load(f)
 
 
 def get_path_config() -> dict:
@@ -27,16 +12,54 @@ def get_path_config() -> dict:
     return load_yaml("config/main_paths.yaml")
 
 
+def resolve_path(key_or_path: str, section: str = None) -> Path:
+    """
+    main_paths.yamlから定義されたパス、または直接の相対パスをBASE_DIRから解決。
+
+    Parameters:
+        key_or_path (str): 相対パス文字列、または configセクションのキー名
+        section (str, optional): main_paths.yamlのセクション名（例: 'csv', 'config_files'）
+
+    Returns:
+        Path: 絶対パス
+    """
+    base_dir = Path(os.getenv("BASE_DIR", "/work/app"))
+    if section:
+        path_config = get_path_config()
+        relative = path_config.get(section, {}).get(key_or_path)
+        if relative is None:
+            raise KeyError(f"'{section}.{key_or_path}' は main_paths.yaml に存在しません")
+        return base_dir / relative
+    else:
+        return base_dir / key_or_path
+
+
+def load_yaml(key_or_path: str, section: str = None) -> dict:
+    """
+    YAMLファイルを辞書形式で読み込む。
+
+    Parameters:
+        key_or_path (str): 相対パスまたはmain_paths.yamlのキー名
+        section (str, optional): キーが格納されているmain_paths.yamlのセクション名（例: 'config_files'）
+
+    Returns:
+        dict: YAMLから読み込まれた辞書データ
+    """
+    path = resolve_path(key_or_path, section)
+    with open(path, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+
 def get_app_config() -> dict:
-    """main_paths.yaml 経由で app_config を読み込む"""
-    config_path = get_path_config()["config_files"]["app_config"]
-    return load_yaml(config_path)
+    """main_paths.yaml 経由で app_config.yaml を読み込む"""
+    return load_yaml("app_config", section="config_files")
+
 
 
 def get_expected_dtypes() -> dict:
     """main_paths.yaml 経由で expected_dtypes.yaml を読み込み、型を解決する"""
-    config_path = get_path_config()["config_files"]["expected_dtypes"]
-    raw_yaml = load_yaml(config_path)
+    raw_yaml = load_yaml("expected_dtypes", section="config_files")
 
     resolved = {}
     for template_key, file_map in raw_yaml.items():
@@ -51,23 +74,28 @@ def get_expected_dtypes() -> dict:
 
 def get_template_config() -> dict:
     """main_paths.yaml 経由で templates_config.yaml を読み込む"""
-    config_path = get_path_config()["config_files"]["templates_config"]
-    return load_yaml(config_path)
+    return load_yaml("templates_config", section="config_files")
 
 
 def get_page_config() -> list:
     """main_paths.yaml 経由で page_config.yaml のページ定義を取得"""
-    config_path = get_path_config()["config_files"]["page_config"]
-    return load_yaml(config_path)["pages"]
+    return load_yaml("page_config", section="config_files")["pages"]
 
 
 def get_unit_price_table_csv() -> pd.DataFrame:
     """
     単価表CSVを読み込んでDataFrameとして返す。
     """
-    csv_path = get_path_config()["csv"]["unit_price_table"]
-    df = pd.read_csv(csv_path, encoding="utf-8-sig")
-    return df
+    csv_path = resolve_path("unit_price_table", section="csv")
+    return pd.read_csv(csv_path, encoding="utf-8-sig")
+
+
+def receive_header_definition() -> pd.DataFrame:
+    """
+    受入ヘッダー定義CSVを読み込んでDataFrameとして返す。
+    """
+    csv_path = resolve_path("receive_header_definition", section="csv")
+    return pd.read_csv(csv_path, encoding="utf-8-sig")
 
 
 def get_page_dicts():
@@ -78,7 +106,7 @@ def get_page_dicts():
     - 表示名リスト（UI用）
     を返す
     """
-    pages = get_page_config()
+    pages = get_page_config()  # これはすでに修正済み
     page_dict = {p["label"]: p["id"] for p in pages}
     reverse_dict = {v: k for k, v in page_dict.items()}
     labels = list(page_dict.keys())
@@ -86,13 +114,14 @@ def get_page_dicts():
 
 
 def get_csv_sources_config() -> dict:
-    config_path = get_path_config()["config_files"]["csv_sources_config"]
-    return load_yaml(config_path)
+    """main_paths.yaml 経由で csv_sources_config.yaml を読み込む"""
+    return load_yaml("csv_sources_config", section="config_files")
 
 
 def get_csv_label_map() -> dict:
     config = get_csv_sources_config()
     return {key: value["label"] for key, value in config.items()}
+
 
 
 def get_csv_date_columns() -> dict:
@@ -165,6 +194,5 @@ def get_expected_dtypes_by_template(template_key: str) -> dict:
 
 
 def get_required_columns_definition(template_name: str) -> dict:
-    config_path = get_path_config()["config_files"]["required_columns_definition"]
-    all_defs = load_yaml(config_path)
+    all_defs = load_yaml("required_columns_definition", section="config_files")
     return all_defs.get(template_name, {})
