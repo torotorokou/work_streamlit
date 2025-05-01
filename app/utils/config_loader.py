@@ -72,19 +72,19 @@ import os
 #     return df
 
 
-def get_page_dicts():
-    """
-    ページ設定（page_config.yaml）から
-    - 表示名→IDの辞書
-    - ID→表示名の逆引き
-    - 表示名リスト（UI用）
-    を返す
-    """
-    pages = get_page_config()
-    page_dict = {p["label"]: p["id"] for p in pages}
-    reverse_dict = {v: k for k, v in page_dict.items()}
-    labels = list(page_dict.keys())
-    return page_dict, reverse_dict, labels
+# def get_page_dicts():
+#     """
+#     ページ設定（page_config.yaml）から
+#     - 表示名→IDの辞書
+#     - ID→表示名の逆引き
+#     - 表示名リスト（UI用）
+#     を返す
+#     """
+#     pages = get_page_config()
+#     page_dict = {p["label"]: p["id"] for p in pages}
+#     reverse_dict = {v: k for k, v in page_dict.items()}
+#     labels = list(page_dict.keys())
+#     return page_dict, reverse_dict, labels
 
 
 # def get_csv_sources_config() -> dict:
@@ -92,47 +92,47 @@ def get_page_dicts():
 #     return load_yaml(config_path)
 
 
-def get_csv_label_map() -> dict:
-    config = get_csv_sources_config()
-    return {key: value["label"] for key, value in config.items()}
+# def get_csv_label_map() -> dict:
+#     config = get_csv_sources_config()
+#     return {key: value["label"] for key, value in config.items()}
 
 
-def get_csv_date_columns() -> dict:
-    """
-    各CSVファイル種別に対応する日付カラム名を取得する。
+# def get_csv_date_columns() -> dict:
+#     """
+#     各CSVファイル種別に対応する日付カラム名を取得する。
 
-    Returns:
-        dict: { "receive": "伝票日付", "yard": "伝票日付", ... } の形式
-    """
-    config = get_csv_sources_config()
-    return {key: value["date_column"] for key, value in config.items()}
-
-
-def get_required_files_map() -> dict:
-    """
-    各テンプレートに必要なファイル（required_files）を辞書形式で取得。
-
-    Returns:
-        dict: テンプレートキー → 必須ファイルリスト
-    """
-    config = get_template_config()
-    return {key: value.get("required_files", []) for key, value in config.items()}
+#     Returns:
+#         dict: { "receive": "伝票日付", "yard": "伝票日付", ... } の形式
+#     """
+#     config = get_csv_sources_config()
+#     return {key: value["date_column"] for key, value in config.items()}
 
 
-def get_template_descriptions() -> dict:
-    config = get_template_config()
-    return {key: value.get("description", []) for key, value in config.items()}
+# def get_required_files_map() -> dict:
+#     """
+#     各テンプレートに必要なファイル（required_files）を辞書形式で取得。
+
+#     Returns:
+#         dict: テンプレートキー → 必須ファイルリスト
+#     """
+#     config = get_template_config()
+#     return {key: value.get("required_files", []) for key, value in config.items()}
 
 
-def get_template_dict() -> dict:
-    """
-    テンプレートの表示ラベル → テンプレートキー の辞書を返す。
+# def get_template_descriptions() -> dict:
+#     config = get_template_config()
+#     return {key: value.get("description", []) for key, value in config.items()}
 
-    Returns:
-        dict: 例 {"工場日報": "factory_report", ...}
-    """
-    config = get_template_config()
-    return {value["label"]: key for key, value in config.items()}
+
+# def get_template_dict() -> dict:
+#     """
+#     テンプレートの表示ラベル → テンプレートキー の辞書を返す。
+
+#     Returns:
+#         dict: 例 {"工場日報": "factory_report", ...}
+#     """
+#     config = get_template_config()
+#     return {value["label"]: key for key, value in config.items()}
 
 
 def get_expected_dtypes_by_template(template_key: str) -> dict:
