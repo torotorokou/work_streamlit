@@ -50,17 +50,3 @@ class MainPaths:
         self.yaml_files = PathAccessor(
             PathConverter.convert(loader.get_section("yaml_files"))
         )
-
-    # def get(self, category: str, key: str) -> Path:
-    #     section = getattr(self, category, None)
-    #     if section is None:
-    #         raise ValueError(f"カテゴリー {category} は存在しません")
-    #     return section.get(key)
-
-    # def as_dict(self) -> dict:
-    #     return {
-    #         "csv": self.csv.as_dict(),
-    #         "directories": self.directories.as_dict(),
-    #         "logs": self.logs.as_dict(),
-    #         "config_files": self.config_files.as_dict(),
-    #     }

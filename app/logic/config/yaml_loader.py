@@ -1,4 +1,6 @@
 import yaml
+from pathlib import Path  # ← これを追加
+from logic.config.main_paths import MainPaths
 
 
 class YamlConfigLoader:
@@ -9,3 +11,23 @@ class YamlConfigLoader:
         path = self.path_loader.get_config_path(key)
         with open(path, encoding="utf-8") as f:
             return yaml.safe_load(f)
+
+class YamlPathResolver:
+    def __init__(self, path_dict: dict[str, Path]):
+        self._path_dict = path_dict
+
+    def get_path(self, key: str) -> Path:
+        if key not in self._path_dict:
+            raise KeyError(f"指定されたYAMLキーが存在しません: {key}")
+        return self._path_dict[key]
+
+
+class AppSettingYamlDict:
+    """main_paths.yaml 経由で app_setting.yaml を読み込むクラス"""
+
+    def __init__(self):
+        path_dict = MainPaths().yaml_files.as_dict()
+        self.loader = YamlConfigLoader(YamlPathResolver(path_dict))
+
+    def get(self) -> dict:
+        return self.loader.load("app_setting")
