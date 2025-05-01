@@ -25,31 +25,31 @@ def load_yaml(filename: str) -> dict:
         return yaml.safe_load(f)
 
 
-def get_path_config() -> dict:
-    """main_paths.yamlを辞書として取得"""
-    return load_yaml("config/main_paths.yaml")
+# def get_path_config() -> dict:
+#     """main_paths.yamlを辞書として取得"""
+#     return load_yaml("config/main_paths.yaml")
 
 
-def get_app_setting() -> dict:
-    """main_paths.yaml 経由で app_setting を読み込む"""
-    config_path = get_path_config()["yaml_files"]["app_setting"]
-    return load_yaml(config_path)
+# def get_app_setting() -> dict:
+#     """main_paths.yaml 経由で app_setting を読み込む"""
+#     config_path = get_path_config()["yaml_files"]["app_setting"]
+#     return load_yaml(config_path)
 
 
-def get_expected_dtypes() -> dict:
-    """main_paths.yaml 経由で expected_dtypes.yaml を読み込み、型を解決する"""
-    config_path = get_path_config()["yaml_files"]["expected_dtypes"]
-    raw_yaml = load_yaml(config_path)
+# def get_expected_dtypes() -> dict:
+#     """main_paths.yaml 経由で expected_dtypes.yaml を読み込み、型を解決する"""
+#     config_path = get_path_config()["yaml_files"]["expected_dtypes"]
+#     raw_yaml = load_yaml(config_path)
 
-    resolved = {}
-    for template_key, file_map in raw_yaml.items():
-        resolved[template_key] = {}
-        for file_key, dtype_map in file_map.items():
-            resolved[template_key][file_key] = {
-                col: resolve_dtype(dtype_str) for col, dtype_str in dtype_map.items()
-            }
+#     resolved = {}
+#     for template_key, file_map in raw_yaml.items():
+#         resolved[template_key] = {}
+#         for file_key, dtype_map in file_map.items():
+#             resolved[template_key][file_key] = {
+#                 col: resolve_dtype(dtype_str) for col, dtype_str in dtype_map.items()
+#             }
 
-    return resolved
+#     return resolved
 
 
 def get_template_config() -> dict:
@@ -166,7 +166,7 @@ def get_expected_dtypes_by_template(template_key: str) -> dict:
     return config.get(template_key, {})
 
 
-def get_csv_required_columns(template_name: str) -> dict:
-    config_path = get_path_config()["yaml_files"]["csv_required_columns"]
-    all_defs = load_yaml(config_path)
-    return all_defs.get(template_name, {})
+# def get_csv_required_columns(template_name: str) -> dict:
+#     config_path = get_path_config()["yaml_files"]["csv_required_columns"]
+#     all_defs = load_yaml(config_path)
+#     return all_defs.get(template_name, {})
