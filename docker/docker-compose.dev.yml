@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: sanbou_dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    ports:
+      - '8503:8503'
+    volumes:
+      - ../:/work
+      - ~/.ssh:/root/.ssh:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/work/app  # ← これで from logic.xxx などが通る
+      - APP_ENV=dev
+    working_dir: /work
+    command:
+      - streamlit
+      - run
+      - app/app.py
+      - --server.port=8503
+      - --server.address=0.0.0.0
+      - --server.headless=true
+      - --server.enableCORS=false
