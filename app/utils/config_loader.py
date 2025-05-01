@@ -28,7 +28,9 @@ def resolve_path(key_or_path: str, section: str = None) -> Path:
         path_config = get_path_config()
         relative = path_config.get(section, {}).get(key_or_path)
         if relative is None:
-            raise KeyError(f"'{section}.{key_or_path}' は main_paths.yaml に存在しません")
+            raise KeyError(
+                f"'{section}.{key_or_path}' は main_paths.yaml に存在しません"
+            )
         return base_dir / relative
     else:
         return base_dir / key_or_path
@@ -50,11 +52,9 @@ def load_yaml(key_or_path: str, section: str = None) -> dict:
         return yaml.safe_load(f)
 
 
-
 def get_app_config() -> dict:
     """main_paths.yaml 経由で app_config.yaml を読み込む"""
     return load_yaml("app_config", section="config_files")
-
 
 
 def get_expected_dtypes() -> dict:
@@ -121,7 +121,6 @@ def get_csv_sources_config() -> dict:
 def get_csv_label_map() -> dict:
     config = get_csv_sources_config()
     return {key: value["label"] for key, value in config.items()}
-
 
 
 def get_csv_date_columns() -> dict:
