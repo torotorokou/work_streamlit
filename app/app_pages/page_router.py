@@ -2,8 +2,6 @@ import streamlit as st
 
 # from config.page_config import page_dict, page_dict_reverse, page_labels
 from utils.config_loader import get_page_dicts, get_app_config
-from app_pages.top_page import show_top_page
-from app_pages.manage.controller import manage_work_controller
 from components.manual_links import show_manual_links
 from components.notice import show_notice
 from components.update_log import show_update_log
@@ -53,6 +51,9 @@ def _render_sidebar(page_labels):
     st.sidebar.selectbox("📂 機能を選択", page_labels, key="selected_page")
 
 
+from app_pages.page_registry import PAGE_INSTANCES
+
+
 def _render_selected_page():
     title = get_app_config()["title"]
     selected_label = st.session_state.selected_page
@@ -66,11 +67,12 @@ def _render_selected_page():
                 st.info(page["message"])
 
             elif "function" in page:
-                func = globals().get(page["function"])
-                if callable(func):
-                    func()
+                func_name = page["function"]
+                page_instance = PAGE_INSTANCES.get(func_name)
+                if page_instance:
+                        page_instance.render()  # ← クラスの render を呼ぶ
                 else:
-                    st.warning(f"⚠️ `{page['function']}` は存在しない関数です。")
+                    st.warning(f"⚠️ `{func_name}` は存在しません。")
 
             # トップページだけ追加表示
             if page.get("addons") is True:

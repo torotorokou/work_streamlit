@@ -53,7 +53,6 @@ def load_all_filtered_dataframes(
     dict
         フィルタ済みDataFrameの辞書（key: str → df: pd.DataFrame）
     """
-    from utils.config_loader import get_required_columns_definition
 
     df_dict = {}
     column_defs = get_required_columns_definition(template_name)

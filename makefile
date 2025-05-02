@@ -95,4 +95,4 @@ commit:
 
 precommit:
 	pre-commit clean
-	pre-commit run --all-files
+	pre-commit run --all-files > logs/precommit_run.log 2>&1
