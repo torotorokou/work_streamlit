@@ -1,20 +1,21 @@
-from datetime import datetime
 import pandas as pd
-import datetime
+from datetime import datetime, date
+from typing import Union
 
 
-def get_weekday_japanese(date_input):
+def get_weekday_japanese(date_input: Union[str, datetime]) -> str:
     """日付（strまたはdatetime）から日本語の曜日を返す"""
     weekdays_ja = ["日", "月", "火", "水", "木", "金", "土"]
 
     if isinstance(date_input, str):
-        # 区切り文字に応じてパース
         if "/" in date_input:
             date_input = datetime.strptime(date_input, "%Y/%m/%d")
         elif "-" in date_input:
             date_input = datetime.strptime(date_input, "%Y-%m-%d")
         else:
-            raise ValueError("日付形式は 'YYYY-MM-DD' または 'YYYY/MM/DD' にしてください")
+            raise ValueError(
+                "日付形式は 'YYYY-MM-DD' または 'YYYY/MM/DD' にしてください"
+            )
 
     weekday_index = (date_input.weekday() + 1) % 7
     return weekdays_ja[weekday_index]
@@ -25,21 +26,18 @@ def extract_first_date(df: pd.DataFrame, col: str = "伝票日付") -> pd.Timest
     return pd.to_datetime(df[col].dropna().iloc[0])
 
 
-def to_japanese_era(dt) -> str:
-    """
-    西暦の日付を「令和7年」などの和暦表記に変換する関数。
-    pandas.Timestamp にも対応。
-    """
+def to_japanese_era(dt: Union[datetime, date]) -> str:
+    """西暦を和暦表記に変換"""
     if hasattr(dt, "date"):
-        dt = dt.date()
+        dt = dt.date()  # datetime → date に変換
 
-    if dt >= datetime.date(2019, 5, 1):
+    if dt >= date(2019, 5, 1):
         year = dt.year - 2018
         era = "令和"
-    elif dt >= datetime.date(1989, 1, 8):
+    elif dt >= date(1989, 1, 8):
         year = dt.year - 1988
         era = "平成"
-    elif dt >= datetime.date(1926, 12, 25):
+    elif dt >= date(1926, 12, 25):
         year = dt.year - 1925
         era = "昭和"
     else:

@@ -1,6 +1,7 @@
 import yaml
 import pandas as pd
 from pathlib import Path
+from typing import Dict
 from utils.type_converter import resolve_dtype
 import os
 from typing import Optional
@@ -29,7 +30,9 @@ def resolve_path(key_or_path: str, section: Optional[str] = None) -> Path:
         path_config = get_path_config()
         relative = path_config.get(section, {}).get(key_or_path)
         if relative is None:
-            raise KeyError(f"'{section}.{key_or_path}' は main_paths.yaml に存在しません")
+            raise KeyError(
+                f"'{section}.{key_or_path}' は main_paths.yaml に存在しません"
+            )
         return base_dir / relative
     else:
         return base_dir / key_or_path
@@ -56,11 +59,11 @@ def get_app_config() -> dict:
     return load_yaml("app_config", section="config_files")
 
 
-def get_expected_dtypes() -> dict:
+def get_expected_dtypes() -> Dict[str, Dict[str, Dict[str, type]]]:
     """main_paths.yaml 経由で expected_dtypes.yaml を読み込み、型を解決する"""
     raw_yaml = load_yaml("expected_dtypes", section="config_files")
 
-    resolved = {}
+    resolved: Dict[str, Dict[str, Dict[str, type]]] = {}
     for template_key, file_map in raw_yaml.items():
         resolved[template_key] = {}
         for file_key, dtype_map in file_map.items():

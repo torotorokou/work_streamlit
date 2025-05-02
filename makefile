@@ -10,6 +10,10 @@ IMAGE_NAME=sanboukun:prod
 dev:
 	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml up
 
+dev_rebuild:
+	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml up --build --force-recreate
+
+
 staging:
 	docker-compose -p sanbou_staging -f docker/docker-compose.staging.yml up
 
@@ -88,3 +92,7 @@ commit:
 	@git add .
 	@read -p "Enter commit message: " msg; \
 	git commit -m "$$msg" --no-verify && git push origin HEAD
+
+precommit:
+	pre-commit clean
+	pre-commit run --all-files

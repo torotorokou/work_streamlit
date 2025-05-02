@@ -35,7 +35,6 @@ from utils.config_loader import (
     get_required_files_map,
     get_template_descriptions,
     get_template_dict,
-    get_path_config,
     get_template_config,
 )
 
@@ -112,7 +111,9 @@ def manage_work_controller():
                 update_progress(progress, 100, "✅ 整理完了")
 
                 # ダウンロードボタン表示
-                st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
+                st.info(
+                    "✅ ファイルが生成されました。下のボタンからダウンロードできます👇"
+                )
                 centered_download_button(
                     label="📥 Excelファイルをダウンロード",
                     data=output_excel.getvalue(),

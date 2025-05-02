@@ -2,8 +2,6 @@ import streamlit as st
 
 # from config.page_config import page_dict, page_dict_reverse, page_labels
 from utils.config_loader import get_page_dicts, get_app_config
-from app_pages.top_page import show_top_page
-from app_pages.manage.controller import manage_work_controller
 from components.manual_links import show_manual_links
 from components.notice import show_notice
 from components.update_log import show_update_log

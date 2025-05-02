@@ -75,7 +75,9 @@ def summary_apply(
     インポートCSVをgroupby＆sumし、マスターCSVにマージ＆更新する汎用関数（シート名なし版）。
     """
     logger = app_logger()
-    logger.info(f"▶️ マスター更新処理: キー={key_cols}, 集計列={source_col} ➡ 書き込み列={target_col}")
+    logger.info(
+        f"▶️ マスター更新処理: キー={key_cols}, 集計列={source_col} ➡ 書き込み列={target_col}"
+    )
 
     # ① groupbyで合計
     agg_df = data_df.groupby(key_cols, as_index=False)[[source_col]].sum()
@@ -127,7 +129,9 @@ def summary_apply_by_sheet(
         処理済みのマスターCSV（"CSVシート名"以外も含む）
     """
     logger = app_logger()
-    logger.info(f"▶️ 処理対象シート: {sheet_name}, キー: {key_cols}, 集計列: {source_col}")
+    logger.info(
+        f"▶️ 処理対象シート: {sheet_name}, キー: {key_cols}, 集計列: {source_col}"
+    )
 
     # ① 該当シート部分を取り出す
     target_df = master_csv[master_csv["CSVシート名"] == sheet_name].copy()

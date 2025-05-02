@@ -1,8 +1,11 @@
 import streamlit as st
 from io import BytesIO
+from typing import Optional
 
 
-def centered_button(label: str, key: str = None, disabled: bool = False) -> bool:
+def centered_button(
+    label: str, key: Optional[str] = None, disabled: bool = False
+) -> bool:
     """
     中央寄せでスタイル付きのボタンを表示する関数。
 
@@ -51,7 +54,7 @@ def centered_download_button(
     data: BytesIO,
     file_name: str,
     mime: str = "application/octet-stream",
-    key: str = None,
+    key: Optional[str] = None,
 ) -> bool:
     """
     中央寄せでスタイル付きのダウンロードボタンを表示する関数。
