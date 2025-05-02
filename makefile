@@ -87,4 +87,4 @@ push-all-tags:
 commit:
 	@git add .
 	@read -p "Enter commit message: " msg; \
-	git commit -m "$$msg" --no-verify
+	git commit -m "$$msg" --no-verify && git push origin HEAD
