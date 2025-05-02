@@ -8,7 +8,7 @@ from logic.manage.processors.factory_report.factory_report_yard import process_y
 from logic.manage.utils.excel_tools import sort_by_cell_row
 from logic.manage.utils.load_template import load_master_and_template
 from utils.date_tools import to_japanese_era, to_japanese_month_day
-from utils.value_setter import set_value_fast
+from utils.value_setter import set_value_fast,set_value_fast_safe
 
 
 def process(dfs: dict) -> pd.DataFrame:
@@ -149,10 +149,10 @@ def date_format(master_csv, df_shipping):
 
     match_columns = ["大項目"]
     match_value = ["和暦"]
-    set_value_fast(master_csv, match_columns, match_value, to_japanese_era(today))
+    master_csv= set_value_fast_safe(master_csv, match_columns, match_value, to_japanese_era(today))
 
     match_columns = ["大項目"]
     match_value = ["月日"]
-    set_value_fast(master_csv, match_columns, match_value, to_japanese_month_day(today))
+    master_csv= set_value_fast_safe(master_csv, match_columns, match_value, to_japanese_month_day(today))
 
     return master_csv
