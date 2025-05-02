@@ -7,7 +7,7 @@ from typing import Optional
 
 def render_manage_page(template_dict, template_descriptions):
     st.sidebar.markdown("---")
-    st.sidebar.subheader("🛠 管理業務メニュー")
+    st.sidebar.subheader("🛠 帳票作成メニュー")
     template_label = st.sidebar.radio(
         "出力したい項目を選択してください", list(template_dict.keys())
     )

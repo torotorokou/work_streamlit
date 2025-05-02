@@ -1,10 +1,16 @@
-import streamlit as st
 from app_pages.base_page import BasePage
+from utils.page_config import PageConfig
+import streamlit as st
 
 
 class UtilPage(BasePage):
     def __init__(self):
-        super().__init__(page_id="util", title="ユーティリティ機能")
+        config = PageConfig(
+            page_id="util",
+            title="ユーティリティ機能",
+            parent_title="補助ツール"
+        )
+        super().__init__(config)
 
     def render(self):
         self.render_title()

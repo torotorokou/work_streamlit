@@ -44,7 +44,7 @@ def show_manage_work():
 
     # --- UI ---
     st.sidebar.markdown("---")
-    st.sidebar.subheader("🛠 管理業務メニュー")
+    st.sidebar.subheader("🛠 帳票作成メニュー")
     template_label = st.sidebar.radio(
         "出力したい項目を選択してください", list(template_dict.keys())
     )
