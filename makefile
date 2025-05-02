@@ -29,7 +29,7 @@ prod:
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up -d"
 
 # 再ビルド（キャッシュ無効化）
-prod_rebuild:
+rebuild:
 	@echo "Starting full rebuild with --no-cache..."
 	@echo "Reloading .env and rebuilding Docker image..."
 
@@ -82,6 +82,7 @@ status-staging:
 
 restart-staging:
 	docker-compose -p sanbou_staging -f docker/docker-compose.staging.yml restart
+<<<<<<< HEAD
 
 
 push-all-tags:
@@ -96,3 +97,5 @@ commit:
 precommit:
 	pre-commit clean
 	pre-commit run --all-files
+=======
+>>>>>>> parent of 0a60382 (wip/dockerファイルのコピー)

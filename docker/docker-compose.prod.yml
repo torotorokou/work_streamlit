@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   app:
     container_name: sanbou_prod
@@ -17,3 +19,14 @@ services:
     env_file:
       - ../.env
     restart: unless-stopped
+<<<<<<< HEAD
+=======
+    command:
+      - streamlit
+      - run
+      - app.py
+      - --server.port=8501
+      - --server.address=0.0.0.0
+      - --server.headless=true
+      - --server.enableCORS=false
+>>>>>>> parent of 0a60382 (wip/dockerファイルのコピー)

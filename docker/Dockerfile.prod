@@ -13,6 +13,7 @@ ARG GITHUB_TOKEN
 ARG REPO_TAG=main
 ARG REPO_URL
 
+<<<<<<< HEAD
 # --- 認証付きclone（全体）して、必要なファイルだけコピー ---
 RUN git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/" && \
     git clone --branch $REPO_TAG $REPO_URL /tmp/repo && \
@@ -20,12 +21,25 @@ RUN git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "htt
     cp -r /tmp/repo/app /work/app && \
     cp /tmp/repo/requirements.txt /work/ && \
     rm -rf /tmp/repo
+=======
+# --- sparse-checkoutでルート直下すべて取得 ---
+RUN git clone --filter=blob:none --no-checkout $REPO_URL /work && \
+    cd /work && \
+    git sparse-checkout init --cone && \
+    git sparse-checkout set . && \
+    git checkout $REPO_TAG && \
+    rm -rf .git
+>>>>>>> parent of 0a60382 (wip/dockerファイルのコピー)
 
 # --- ライブラリインストール ---
 RUN pip install --no-cache-dir -r requirements.txt
 
 # --- Streamlitアプリ起動 ---
 EXPOSE 8501
+<<<<<<< HEAD
 CMD ["streamlit", "run", "app/app.py", \
     "--server.port=8501", "--server.address=0.0.0.0", \
     "--server.headless=true", "--server.enableCORS=false"]
+=======
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.enableCORS=false"]
+>>>>>>> parent of 0a60382 (wip/dockerファイルのコピー)
