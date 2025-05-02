@@ -5,10 +5,11 @@ from abc import ABC, abstractmethod
 
 
 class BasePage(ABC):
-    def __init__(self, page_id: str, title: str = ""):
+    def __init__(self, page_id: str, title: str = "", parent_title: str = ""):
         self.page_id = page_id
         self.config = get_template_config().get(page_id, {})
         self.title = title or self.config.get("title", page_id)
+        self.parent_title = parent_title
         self.logger = app_logger()
 
     def render_title(self):
