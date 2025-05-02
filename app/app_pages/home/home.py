@@ -2,11 +2,17 @@ import streamlit as st
 import time
 import random
 from app_pages.base_page import BasePage
-
+from utils.page_config import PageConfig
 
 class HomePage(BasePage):
     def __init__(self):
-        super().__init__(page_id="home", title="参謀くん Chat Guide")
+        config = PageConfig(
+            page_id="home",
+            title="参謀くん Chat Guide",
+            parent_title="ホームガイド"  # 任意、デフォルトのままでもOK
+        )
+        super().__init__(config)
+
         self.chat = [
             "こんにちは！私は **WEB版 参謀くん** です 🧠✨",
             "このツールは、**現場業務の効率化**と**帳票作成の自動化**をサポートする、社内専用の業務支援アプリです。",

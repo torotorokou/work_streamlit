@@ -1,20 +1,26 @@
+# app_pages/base_page.py
+
 import streamlit as st
+from abc import ABC, abstractmethod
+from utils.page_config import PageConfig
 from utils.logger import app_logger
 from utils.config_loader import get_template_config
-from abc import ABC, abstractmethod
 
 
 class BasePage(ABC):
-    def __init__(self, page_id: str, title: str = "", parent_title: str = ""):
-        self.page_id = page_id
-        self.config = get_template_config().get(page_id, {})
-        self.title = title or self.config.get("title", page_id)
-        self.parent_title = parent_title
+    def __init__(self, config: PageConfig):
+        self.page_id = config.page_id
+        self.config = get_template_config().get(self.page_id, {})
+        self.title = config.title or self.config.get("title", self.page_id)
+        self.parent_title = config.parent_title
+        self.show_parent_title = config.show_parent_title  # ← これ追加
         self.logger = app_logger()
 
     def render_title(self):
-        st.title(f"📄 {self.title}")
+        st.markdown(f"## {self.title}")
 
+
+            
     def log(self, message: str):
         self.logger.info(f"[{self.page_id}] {message}")
 

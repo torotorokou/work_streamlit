@@ -61,8 +61,8 @@ def _render_selected_page():
 
     for page in pages:
         if page["label"] == selected_label:
-            st.title(f" {selected_label}" if page["id"] != "home" else title)
-
+            if page["id"] == "home":
+                st.title(title)
             if "message" in page:
                 st.info(page["message"])
 
