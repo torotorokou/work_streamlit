@@ -4,4 +4,3 @@ openpyxl
 xlsxwriter
 streamlit-calendar
 PyYAML
-ipython

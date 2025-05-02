@@ -37,21 +37,21 @@ Sub Avel_Summary_Table()
     '===インプットブックからの情報格納=================
     '日付順にシートをソートする
     Call SortrowByColumn(ws_Input, 受入一覧.伝票日付)
-                               
-                
+
+
     'インプットデータを配列に格納
     Dim Input_ShipDisp As Variant
     Dim input_data As Variant
-                    
-            
+
+
     With ws_Input.Range("A1").CurrentRegion
-        Input_ShipDisp =    .value  
+        Input_ShipDisp =    .value
     End With
-            
+
     '日付の不要な（）を削除する
     Input_ShipDisp = Remove_kakkoFromArray(Input_ShipDisp, 受入一覧.伝票日付)
-            
-            
+
+
     '最初月内に入る配列にredim
     Dim temp As Variant
     With ws_Output.Cells(Ref_sh.First_Month, 2)
@@ -62,13 +62,13 @@ Sub Avel_Summary_Table()
             Exit Sub
         End If
     End With
-    
+
     input_data = temp
-        
+
     SafeEraseArray (temp)
     SafeEraseArray (Input_ShipDisp)
 
-                                               
+
     If IsError Then: Exit Sub                    'エラーの場合に抜ける
 
     '===アウトプット情報の格納===================
@@ -84,23 +84,23 @@ Sub Avel_Summary_Table()
     With ws_Output_Cal.Range("A1").CurrentRegion
         OS_ShipDist = .value
     End With
-    
+
     Dim hist_check As Boolean
     Dim dim_num As Long
     Dim initialized As Boolean
-    
+
     Dim OS_Count As Variant
     With wb_Output.Worksheets("カレンダー_台数").Range("A1").CurrentRegion
         OS_Count = .value
     End With
-    
+
     Dim culnum As Long
 
     For i = 4 To UBound(OS_ShipDist, 1)          ' カレンダーでループ
         initialized = False
         '台数：ユニーク数を計算する
         temp = FilterArrayByDate(input_data, 受入一覧.伝票日付, CDate(OS_ShipDist(i, 2)), CDate(OS_ShipDist(i, 2)))
-        
+
         '空データなら次のi
         If Not IsArray(temp) Or UBound(temp, 1) < LBound(temp, 1) Then
             GoTo next_loop
@@ -112,20 +112,20 @@ Sub Avel_Summary_Table()
             For jj = 3 To UBound(OS_ShipDist, 2)
                 OS_ShipDist(i, jj) = 0
             Next jj
-                    
+
             For jj = 3 To UBound(OS_Count, 2)
                 OS_Count(i - 1, jj) = 0          'iはマイナス１
             Next jj
             initialized = True
         End If
-            
-            
+
+
         Dim sum_kg_2D As Variant
         Dim sum_kg_arr As Variant
         Dim sum_uriage_2D As Variant
         Dim sum_uriage_arr As Variant
         Dim temp_sum As Variant
-            
+
         '総品目合計
 
         temp_sum = FilterArray_ByKeyword(temp, 受入一覧.単位名, "kg")
@@ -133,15 +133,15 @@ Sub Avel_Summary_Table()
 
         sum_kg_2D = col1D_from2DArray(temp_sum, 受入一覧.正味重量)
         sum_kg_arr = SumArray(sum_kg_2D)
-                    
+
         sum_uriage_2D = col1D_from2DArray(temp_sum, 受入一覧.金額)
         sum_uriage_arr = SumArray(sum_uriage_2D)
-                    
+
         OS_ShipDist(i, AS_item_cul.合計kg) = sum_kg_arr
         OS_ShipDist(i, AS_item_cul.合計売上) = sum_uriage_arr
-        
 
-        
+
+
         'インプットデータのループ
         culnum = 1
         Do While culnum <= UBound(temp, 1)
@@ -178,7 +178,7 @@ Sub Avel_Summary_Table()
             'さらにABCでソートして、台数、重量を算出する。
             Dim tempabc_cul As Long
             tempabc_cul = 1
-            
+
             For ii = 1 To 6
                 Dim temp_abc As Variant
                 Dim car_sum As Long
@@ -189,17 +189,17 @@ Sub Avel_Summary_Table()
 
                 ' 各ABC毎の配列を作成
                 temp_abc = FilterArray_ByKeyword(temp, 受入一覧.集計項目CD, CStr(ii))
-    
+
                 ' 空の配列でないか確認
                 If IsArray(temp_abc) And Not IsEmptyArray(temp_abc) Then
 
                     car_sum = CountUniqueValues(temp_abc, 受入一覧.受入番号) '車両数
                     height_arr = col1D_from2DArray(temp_abc, 受入一覧.正味重量) '重量
                     height_sum = SumArray(height_arr)
-                    
+
                     For j = 3 To UBound(OS_Count, 2)
                         If OS_Count(1, j) = ii Then
-                        
+
                             ' OS_Count に代入 iがマイナスになるので注意
                             OS_Count(i - 1, j) = car_sum
                             OS_Count(i - 1, j + 1) = height_sum
@@ -208,16 +208,16 @@ Sub Avel_Summary_Table()
                     Next j
                 End If
             Next ii
-        
+
             culnum = culnum + 1
         Loop                                     'インプットデータ
-        
+
         '        Next dim_num
-                 
+
         '出荷の履歴更新
         OS_ShipDist(i, 1) = 1
         OS_Count(i - 1, 1) = 1
-        
+
 next_loop:
     Next i
 
@@ -240,7 +240,7 @@ next_loop:
     Dim loop_date As Long
 
     For loop_date = 4 To UBound(OS_ShipDist, 1)
-    
+
         'カレンダー品目
         '履歴が１なら、テンプレート作成
         If OS_ShipDist(loop_date, 1) = 1 Then
@@ -256,20 +256,20 @@ next_loop:
             Else
                 'テンプレートから新しいワークシートを作成
                 Set ws_temp = CreateNewWorksheet(ws_Output_Template, sheet_name)
-        
+
                 '日付を記入する
                 With ws_temp
                     .Cells(2, "B") = OS_ShipDist(loop_date, 2)
                 End With
             End If
-    
+
             With ws_temp
-        
+
                 '=====テンプレートを埋める===========
                 Dim fCell_abc As Range
                 Set fCell_abc = .Cells(3, "E")
                 Dim cul As Long
-     
+
                 '総合計
                 fCell_abc.Offset(23, 4) = OS_ShipDist(loop_date, AS_item_cul.合計売上)
                 fCell_abc.Offset(24, 4) = OS_ShipDist(loop_date, AS_item_cul.合計kg)
@@ -283,7 +283,7 @@ next_loop:
                         cul = cul + 2
                     Next j
                 Next i
-            
+
                 '台数・重量
                 cul = 3
                 For i = 0 To 5
@@ -291,7 +291,7 @@ next_loop:
                     fCell_abc.Offset(i * 3 - 1, 6) = OS_Count(loop_date - 1, cul + 1)
                     cul = cul + 2
                 Next i
-            
+
             End With
 
 ExitLoops:

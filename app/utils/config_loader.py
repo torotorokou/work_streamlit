@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 from utils.type_converter import resolve_dtype
 import os
+from typing import Optional
 
 # from utils.logger import app_logger
 
@@ -12,7 +13,7 @@ def get_path_config() -> dict:
     return load_yaml("config/main_paths.yaml")
 
 
-def resolve_path(key_or_path: str, section: str = None) -> Path:
+def resolve_path(key_or_path: str, section: Optional[str] = None) -> Path:
     """
     main_paths.yamlから定義されたパス、または直接の相対パスをBASE_DIRから解決。
 
@@ -28,15 +29,13 @@ def resolve_path(key_or_path: str, section: str = None) -> Path:
         path_config = get_path_config()
         relative = path_config.get(section, {}).get(key_or_path)
         if relative is None:
-            raise KeyError(
-                f"'{section}.{key_or_path}' は main_paths.yaml に存在しません"
-            )
+            raise KeyError(f"'{section}.{key_or_path}' は main_paths.yaml に存在しません")
         return base_dir / relative
     else:
         return base_dir / key_or_path
 
 
-def load_yaml(key_or_path: str, section: str = None) -> dict:
+def load_yaml(key_or_path: str, section: Optional[str] = None) -> dict:
     """
     YAMLファイルを辞書形式で読み込む。
 

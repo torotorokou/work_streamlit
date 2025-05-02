@@ -17,27 +17,22 @@ staging:
 # 本番ビルド＆起動
 prod:
 	@echo "Starting production environment rebuild..."
-	@echo "Loading .env with PowerShell..."
+	@echo "Loading .env and starting services..."
 
-	powershell -Command "Get-Content $(ENV_FILE) | Where-Object { \$_.Trim() -match '^[^#].*=.*' } | ForEach-Object { \$kv = \$_.Split('=', 2); Set-Item -Path Env:\$kv[0].Trim() -Value \$kv[1].Trim() }; \
-	docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) build --build-arg GITHUB_TOKEN=\$env:GITHUB_TOKEN --build-arg REPO_TAG=\$env:REPO_TAG --build-arg REPO_URL=\$env:REPO_URL"
-
-	docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) down || true
-	docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) up -d
+	powershell -Command "$$envs = Get-Content .env | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
+	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml build --build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN --build-arg REPO_TAG=$$env:REPO_TAG --build-arg REPO_URL=$$env:REPO_URL; \
+	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml down -v || true; \
+	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up -d"
 
 # 再ビルド（キャッシュ無効化）
 prod_rebuild:
 	@echo "Starting full rebuild with --no-cache..."
-	@echo "Reloading .env with PowerShell..."
+	@echo "Reloading .env and rebuilding Docker image..."
 
-	powershell -Command "Get-Content .env | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
-	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml build --no-cache --build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN --build-arg REPO_TAG=$$env:REPO_TAG --build-arg REPO_URL=$$env:REPO_URL"
-
-	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml down || true
-	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up -d
-
-# --- 停止・削除 ---
-
+	powershell -Command "$$envs = Get-Content .env | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
+	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml build --no-cache --build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN --build-arg REPO_TAG=$$env:REPO_TAG --build-arg REPO_URL=$$env:REPO_URL; \
+	try { docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml down -v } catch { Write-Host 'down failed (ignored)' }; \
+	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up -d"
 down:
 	docker-compose -p $(PROJECT_NAME) down
 
@@ -87,3 +82,9 @@ restart-staging:
 
 push-all-tags:
 	git push origin --tags
+
+
+commit:
+	@git add .
+	@read -p "Enter commit message: " msg; \
+	git commit -m "$$msg" --no-verify

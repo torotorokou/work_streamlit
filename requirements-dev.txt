@@ -1,0 +1,11 @@
+# ▶ 対話的開発にあると便利（任意・不要なら削除可）
+ipython
+
+# ▶ 開発用：コード整形・型チェック・静的解析（ローカルorCI）
+black==23.3.0
+flake8==6.1.0
+mypy==1.4.1
+ruff
+isort
+pre-commit
+types-PyYAML

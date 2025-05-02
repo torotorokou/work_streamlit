@@ -25,9 +25,7 @@ def detect_csv_type(file) -> str:
 
         # 判別ルール読み込み
         df_csv = receive_header_definition()
-        logger.info(
-            f"🧾 ヘッダー定義DataFrame（先頭5行）:\n{df_csv.head().to_string(index=False)}"
-        )
+        logger.info(f"🧾 ヘッダー定義DataFrame（先頭5行）:\n{df_csv.head().to_string(index=False)}")
 
         signatures = load_template_signatures(df_csv)
         logger.info(f"📌 判別ルール（signatures）: {signatures}")

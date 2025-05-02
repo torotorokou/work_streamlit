@@ -1,10 +1,9 @@
-# 開発用Dockerfile
+# 開発用 Dockerfile
 FROM python:3.10-slim
 
-# 作業ディレクトリを作成・設定
 WORKDIR /work
 
-# 必要パッケージインストール（日本語フォント・git・make・procps）
+# 必要パッケージ（フォント・Git・ビルドツールなど）
 RUN apt-get update && apt-get install -y \
     fonts-noto-cjk \
     fonts-noto \
@@ -13,19 +12,14 @@ RUN apt-get update && apt-get install -y \
     procps \
     && rm -rf /var/lib/apt/lists/*
 
-# Pythonパッケージインストール
+# Python依存ライブラリ（本番 + 開発）
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements-dev.txt .
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-dev.txt
 
-# 開発用ツールインストール
-RUN pip install --no-cache-dir \
-    black \
-    ruff \
-    isort \
-    pre-commit
+# 必要に応じてpre-commitチェック（任意）
+# RUN cd /work && pre-commit run --all-files || true
 
-# ポート開放（Streamlit開発用ポート）
 EXPOSE 8503
 
-# デフォルトコマンド（Streamlit起動）
 CMD ["streamlit", "run", "app/app.py", "--server.port=8503", "--server.address=0.0.0.0", "--server.headless=true", "--server.enableCORS=false", "--server.enableXsrfProtection=false"]
