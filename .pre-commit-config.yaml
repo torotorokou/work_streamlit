@@ -1,12 +1,22 @@
+# .pre-commit-config.yaml（推奨構成）
 repos:
-  - repo: https://github.com/psf/black
-    rev: 22.3.0  # 使用するBlackのバージョン
-    hooks:
-      - id: black
-        language_version: python3  # Python3を指定
+    - repo: https://github.com/psf/black
+      rev: 23.3.0
+      hooks:
+          - id: black
 
-  - repo: https://github.com/pre-commit/mirrors-ruff
-    rev: v0.0.118  # 使用するRuffのバージョン
-    hooks:
-      - id: ruff
-        language_version: python3
+    - repo: https://github.com/pre-commit/mirrors-mypy
+      rev: v1.4.1
+      hooks:
+          - id: mypy
+
+    - repo: https://github.com/pycqa/flake8
+      rev: 6.1.0
+      hooks:
+          - id: flake8
+
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v4.4.0
+      hooks:
+          - id: end-of-file-fixer
+          - id: trailing-whitespace

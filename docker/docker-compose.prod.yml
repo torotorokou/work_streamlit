@@ -12,16 +12,8 @@ services:
     ports:
       - "8501:8501"
     environment:
-      - APP_ENV=prod
+      - APP_ENV=${APP_ENV}
       - PYTHONUNBUFFERED=1
     env_file:
       - ../.env
     restart: unless-stopped
-    command:
-      - streamlit
-      - run
-      - app/app.py
-      - --server.port=8501
-      - --server.address=0.0.0.0
-      - --server.headless=true
-      - --server.enableCORS=false

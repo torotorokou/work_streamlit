@@ -14,9 +14,7 @@ def get_weekday_japanese(date_input):
         elif "-" in date_input:
             date_input = datetime.strptime(date_input, "%Y-%m-%d")
         else:
-            raise ValueError(
-                "日付形式は 'YYYY-MM-DD' または 'YYYY/MM/DD' にしてください"
-            )
+            raise ValueError("日付形式は 'YYYY-MM-DD' または 'YYYY/MM/DD' にしてください")
 
     weekday_index = (date_input.weekday() + 1) % 7
     return weekdays_ja[weekday_index]

@@ -5,51 +5,46 @@ __pycache__/
 *.pyd
 *.pyc
 
-# ▶ Jupyter系（もし使っていれば）
+# ▶ Jupyter系（使っていれば）
 .ipynb_checkpoints/
 
-# ▶ VSCode設定ファイル（個人の環境に依存する）
+# ▶ VSCode設定（個人環境依存）
 .vscode/
+*.code-workspace
 
-# ▶ OSごとのゴミファイル
+# ▶ OSのゴミファイル
 .DS_Store
 Thumbs.db
 
-# ▶ 環境変数や秘密情報
+# ▶ 環境変数や秘密情報（必ず除外）
 .env
 *.env
 
 # ▶ Streamlitキャッシュ
 .streamlit/
 
-# ▶ 出力ファイル（自動生成されるもの）
+# ▶ 自動生成・中間ファイル系（出力やDB）
 *.log
 *.sqlite3
 *.db
 *.parquet
-*.csv
 *.zip
-*.xlsx
-*.xls
-
-# ▶ テスト用の保存ファイルやテンプレート一時ファイル
-data/output/
-data/input/
-templates/*.bak.xlsx
-
-# ▶ Docker関連（不要なら）
 *.tar
 *.whl
+*.xls  # Excelの古い形式。必要なら限定して除外
 
-# ▶ pre-commitが自動生成するファイル（必要ならコメントアウト）
-# .pre-commit-config.yaml
+# ▶ テスト用 or 一時データの除外（厳密に限定）
+app/data/output/**
+app/data/input/**
+app/data/temp/**
+app/data/templates/*.bak.xlsx
 
-# ▶ VSCodeワークスペース用の設定ファイル
-*.code-workspace
+# ▶ マスターデータは明示的に除外解除（重要）
+!app/data/master/*.csv
 
-# ▶ __init__.py が空のままなら除外（※プロジェクトによる）
-# **/__init__.py
-
-# ▶ その他バックアップ
+# ▶ バックアップや一時ファイル
 *~
 *.swp
+
+# ▶ pre-commit自動生成（使用時はコメント解除）
+# .pre-commit-config.yaml

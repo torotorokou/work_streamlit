@@ -112,9 +112,7 @@ def manage_work_controller():
                 update_progress(progress, 100, "✅ 整理完了")
 
                 # ダウンロードボタン表示
-                st.info(
-                    "✅ ファイルが生成されました。下のボタンからダウンロードできます👇"
-                )
+                st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
                 centered_download_button(
                     label="📥 Excelファイルをダウンロード",
                     data=output_excel.getvalue(),
@@ -123,7 +121,6 @@ def manage_work_controller():
                 )
 
     else:
-
         uploaded_count = len(required_keys) - len(missing_keys)
         total_count = len(required_keys)
 

@@ -46,9 +46,7 @@ def show_manage_work():
     # --- UI ---
     st.sidebar.markdown("---")
     st.sidebar.subheader("🛠 管理業務メニュー")
-    template_label = st.sidebar.radio(
-        "出力したい項目を選択してください", list(template_dict.keys())
-    )
+    template_label = st.sidebar.radio("出力したい項目を選択してください", list(template_dict.keys()))
     selected_template = template_dict.get(template_label)
     uploaded_files = {}
 
@@ -151,9 +149,7 @@ def show_manage_work():
                 progress.progress(100)
                 today_str = datetime.now().strftime("%Y%m%d")
 
-                st.info(
-                    "✅ ファイルが生成されました。下のボタンからダウンロードできます👇"
-                )
+                st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
 
                 centered_download_button(
                     label="📥 Excelファイルをダウンロード",
@@ -163,7 +159,6 @@ def show_manage_work():
                 )
 
     else:
-
         uploaded_count = len(required_keys) - len(missing_keys)
         total_count = len(required_keys)
 

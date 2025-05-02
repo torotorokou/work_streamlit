@@ -2,23 +2,13 @@ import streamlit as st
 from components.status_box import render_status_box
 from components.custom_button import centered_download_button
 from io import BytesIO
-
-# from utils.config_loader import (
-#     get_template_dict,
-#     get_template_descriptions,
-#     get_required_files_map,
-#     get_csv_label_map,
-#     get_csv_date_columns,
-#     get_path_config,
-# )
+from typing import Optional
 
 
 def render_manage_page(template_dict, template_descriptions):
     st.sidebar.markdown("---")
     st.sidebar.subheader("🛠 管理業務メニュー")
-    template_label = st.sidebar.radio(
-        "出力したい項目を選択してください", list(template_dict.keys())
-    )
+    template_label = st.sidebar.radio("出力したい項目を選択してください", list(template_dict.keys()))
 
     st.subheader(f"📝 {template_label} の作成")
     description = template_descriptions.get(template_label, "")
@@ -92,12 +82,8 @@ def render_file_upload_section(required_keys, csv_label_map):
 
         # --- 不要なCSVファイル（グレー表示で保持＋案内） ---
         else:
-            with st.expander(
-                f"🗂 {label}（このテンプレートでは不要です）", expanded=False
-            ):
-                st.caption(
-                    "このファイルは他のテンプレートで使用されます。削除する必要はありません。"
-                )
+            with st.expander(f"🗂 {label}（このテンプレートでは不要です）", expanded=False):
+                st.caption("このファイルは他のテンプレートで使用されます。削除する必要はありません。")
                 uploaded_file = st.file_uploader(
                     label,
                     type="csv",
@@ -118,12 +104,11 @@ def render_file_upload_section(required_keys, csv_label_map):
 # app_pages/manage/view.py
 def render_status_message_ui(
     file_ready: bool,
-    file_name: str = None,
-    output_excel: BytesIO = None,
+    file_name: Optional[str] = None,
+    output_excel: Optional[BytesIO] = None,
     uploaded_count: int = 0,
     total_count: int = 0,
 ):
-
     if file_ready and output_excel:
         st.success("✅ 必要なファイルがすべてアップロードされました！")
         st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
