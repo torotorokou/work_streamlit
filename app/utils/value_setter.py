@@ -65,3 +65,48 @@ def set_value_fast(df, match_columns, match_values, value, value_col="値"):
         return
 
     df.loc[cond, value_col] = value
+
+
+def set_value_fast_safe(df: pd.DataFrame,
+                        match_columns: list[str],
+                        match_values: list,
+                        value,
+                        value_col: str = "値") -> pd.DataFrame:
+    """
+    元の DataFrame を変更せず、一致行に値を設定した新しい DataFrame を返す。
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        元のデータフレーム（変更されません）
+    match_columns : list[str]
+        マッチさせる列名
+    match_values : list
+        マッチさせる値（列名に対応）
+    value : any
+        書き込む値
+    value_col : str
+        値を格納する列名（デフォルトは '値'）
+
+    Returns
+    -------
+    pd.DataFrame
+        値が設定された新しい DataFrame
+    """
+    if len(match_columns) != len(match_values):
+        raise ValueError("列名と値の数が一致していません")
+
+    df_copy = df.copy()
+    cond = pd.Series(True, index=df_copy.index)
+    for col, val in zip(match_columns, match_values):
+        if val in [None, ""]:
+            cond &= df_copy[col].isna()
+        else:
+            cond &= df_copy[col] == val
+
+    if cond.sum() == 0:
+        print(f"⚠️ 該当行なし: {dict(zip(match_columns, match_values))}")
+        return df_copy
+
+    df_copy.loc[cond, value_col] = value
+    return df_copy
