@@ -1,7 +1,7 @@
 pages:
     - label: トップページ
       id: home
-      function: show_top_page
+      function: render_home
       addons: true
 
     - label: 管理業務
@@ -15,3 +15,7 @@ pages:
     - label: 機能２
       id: feature2
       message: '🧪 新機能２は今後追加予定です。しばらくお待ちください。'
+
+    # - id: home
+    #   label: ホーム
+    #   function: render_home

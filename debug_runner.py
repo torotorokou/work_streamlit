@@ -6,10 +6,8 @@ os.chdir("/work")
 import pandas as pd
 from utils.logger import app_logger
 from utils.config_loader import get_template_config
-from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.utils.load_template import load_master_and_template
 from IPython.display import display
-import re
 from logic.manage.factory_report import process
 
 # 表示ラベルマップ（処理対象名として使う）
@@ -31,11 +29,6 @@ master_csv_shobun = process(dfs)
 display(master_csv_shobun)
 
 import pandas as pd
-from utils.logger import app_logger
-from utils.config_loader import get_template_config
-from logic.manage.utils.load_template import load_master_and_template
-from utils.value_setter import set_value_fast
-from logic.manage.utils.excel_tools import create_label_rows_generic, sort_by_cell_row
 from logic.manage.utils.summary_tools import write_sum_to_target_cell
 from logic.manage.utils.excel_tools import add_label_rows_and_restore_sum
 
@@ -98,7 +91,9 @@ def apply_shobun_weight(
     # --- 丸源処理 ---
     df_marugen = df_shipping[df_shipping["業者CD"] == marugen_num].copy()
     filtered_marugen = df_marugen[df_marugen["品名"].isin(master_csv["品名"])]
-    agg_marugen = filtered_marugen.groupby(["業者CD", "品名"], as_index=False)["正味重量"].sum()
+    agg_marugen = filtered_marugen.groupby(["業者CD", "品名"], as_index=False)[
+        "正味重量"
+    ].sum()
 
     # --- その他業者処理 ---
     df_others = df_shipping[df_shipping["業者CD"] != marugen_num]
