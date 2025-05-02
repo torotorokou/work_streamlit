@@ -1,11 +1,13 @@
-# ▶ 対話的開発にあると便利（任意・不要なら削除可）
-ipython
+# ▶ 対話的開発（任意・Jupyterなど使う場合に便利）
+ipython>=8.0
 
-# ▶ 開発用：コード整形・型チェック・静的解析（ローカルorCI）
-black==23.3.0
-flake8==6.1.0
-mypy==1.4.1
-ruff
-isort
-pre-commit
+# ▶ コード整形・静的解析・型チェック（pre-commit連携）
+black==24.4.2
+mypy==1.10.0
+ruff==0.4.4
+isort==5.13.2
+pre-commit==3.7.0
+
+# ▶ 型補完（mypy用 stub パッケージ）
 types-PyYAML
+pandas-stubs
