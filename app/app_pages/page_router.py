@@ -70,7 +70,7 @@ def _render_selected_page():
                 func_name = page["function"]
                 page_instance = PAGE_INSTANCES.get(func_name)
                 if page_instance:
-                        page_instance.render()  # ← クラスの render を呼ぶ
+                    page_instance.render()  # ← クラスの render を呼ぶ
                 else:
                     st.warning(f"⚠️ `{func_name}` は存在しません。")
 
