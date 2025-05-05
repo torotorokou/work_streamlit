@@ -67,11 +67,13 @@ def set_value_fast(df, match_columns, match_values, value, value_col="値"):
     df.loc[cond, value_col] = value
 
 
-def set_value_fast_safe(df: pd.DataFrame,
-                        match_columns: list[str],
-                        match_values: list,
-                        value,
-                        value_col: str = "値") -> pd.DataFrame:
+def set_value_fast_safe(
+    df: pd.DataFrame,
+    match_columns: list[str],
+    match_values: list,
+    value,
+    value_col: str = "値",
+) -> pd.DataFrame:
     """
     元の DataFrame を変更せず、一致行に値を設定した新しい DataFrame を返す。
 

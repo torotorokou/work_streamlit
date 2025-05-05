@@ -1,5 +1,5 @@
 import pandas as pd
-from utils.value_setter import set_value_fast,set_value_fast_safe
+from utils.value_setter import set_value_fast, set_value_fast_safe
 from utils.logger import app_logger
 
 
@@ -28,7 +28,9 @@ def write_sum_to_target_cell(
     """
     total = pd.to_numeric(df[value_column], errors="coerce").sum()
 
-    df= set_value_fast_safe(df, target_keys, target_values, total, value_col=value_column)
+    df = set_value_fast_safe(
+        df, target_keys, target_values, total, value_col=value_column
+    )
 
     return df
 
