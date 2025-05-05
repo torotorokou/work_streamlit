@@ -19,8 +19,6 @@ class BasePage(ABC):
     def render_title(self):
         st.markdown(f"## {self.title}")
 
-
-            
     def log(self, message: str):
         self.logger.info(f"[{self.page_id}] {message}")
 

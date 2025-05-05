@@ -6,9 +6,7 @@ import streamlit as st
 class UtilPage(BasePage):
     def __init__(self):
         config = PageConfig(
-            page_id="util",
-            title="ユーティリティ機能",
-            parent_title="補助ツール"
+            page_id="util", title="ユーティリティ機能", parent_title="補助ツール"
         )
         super().__init__(config)
 

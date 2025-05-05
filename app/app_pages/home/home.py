@@ -4,12 +4,13 @@ import random
 from app_pages.base_page import BasePage
 from utils.page_config import PageConfig
 
+
 class HomePage(BasePage):
     def __init__(self):
         config = PageConfig(
             page_id="home",
             title="参謀くん Chat Guide",
-            parent_title="ホームガイド"  # 任意、デフォルトのままでもOK
+            parent_title="ホームガイド",  # 任意、デフォルトのままでもOK
         )
         super().__init__(config)
 
