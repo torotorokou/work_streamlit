@@ -7,7 +7,6 @@ import pandas as pd
 from utils.logger import app_logger
 from utils.config_loader import get_template_config
 from logic.manage.utils.load_template import load_master_and_template
-from IPython.display import display
 from logic.manage.factory_report import process
 
 # 表示ラベルマップ（処理対象名として使う）
@@ -26,7 +25,7 @@ dfs = {
 # df_yard = dfs["yard"]
 # df_yard
 master_csv_shobun = process(dfs)
-display(master_csv_shobun)
+# display(master_csv_shobun)
 
 import pandas as pd
 from logic.manage.utils.summary_tools import write_sum_to_target_cell
