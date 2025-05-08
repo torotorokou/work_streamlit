@@ -4,9 +4,14 @@ target-version = ["py310"]
 skip-string-normalization = false  # ダブルクォート統一（false 推奨）
 
 exclude = '''
-/app/__archive__/
+/(
+    app/__archive__(/|$)
+  | \.git
+  | \.mypy_cache
+  | \.ruff_cache
+  | __pycache__
+)/
 '''
-
 [tool.ruff]
 line-length = 88
 target-version = "py310"
