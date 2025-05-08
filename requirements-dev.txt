@@ -3,6 +3,7 @@ ipython>=8.0
 
 # ▶ コード整形・静的解析・型チェック（pre-commit連携）
 black==24.4.2
+black[jupyter]
 mypy==1.10.0
 ruff==0.4.4
 isort==5.13.2
