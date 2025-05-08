@@ -25,6 +25,7 @@ balance_sheet:
         yuka_yard: data/master/balance_sheet/yuka_yard.csv
         uriage: data/master/balance_sheet/uriage.csv
         uriage_yuka_kaitori: data/master/balance_sheet/uriage_yuka_kaitori.csv
+        etc: data/master/balance_sheet/etc.csv
 
 average_sheet:
     key: average_sheet
