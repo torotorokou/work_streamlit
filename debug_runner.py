@@ -28,7 +28,7 @@ dfs = {
 # df_yard = dfs["yard"]
 # df_yard
 master_csv_shobun = process(dfs)
-display(master_csv_shobun)
+# display(master_csv_shobun)
 
 import pandas as pd
 from utils.logger import app_logger
