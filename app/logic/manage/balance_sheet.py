@@ -14,7 +14,7 @@ def process(dfs: dict) -> pd.DataFrame:
     """
     Streamlitの選択に基づき、工場日報（処分パート）を処理するエントリーポイント関数。
     """
-
+    
     logger = app_logger()
 
     # --- テンプレート設定の取得 ---
