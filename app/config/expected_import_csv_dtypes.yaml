@@ -30,3 +30,12 @@ balance_sheet:
         種類名: str
         品名: str
         正味重量: int
+    receive:
+        受入番号: int
+        正味重量: int
+        伝票区分名: str
+        単位名: str
+        単価: int
+        金額: int
+        品名: str
+        数量: int
