@@ -40,3 +40,4 @@ balance_sheet:
         単価: int
         伝票区分名: str
         品名: str
+        伝票日付: datetime
