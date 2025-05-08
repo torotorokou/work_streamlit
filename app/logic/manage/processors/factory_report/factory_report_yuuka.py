@@ -8,8 +8,6 @@ from logic.manage.utils.summary_tools import (
     write_sum_to_target_cell,
     summarize_value_by_cell_with_label,
 )
-from utils.value_setter import set_value
-from IPython.display import display
 
 
 def process_yuuka(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFrame:

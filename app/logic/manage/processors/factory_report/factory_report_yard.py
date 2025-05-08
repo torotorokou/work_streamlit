@@ -8,8 +8,6 @@ from logic.manage.utils.summary_tools import (
     summarize_value_by_cell_with_label,
 )
 from logic.manage.utils.summary_tools import summary_apply_by_sheet
-from utils.value_setter import set_value
-from IPython.display import display
 
 
 def process_yard(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFrame:
