@@ -58,5 +58,4 @@ def calculate_honest_sales_by_unit(df_receive: pd.DataFrame) -> tuple[int, int]:
     # kg - m3 の差分を計算（kg純粋）
     honest_kg_total = honest_kg_value - honest_m3_value
 
-
     return honest_kg_total, honest_m3_value
