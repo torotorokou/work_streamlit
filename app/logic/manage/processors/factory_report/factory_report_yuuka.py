@@ -1,4 +1,5 @@
 import pandas as pd
+import streamlit as st
 from utils.logger import app_logger
 from utils.config_loader import get_template_config
 from logic.manage.utils.load_template import load_master_and_template
@@ -7,7 +8,7 @@ from logic.manage.utils.summary_tools import summary_apply_by_sheet
 from logic.manage.utils.summary_tools import (
     summarize_value_by_cell_with_label,
 )
-
+from utils.debug_tools import DevTools
 
 def process_yuuka(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFrame:
     """
@@ -38,13 +39,6 @@ def process_yuuka(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFr
         updated_master_csv, label_col="有価名"
     )
 
-    # # --- ④ 合計行などを追加集計 ---
-    # target_keys = ["有価名"]
-    # target_values = ["合計_有価"]
-    # updated_with_sum2 = write_sum_to_target_cell(
-    #     updated_with_sum, target_keys, target_values
-    # )
-
     # ラベル行追加
     final_df = add_label_rows_and_restore_sum(
         updated_with_sum, label_col="有価名", offset=-1
@@ -58,6 +52,8 @@ def process_yuuka(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFr
 
 
 def apply_yuuka_summary(master_csv, df_yard, df_shipping):
+    devtools = DevTools()
+    logger = app_logger()
     df_map = {"ヤード": df_yard, "出荷": df_shipping}
 
     sheet_key_pairs = [
@@ -79,6 +75,8 @@ def apply_yuuka_summary(master_csv, df_yard, df_shipping):
             key_cols=key_cols,
         )
 
+    # 開発用
+    devtools.display(master_csv_updated)
     return master_csv_updated
 
 

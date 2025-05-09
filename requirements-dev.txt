@@ -1,5 +1,7 @@
 # ▶ 対話的開発（任意・Jupyterなど使う場合に便利）
 ipython>=8.0
+matplotlib
+pandasgui
 
 # ▶ コード整形・静的解析・型チェック（pre-commit連携）
 black==24.4.2
