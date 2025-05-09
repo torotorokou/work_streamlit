@@ -1,6 +1,9 @@
 import pandas as pd
 from utils.logger import app_logger
-from logic.manage.utils.summary_tools import safe_merge_by_keys, summary_update_column_if_notna
+from logic.manage.utils.summary_tools import (
+    safe_merge_by_keys,
+    summary_update_column_if_notna,
+)
 
 
 # --- utils/filters.py ---
@@ -19,7 +22,8 @@ def apply_negation_filters(
 
         unique_vals = match_df[col].dropna().unique()
         neg_vals = [
-            v[3:] for v in unique_vals
+            v[3:]
+            for v in unique_vals
             if isinstance(v, str) and v.lower().startswith("not")
         ]
         if neg_vals:
@@ -110,7 +114,9 @@ def summary_apply_by_sheet(
         return master_csv
 
     # --- 集計 ---
-    agg_df = filtered_data_df.groupby(merge_key_cols, as_index=False)[[source_col]].sum()
+    agg_df = filtered_data_df.groupby(merge_key_cols, as_index=False)[
+        [source_col]
+    ].sum()
 
     # --- マージ ---
     merged_df = safe_merge_by_keys(match_df, agg_df, merge_key_cols)

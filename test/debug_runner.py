@@ -15,6 +15,7 @@ from logic.manage.utils.excel_tools import create_label_rows_generic, sort_by_ce
 from utils.value_setter import set_value_fast, set_value_fast_safe
 from logic.manage.utils.summary_tools import summary_apply
 from logic.manage.factory_report import process as process_factory
+from logic.manage.balance_sheet import process as process_balance_sheet
 
 # 処理の統合
 def run_debug_process() -> pd.DataFrame:
@@ -40,7 +41,7 @@ def run_debug_process() -> pd.DataFrame:
 
 
     # --- テンプレート設定の取得 ---
-    template_key = "factory_report"
+    template_key = "balance_sheet"
 
     template_config = get_template_config()[template_key]
     template_name = template_config["key"]
@@ -66,4 +67,4 @@ logger = app_logger()
 dfs_after = run_debug_process()
 
 logger.info("デバッグ作業開始")
-process(dfs_after)
+process_balance_sheet(dfs_after)
