@@ -55,7 +55,9 @@ def apply_shobun_weight(
     # --- 丸源処理 ---
     df_marugen = df_shipping[df_shipping["業者CD"] == marugen_num].copy()
     filtered_marugen = df_marugen[df_marugen["品名"].isin(master_csv["品名"])]
-    agg_marugen = filtered_marugen.groupby(["業者CD", "品名"], as_index=False)["正味重量"].sum()
+    agg_marugen = filtered_marugen.groupby(["業者CD", "品名"], as_index=False)[
+        "正味重量"
+    ].sum()
 
     # --- その他業者処理 ---
     df_others = df_shipping[df_shipping["業者CD"] != marugen_num]

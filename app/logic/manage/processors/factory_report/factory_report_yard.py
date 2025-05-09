@@ -4,10 +4,10 @@ from utils.config_loader import get_template_config
 from logic.manage.utils.load_template import load_master_and_template
 from logic.manage.utils.excel_tools import add_label_rows_and_restore_sum
 from logic.manage.utils.summary_tools import (
-    write_sum_to_target_cell,
     summarize_value_by_cell_with_label,
 )
-from logic.manage.utils.summary_tools import summary_apply_by_sheet
+
+from logic.manage.processors.factory_report.summary import summary_apply_by_sheet
 
 
 def process_yard(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFrame:

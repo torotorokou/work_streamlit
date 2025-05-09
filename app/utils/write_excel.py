@@ -2,7 +2,6 @@ from openpyxl import load_workbook
 from io import BytesIO
 import pandas as pd
 import numpy as np
-from datetime import datetime
 from openpyxl.cell.cell import MergedCell
 from utils.logger import app_logger
 from openpyxl.workbook.workbook import Workbook

@@ -16,7 +16,9 @@ template_processors = {}
 
 for key in template_configs.keys():
     try:
-        module = importlib.import_module(f".{key}", package=__name__)  # ← ここがポイント
+        module = importlib.import_module(
+            f".{key}", package=__name__
+        )  # ← ここがポイント
         func = getattr(module, "process")
         template_processors[key] = func
         logger.info(f"✅ {key}.py の process 関数を登録しました")

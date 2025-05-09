@@ -8,7 +8,6 @@ from components.ui_message import show_warning_bubble
 from logic.manage import template_processors
 from components.custom_button import centered_button, centered_download_button
 from logic.controllers.csv_controller import prepare_csv_data
-from utils.debug_tools import save_debug_parquets
 from utils.write_excel import write_values_to_template
 
 
@@ -45,8 +44,10 @@ def show_manage_work():
 
     # --- UI ---
     st.sidebar.markdown("---")
-    st.sidebar.subheader("🛠 管理業務メニュー")
-    template_label = st.sidebar.radio("出力したい項目を選択してください", list(template_dict.keys()))
+    st.sidebar.subheader("🛠 帳票作成メニュー")
+    template_label = st.sidebar.radio(
+        "出力したい項目を選択してください", list(template_dict.keys())
+    )
     selected_template = template_dict.get(template_label)
     uploaded_files = {}
 
@@ -149,7 +150,9 @@ def show_manage_work():
                 progress.progress(100)
                 today_str = datetime.now().strftime("%Y%m%d")
 
-                st.info("✅ ファイルが生成されました。下のボタンからダウンロードできます👇")
+                st.info(
+                    "✅ ファイルが生成されました。下のボタンからダウンロードできます👇"
+                )
 
                 centered_download_button(
                     label="📥 Excelファイルをダウンロード",

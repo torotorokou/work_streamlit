@@ -12,7 +12,7 @@ def typewriter_chat(message: str, delay=0.03):
         placeholder.markdown(displayed)
         time.sleep(delay)
 
-
+class TopPage:
 # メイントップページ表示
 def show_top_page():
     st.title("💬 参謀くん Chat Guide")

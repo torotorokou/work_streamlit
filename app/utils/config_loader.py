@@ -29,7 +29,9 @@ def resolve_path(key_or_path: str, section: Optional[str] = None) -> Path:
         path_config = get_path_config()
         relative = path_config.get(section, {}).get(key_or_path)
         if relative is None:
-            raise KeyError(f"'{section}.{key_or_path}' は main_paths.yaml に存在しません")
+            raise KeyError(
+                f"'{section}.{key_or_path}' は main_paths.yaml に存在しません"
+            )
         return base_dir / relative
     else:
         return base_dir / key_or_path

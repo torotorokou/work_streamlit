@@ -4,7 +4,7 @@ import pandas as pd
 from utils.logger import app_logger
 from utils.date_tools import get_weekday_japanese
 from utils.rounding_tools import round_value_column_generic
-from utils.value_setter import set_value_fast
+from utils.value_setter import set_value_fast, set_value_fast_safe
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.utils.load_template import load_master_and_template
 
@@ -128,13 +128,13 @@ def aggregate_vehicle_data(
         unit_price = total_weight / total_car if total_car > 0 else 0
 
         # --- 結果を master_csv に反映 ---
-        set_value_fast(
+        master_csv = set_value_fast_safe(
             master_csv, master_columns_keys, [abc_label, None, "重量"], total_weight
         )
-        set_value_fast(
+        master_csv = set_value_fast_safe(
             master_csv, master_columns_keys, [abc_label, None, "台数"], total_car
         )
-        set_value_fast(
+        master_csv = set_value_fast_safe(
             master_csv, master_columns_keys, [abc_label, None, "台数単価"], unit_price
         )
 
@@ -206,19 +206,19 @@ def calculate_item_summary(
             ave_sell = total_sell / total_weight if total_weight > 0 else 0
 
             # master_csv に書き込み
-            set_value_fast(
+            master_csv = set_value_fast_safe(
                 master_csv,
                 master_columns_keys,
                 [abc_key, "平均単価", item_name],
                 ave_sell,
             )
-            set_value_fast(
+            master_csv = set_value_fast_safe(
                 master_csv,
                 master_columns_keys,
                 [abc_key, "kg", item_name],
                 total_weight,
             )
-            set_value_fast(
+            master_csv = set_value_fast_safe(
                 master_csv,
                 master_columns_keys,
                 [abc_key, "売上", item_name],
@@ -231,7 +231,9 @@ def calculate_item_summary(
             )
 
             if total_weight == 0:
-                logger.warning(f"⚠️ {abc_key}・{item_name} の重量が0のため単価が0になります。")
+                logger.warning(
+                    f"⚠️ {abc_key}・{item_name} の重量が0のため単価が0になります。"
+                )
 
     return master_csv
 
@@ -277,13 +279,13 @@ def summarize_item_and_abc_totals(
         total_sell = filtered[filtered["kg売上平均単価"] == "売上"]["値"].sum()
         ave_sell = total_sell / total_weight if total_weight > 0 else 0
 
-        set_value_fast(
+        master_csv = set_value_fast_safe(
             master_csv, master_columns_keys, ["合計", "平均単価", item_name], ave_sell
         )
-        set_value_fast(
+        master_csv = set_value_fast_safe(
             master_csv, master_columns_keys, ["合計", "kg", item_name], total_weight
         )
-        set_value_fast(
+        master_csv = set_value_fast_safe(
             master_csv, master_columns_keys, ["合計", "売上", item_name], total_sell
         )
 
@@ -295,16 +297,16 @@ def summarize_item_and_abc_totals(
         total_sell = filtered[filtered["kg売上平均単価"] == "売上"]["値"].sum()
         ave_sell = total_sell / total_weight if total_weight > 0 else 0
 
-        set_value_fast(
+        master_csv = set_value_fast_safe(
             master_csv,
             master_columns_keys,
             [abc_key, "平均単価", "3品目合計"],
             ave_sell,
         )
-        set_value_fast(
+        master_csv = set_value_fast_safe(
             master_csv, master_columns_keys, [abc_key, "kg", "3品目合計"], total_weight
         )
-        set_value_fast(
+        master_csv = set_value_fast_safe(
             master_csv, master_columns_keys, [abc_key, "売上", "3品目合計"], total_sell
         )
 
@@ -315,9 +317,15 @@ def summarize_item_and_abc_totals(
     total_sell = filtered[filtered["kg売上平均単価"] == "売上"]["値"].sum()
     ave_sell = total_sell / total_weight if total_weight > 0 else 0
 
-    set_value_fast(master_csv, master_columns_keys, ["合計", "平均単価", "3品目合計"], ave_sell)
-    set_value_fast(master_csv, master_columns_keys, ["合計", "kg", "3品目合計"], total_weight)
-    set_value_fast(master_csv, master_columns_keys, ["合計", "売上", "3品目合計"], total_sell)
+    master_csv = set_value_fast_safe(
+        master_csv, master_columns_keys, ["合計", "平均単価", "3品目合計"], ave_sell
+    )
+    master_csv = set_value_fast_safe(
+        master_csv, master_columns_keys, ["合計", "kg", "3品目合計"], total_weight
+    )
+    master_csv = set_value_fast_safe(
+        master_csv, master_columns_keys, ["合計", "売上", "3品目合計"], total_sell
+    )
 
     logger.info("✅ 品目ごとの合計およびABC業者別3品目合計を集計しました。")
 
@@ -364,27 +372,35 @@ def calculate_final_totals(
     total_weight = master_csv[master_csv["品目_台数他"] == "重量"]["値"].sum()
     unit_price = total_weight / total_car if total_car > 0 else 0
 
-    set_value_fast(master_csv, master_columns_keys, ["合計", None, "台数"], total_car)
-    set_value_fast(master_csv, master_columns_keys, ["合計", None, "重量"], total_weight)
-    set_value_fast(master_csv, master_columns_keys, ["合計", None, "台数単価"], unit_price)
+    master_csv = set_value_fast_safe(
+        master_csv, master_columns_keys, ["合計", None, "台数"], total_car
+    )
+    master_csv = set_value_fast_safe(
+        master_csv, master_columns_keys, ["合計", None, "重量"], total_weight
+    )
+    master_csv = set_value_fast_safe(
+        master_csv, master_columns_keys, ["合計", None, "台数単価"], unit_price
+    )
 
     logger.info(
         f"📊 全体合計 → 台数: {total_car}, 重量: {total_weight:.2f}, 単価: {unit_price:.2f}"
     )
 
     # --- 総品目合計 ---
-    filtered = df_receive[(df_receive["伝票区分名"] == "売上") & (df_receive["単位名"] == "kg")]
+    filtered = df_receive[
+        (df_receive["伝票区分名"] == "売上") & (df_receive["単位名"] == "kg")
+    ]
     total_weight_all = pd.to_numeric(filtered["正味重量"], errors="coerce").sum()
     total_sell_all = pd.to_numeric(filtered["金額"], errors="coerce").sum()
     average_price_all = total_sell_all / total_weight_all if total_sell_all > 0 else 0
 
-    set_value_fast(
+    master_csv = set_value_fast_safe(
         master_csv, master_columns_keys, ["総品目㎏", None, None], total_weight_all
     )
-    set_value_fast(
+    master_csv = set_value_fast_safe(
         master_csv, master_columns_keys, ["総品目売上", None, None], total_sell_all
     )
-    set_value_fast(
+    master_csv = set_value_fast_safe(
         master_csv,
         master_columns_keys,
         ["総品目平均単価", None, None],
@@ -408,11 +424,13 @@ def calculate_final_totals(
     other_weight = total_weight_all - total_weight_3items
     other_avg_price = other_sell / other_weight if other_sell > 0 else 0
 
-    set_value_fast(
+    master_csv = set_value_fast_safe(
         master_csv, master_columns_keys, ["その他品目㎏", None, None], other_weight
     )
-    set_value_fast(master_csv, master_columns_keys, ["その他品目売上", None, None], other_sell)
-    set_value_fast(
+    master_csv = set_value_fast_safe(
+        master_csv, master_columns_keys, ["その他品目売上", None, None], other_sell
+    )
+    master_csv = set_value_fast_safe(
         master_csv,
         master_columns_keys,
         ["その他品目平均単価", None, None],
@@ -440,8 +458,12 @@ def set_report_date_info(
     weekday = get_weekday_japanese(today)
 
     formatted_date = today.strftime("%m/%d")
-    set_value_fast(master_csv, master_columns_keys, ["日付", None, None], formatted_date)
-    set_value_fast(master_csv, master_columns_keys, ["曜日", None, None], weekday)
+    master_csv = set_value_fast_safe(
+        master_csv, master_columns_keys, ["日付", None, None], formatted_date
+    )
+    master_csv = set_value_fast_safe(
+        master_csv, master_columns_keys, ["曜日", None, None], weekday
+    )
 
     logger.info(f"日付: {formatted_date}（{weekday}）")
 
