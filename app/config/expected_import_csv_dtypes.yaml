@@ -13,20 +13,33 @@ average_sheet:
 factory_report:
     shipping:
         業者CD: int
-        品名: str
         正味重量: int
+        品名: str
     yard:
-        品名: str
         正味重量: int
+        品名: str
 
 balance_sheet:
     shipping:
         業者CD: int
         業者名: str
         金額: int
-        品名: str
         正味重量: int
+        伝票日付: datetime
+        品名: str
     yard:
         種類名: str
-        品名: str
+        数量: int
         正味重量: int
+        伝票日付: datetime
+        品名: str
+    receive:
+        金額: int
+        受入番号: int
+        数量: int
+        正味重量: int
+        単位名: str
+        単価: int
+        伝票区分名: str
+        伝票日付: datetime
+        品名: str

@@ -1,5 +1,5 @@
 import pandas as pd
-from utils.value_setter import set_value_fast
+from utils.value_setter import set_value_fast, set_value_fast_safe
 from utils.logger import app_logger
 
 
@@ -28,7 +28,9 @@ def write_sum_to_target_cell(
     """
     total = pd.to_numeric(df[value_column], errors="coerce").sum()
 
-    set_value_fast(df, target_keys, target_values, total, value_col=value_column)
+    df = set_value_fast_safe(
+        df, target_keys, target_values, total, value_col=value_column
+    )
 
     return df
 
@@ -75,7 +77,9 @@ def summary_apply(
     インポートCSVをgroupby＆sumし、マスターCSVにマージ＆更新する汎用関数（シート名なし版）。
     """
     logger = app_logger()
-    logger.info(f"▶️ マスター更新処理: キー={key_cols}, 集計列={source_col} ➡ 書き込み列={target_col}")
+    logger.info(
+        f"▶️ マスター更新処理: キー={key_cols}, 集計列={source_col} ➡ 書き込み列={target_col}"
+    )
 
     # ① groupbyで合計
     agg_df = data_df.groupby(key_cols, as_index=False)[[source_col]].sum()
@@ -93,64 +97,6 @@ def summary_apply(
         updated_df.drop(columns=[source_col], inplace=True)
 
     return updated_df
-
-
-def summary_apply_by_sheet(
-    master_csv: pd.DataFrame,
-    data_df: pd.DataFrame,
-    sheet_name: str,
-    key_cols: list[str],
-    source_col: str = "正味重量",
-    target_col: str = "値",
-) -> pd.DataFrame:
-    """
-    インポートCSVをgroupby＆sumし、マスターCSVの特定シートの値に書き込む汎用関数。
-
-    Parameters
-    ----------
-    master_csv : pd.DataFrame
-        全体のテンプレートCSV（複数シートを含む）
-    data_df : pd.DataFrame
-        処理対象のデータ（例：df_shipping）
-    sheet_name : str
-        処理対象とする "CSVシート名"（例："出荷"）
-    key_cols : list[str]
-        groupbyキー ＝ マージキー（例：["品名"], ["業者名", "品名"]）
-    source_col : str
-        集計対象の列（例："正味重量"）
-    target_col : str
-        書き込み先の列（例："値"）
-
-    Returns
-    -------
-    pd.DataFrame
-        処理済みのマスターCSV（"CSVシート名"以外も含む）
-    """
-    logger = app_logger()
-    logger.info(f"▶️ 処理対象シート: {sheet_name}, キー: {key_cols}, 集計列: {source_col}")
-
-    # ① 該当シート部分を取り出す
-    target_df = master_csv[master_csv["CSVシート名"] == sheet_name].copy()
-
-    # ② groupbyで合計
-    agg_df = data_df.groupby(key_cols, as_index=False)[[source_col]].sum()
-
-    # ③ 安全にマージ
-    merged_df = safe_merge_by_keys(
-        master_df=target_df, data_df=agg_df, key_cols=key_cols
-    )
-
-    # ④ 値を書き込み（NaN以外）
-    merged_df = summary_update_column_if_notna(merged_df, source_col, target_col)
-
-    # ⑤ 不要列を削除
-    merged_df.drop(columns=[source_col], inplace=True)
-
-    # ⑥ 元に戻す：シート以外はそのまま
-    master_others = master_csv[master_csv["CSVシート名"] != sheet_name]
-    final_df = pd.concat([master_others, merged_df], ignore_index=True)
-
-    return final_df
 
 
 def safe_merge_by_keys(

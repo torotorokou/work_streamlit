@@ -69,10 +69,23 @@ def enforce_dtypes(df, dtype_map):
 
 def strip_whitespace(df: pd.DataFrame) -> pd.DataFrame:
     """
-    文字列型の列すべてに対して、前後の空白（全角・半角）を除去する。
+    DataFrame内の文字列列に対して、
+    ・前後の空白（半角/全角）
+    ・中央の空白（半角/全角）
+    をすべて削除する。
+
+    Parameters:
+        df (pd.DataFrame): 処理対象のデータフレーム
+
+    Returns:
+        pd.DataFrame: 空白が除去された新しいデータフレーム
     """
     for col in df.select_dtypes(include=["object"]).columns:
         df[col] = (
-            df[col].astype(str).str.strip().str.replace("　", "", regex=False)
-        )  # 全角スペースも削除
+            df[col]
+            .astype(str)
+            .str.strip()  # 前後の半角スペース, 改行, タブなどを除去
+            .str.replace("　", "", regex=False)  # 全角スペースをすべて削除
+            .str.replace(" ", "", regex=False)  # 半角スペースをすべて削除
+        )
     return df

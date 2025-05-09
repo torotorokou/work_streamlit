@@ -21,6 +21,12 @@ balance_sheet:
         shobun_cost: data/master/balance_sheet/syobun_cost.csv
         syobun_cost_kinko: data/master/balance_sheet/syobun_cost_kinko.csv
         syobun_cost_kinko_yard: data/master/balance_sheet/syobun_cost_kinko_yard.csv
+        yuka_shipping: data/master/balance_sheet/yuka_shipping.csv
+        yuka_yard: data/master/balance_sheet/yuka_yard.csv
+        uriage: data/master/balance_sheet/uriage.csv
+        uriage_yuka_kaitori: data/master/balance_sheet/uriage_yuka_kaitori.csv
+        etc: data/master/balance_sheet/etc.csv
+    template_excel_path: data/templates/balance_sheet.xlsx
 
 average_sheet:
     key: average_sheet

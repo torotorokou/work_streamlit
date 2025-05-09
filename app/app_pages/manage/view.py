@@ -7,8 +7,10 @@ from typing import Optional
 
 def render_manage_page(template_dict, template_descriptions):
     st.sidebar.markdown("---")
-    st.sidebar.subheader("🛠 管理業務メニュー")
-    template_label = st.sidebar.radio("出力したい項目を選択してください", list(template_dict.keys()))
+    st.sidebar.subheader("🛠 帳票作成メニュー")
+    template_label = st.sidebar.radio(
+        "出力したい項目を選択してください", list(template_dict.keys())
+    )
 
     st.subheader(f"📝 {template_label} の作成")
     description = template_descriptions.get(template_label, "")
@@ -82,8 +84,12 @@ def render_file_upload_section(required_keys, csv_label_map):
 
         # --- 不要なCSVファイル（グレー表示で保持＋案内） ---
         else:
-            with st.expander(f"🗂 {label}（このテンプレートでは不要です）", expanded=False):
-                st.caption("このファイルは他のテンプレートで使用されます。削除する必要はありません。")
+            with st.expander(
+                f"🗂 {label}（このテンプレートでは不要です）", expanded=False
+            ):
+                st.caption(
+                    "このファイルは他のテンプレートで使用されます。削除する必要はありません。"
+                )
                 uploaded_file = st.file_uploader(
                     label,
                     type="csv",
