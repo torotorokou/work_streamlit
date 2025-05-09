@@ -19,6 +19,8 @@ Thumbs.db
 # ▶ 環境変数や秘密情報（必ず除外）
 .env
 *.env
+.env.staging
+*.env*
 
 # ▶ Streamlitキャッシュ
 .streamlit/
