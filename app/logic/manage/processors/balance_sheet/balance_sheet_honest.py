@@ -47,15 +47,16 @@ def calculate_honest_sales_by_unit(df_receive: pd.DataFrame) -> tuple[int, int]:
         target_col="金額",
     )
 
-    # --- ④ m3 売上金額を取得・マスターへ反映 ---
-    honest_m3_value = summary_m3.loc[summary_m3["項目"] == "オネストm3", "金額"].values[
-        0
-    ]
-    master_df.loc[master_df["項目"] == "オネストm3", "値"] = honest_m3_value
+    # --- ④ m3 売上金額を取得 ---
+    honest_row_m3 = summary_m3[summary_m3["項目"] == "オネストm3"]
+    honest_m3_value = honest_row_m3["金額"].values[0] if not honest_row_m3.empty else 0
 
-    # --- ⑤ kg 売上金額を取得し、差分（kg純粋）を算出 ---
-    honest_kg_total = summary_kg.loc[summary_kg["項目"] == "オネストkg", "金額"].values[
-        0
-    ]
+    # --- ⑤ kg 売上金額を取得 ---
+    honest_row_kg = summary_kg[summary_kg["項目"] == "オネストkg"]
+    honest_kg_value = honest_row_kg["金額"].values[0] if not honest_row_kg.empty else 0
+
+    # kg - m3 の差分を計算（kg純粋）
+    honest_kg_total = honest_kg_value - honest_m3_value
+
 
     return honest_kg_total, honest_m3_value
