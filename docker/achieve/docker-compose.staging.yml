@@ -1,21 +1,19 @@
-version: "3.8"
-
 services:
   app:
-    container_name: ${CONTAINER_NAME}
+    container_name: sanbou_prod
     build:
       context: ../
-      dockerfile: ${DOCKERFILE_PATH}
+      dockerfile: docker/Dockerfile.prod
       args:
         GITHUB_TOKEN: ${GITHUB_TOKEN}
         REPO_TAG: ${REPO_TAG}
         REPO_URL: ${REPO_URL}
     working_dir: /work
     ports:
-      - "${APP_PORT}:8501"
+      - "8502:8501"
     environment:
       - APP_ENV=${APP_ENV}
       - PYTHONUNBUFFERED=1
     env_file:
-      - ${ENV_FILE_PATH}
+      - ../.env.staging
     restart: unless-stopped
