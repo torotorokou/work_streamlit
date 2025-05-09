@@ -14,9 +14,26 @@ dev_rebuild:
 	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml up --build --force-recreate
 
 
-staging:
-	docker-compose -p sanbou_staging -f docker/docker-compose.staging.yml up
 
+# ステージングビルド＆起動（キャッシュあり）
+staging:
+	@echo "Starting staging environment rebuild..."
+	@echo "Loading .env.staging and starting services..."
+
+	powershell -Command "$$envs = Get-Content .env.staging | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
+	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml build --build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN --build-arg REPO_TAG=$$env:REPO_TAG --build-arg REPO_URL=$$env:REPO_URL; \
+	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml down -v || true; \
+	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml up -d"
+
+# ステージング再ビルド（キャッシュ無効化）
+staging_rebuild:
+	@echo "Starting full staging rebuild with --no-cache..."
+	@echo "Reloading .env.staging and rebuilding Docker image..."
+
+	powershell -Command "$$envs = Get-Content .env.staging | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
+	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml build --no-cache --build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN --build-arg REPO_TAG=$$env:REPO_TAG --build-arg REPO_URL=$$env:REPO_URL; \
+	try { docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml down -v } catch { Write-Host 'down failed (ignored)' }; \
+	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml up -d"
 
 # 本番ビルド＆起動
 prod:
@@ -37,6 +54,7 @@ prod_rebuild:
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml build --no-cache --build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN --build-arg REPO_TAG=$$env:REPO_TAG --build-arg REPO_URL=$$env:REPO_URL; \
 	try { docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml down -v } catch { Write-Host 'down failed (ignored)' }; \
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up -d"
+
 down:
 	docker-compose -p $(PROJECT_NAME) down
 
