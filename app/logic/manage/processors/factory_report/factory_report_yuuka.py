@@ -4,11 +4,12 @@ from utils.logger import app_logger
 from utils.config_loader import get_template_config
 from logic.manage.utils.load_template import load_master_and_template
 from logic.manage.utils.excel_tools import add_label_rows_and_restore_sum
-from logic.manage.utils.summary_tools import summary_apply_by_sheet
+from logic.manage.processors.factory_report.summary import summary_apply_by_sheet
 from logic.manage.utils.summary_tools import (
     summarize_value_by_cell_with_label,
 )
 from utils.debug_tools import DevTools
+
 
 def process_yuuka(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFrame:
     """
@@ -60,7 +61,7 @@ def apply_yuuka_summary(master_csv, df_yard, df_shipping):
         ("ヤード", ["品名"]),
         ("出荷", ["品名"]),
         ("出荷", ["業者名", "品名"]),
-        ("出荷", ["現場名", "運搬業者名", "品名"]),
+        ("出荷", ["現場名", "業者名", "品名"]),
     ]
 
     master_csv_updated = master_csv.copy()
@@ -75,8 +76,6 @@ def apply_yuuka_summary(master_csv, df_yard, df_shipping):
             key_cols=key_cols,
         )
 
-    # 開発用
-    devtools.display(master_csv_updated)
     return master_csv_updated
 
 

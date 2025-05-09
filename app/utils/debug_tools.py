@@ -26,7 +26,6 @@ def check_dfs(dfs: dict, rows: int = 5, show_columns: bool = True):
 
 def save_debug_parquets(
     dfs: Dict[str, pd.DataFrame],
-    
 ) -> None:
     folder = get_path_config()["directories"]["input"]
     os.makedirs(folder, exist_ok=True)
@@ -72,9 +71,11 @@ def show_with_gui(df, name="DataFrame"):
     pandasgui を使って DataFrame をGUI表示（開発環境専用）
     """
     from config.settings.config import IS_DEV
+
     if IS_DEV:
         try:
             from pandasgui import show
+
             print(f"🖥 pandasgui で [{name}] を表示します")
             show(df)
         except ImportError:
@@ -82,6 +83,8 @@ def show_with_gui(df, name="DataFrame"):
 
 
 from config.settings.config import IS_DEV
+
+
 class DevTools:
     def __init__(self, enabled: bool = IS_DEV):
         self.enabled = enabled
@@ -96,20 +99,21 @@ class DevTools:
         except Exception as e:
             print(f"⚠️ 表示中にエラー発生: {e}")
 
-
     def visualize_df(self, df):
         if self.enabled:
             try:
                 from utils.debug_tools import visualize_df
+
                 visualize_df(df)
             except ImportError:
                 print("⚠️ visualize_df 未使用（未インポート）")
 
     def show_gui(self, df, name="DataFrame"):
-            if self.enabled:
-                try:
-                    from pandasgui import show
-                    print(f"🖥 [{name}] をGUI表示します")
-                    show(df)
-                except ImportError:
-                    print("⚠️ pandasgui が未インストール")
+        if self.enabled:
+            try:
+                from pandasgui import show
+
+                print(f"🖥 [{name}] をGUI表示します")
+                show(df)
+            except ImportError:
+                print("⚠️ pandasgui が未インストール")
