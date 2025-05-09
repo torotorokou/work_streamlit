@@ -6,7 +6,12 @@ from logic.manage.processors.factory_report.factory_report_shobun import process
 from logic.manage.processors.factory_report.factory_report_yuuka import process_yuuka
 from logic.manage.processors.factory_report.factory_report_yard import process_yard
 from logic.manage.utils.excel_tools import sort_by_cell_row
-from logic.manage.processors.factory_report.etc import generate_summary_dataframe, upsert_summary_row, date_format
+from logic.manage.processors.factory_report.etc import (
+    generate_summary_dataframe,
+    upsert_summary_row,
+    date_format,
+)
+
 # from logic.manage.utils.load_template import load_master_and_template
 # from utils.date_tools import to_japanese_era, to_japanese_month_day
 # from utils.value_setter import set_value_fast, set_value_fast_safe
@@ -56,8 +61,6 @@ def process(dfs: dict) -> pd.DataFrame:
 
     # --- セル行順にソート ---
     combined_df = sort_by_cell_row(combined_df, cell_col="セル")
-
-    logger.debug("\n" + combined_df.to_string())
 
     # --- インデックスをリセットして返す ---
     return combined_df.reset_index(drop=True)

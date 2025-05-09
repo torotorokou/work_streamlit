@@ -82,11 +82,10 @@ def strip_whitespace(df: pd.DataFrame) -> pd.DataFrame:
     """
     for col in df.select_dtypes(include=["object"]).columns:
         df[col] = (
-            df[col].astype(str)
-                   .str.strip()                       # 前後の半角スペース, 改行, タブなどを除去
-                   .str.replace("　", "", regex=False)  # 全角スペースをすべて削除
-                   .str.replace(" ", "", regex=False)   # 半角スペースをすべて削除
+            df[col]
+            .astype(str)
+            .str.strip()  # 前後の半角スペース, 改行, タブなどを除去
+            .str.replace("　", "", regex=False)  # 全角スペースをすべて削除
+            .str.replace(" ", "", regex=False)  # 半角スペースをすべて削除
         )
     return df
-
-

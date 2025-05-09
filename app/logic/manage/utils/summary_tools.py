@@ -98,64 +98,6 @@ def summary_apply(
 
     return updated_df
 
-
-def summary_apply_by_sheet(
-    master_csv: pd.DataFrame,
-    data_df: pd.DataFrame,
-    sheet_name: str,
-    key_cols: list[str],
-    source_col: str = "正味重量",
-    target_col: str = "値",
-) -> pd.DataFrame:
-    """
-    インポートCSVをgroupby＆sumし、マスターCSVの特定シートの値に書き込む汎用関数。
-    master_csv の key_level（数値）が key_cols の数と一致する行のみ処理対象とする。
-    一致しない行は削除されず保持される。source_col（例: 正味重量）は最終的に削除。
-    """
-    logger = app_logger()
-    logger.info(f"▶️ シート: {sheet_name}, キー: {key_cols}, 集計列: {source_col}")
-
-    # シート全体を取得し、key_level一致行と不一致行に分ける
-    sheet_df = master_csv[master_csv["CSVシート名"] == sheet_name].copy()
-
-    if "key_level" not in sheet_df.columns:
-        logger.warning("❌ key_level列が存在しません。スキップします。")
-        return master_csv
-
-    expected_level = len(key_cols)
-    try:
-        match_df = sheet_df[sheet_df["key_level"].astype(int) == expected_level].copy()
-        remain_df = sheet_df[sheet_df["key_level"].astype(int) != expected_level].copy()
-    except Exception as e:
-        logger.error(f"❌ key_level変換エラー: {e}")
-        return master_csv
-
-    if match_df.empty:
-        logger.info(f"⚠️ key_level={expected_level} に一致する行がありません。スキップします。")
-        return master_csv
-
-    # 集計とマージ
-    agg_df = data_df.groupby(key_cols, as_index=False)[[source_col]].sum()
-    merged_df = safe_merge_by_keys(match_df, agg_df, key_cols)
-
-    # 値を書き込み（NaNでないときだけ上書き）
-    merged_df = summary_update_column_if_notna(merged_df, source_col, target_col)
-
-    # ✅ source_col（例: 正味重量）は削除
-    if source_col in merged_df.columns:
-        merged_df.drop(columns=[source_col], inplace=True)
-
-    # 同一シート内で合致しなかった行と、他シートを結合して戻す
-    master_others = master_csv[master_csv["CSVシート名"] != sheet_name]
-    final_df = pd.concat([master_others, remain_df, merged_df], ignore_index=True)
-
-    return final_df
-
-
-
-
-
-
 def safe_merge_by_keys(
     master_df: pd.DataFrame,
     data_df: pd.DataFrame,
