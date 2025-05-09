@@ -13,6 +13,7 @@ csv:
 
 # 📁 ディレクトリ構成
 directories:
+    input: 'app/data/input'
     output: 'app/data/output' # 出力結果の保存先
     master_data: 'app/data/master' # マスターCSVの格納場所
     template: 'app/data/template'

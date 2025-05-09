@@ -25,18 +25,18 @@ def detect_csv_type(file) -> str:
 
         # 判別ルール読み込み
         df_csv = receive_header_definition()
-        logger.info(
-            f"🧾 ヘッダー定義DataFrame（先頭5行）:\n{df_csv.head().to_string(index=False)}"
-        )
+        # logger.info(
+        #     f"🧾 ヘッダー定義DataFrame（先頭5行）:\n{df_csv.head().to_string(index=False)}"
+        # )
 
         signatures = load_template_signatures(df_csv)
-        logger.info(f"📌 判別ルール（signatures）: {signatures}")
+        # logger.info(f"📌 判別ルール（signatures）: {signatures}")
 
         # ✅ ファイルのカーソルを先頭に戻す（重要）
         file.seek(0)
         df = read_csv(file, nrows=1)
         cols = list(df.columns)[:5]
-        logger.info(f"📊 アップロードCSVの先頭列: {cols}")
+        # logger.info(f"📊 アップロードCSVの先頭列: {cols}")
 
         for name, expected in signatures.items():
             logger.info(f"🔍 比較中: 種別 = {name}, 期待ヘッダー = {expected}")
