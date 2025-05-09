@@ -1,68 +1,100 @@
 import pandas as pd
-
-# from utils.config_loader import load_config_json
 from utils.logger import app_logger
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
-
-# from logic.manage.utils.csv_loader import load_filtered_dataframe
+from logic.manage.utils.load_template import load_master_and_template
 from utils.config_loader import get_template_config
+from logic.manage.processors.balance_sheet.balance_sheet_fact import (
+    process_factory_report,
+)
+from logic.manage.processors.balance_sheet.balance_sheet_syobun import (
+    calculate_total_disposal_cost,
+)
+from logic.manage.processors.balance_sheet.balance_sheet_yuukabutu import (
+    calculate_total_valuable_material_cost,
+)
+from logic.manage.processors.balance_sheet.balance_sheet_inbound_truck_count import (
+    inbound_truck_count,
+)
+from logic.manage.processors.balance_sheet.balacne_sheet_inbound_weight import (
+    inbound_weight,
+)
+from logic.manage.processors.balance_sheet.balance_sheet_honest import (
+    calculate_honest_sales_by_unit,
+)
+from logic.manage.processors.balance_sheet.balance_sheet_yuka_kaitori import (
+    calculate_purchase_value_of_valuable_items,
+)
+from logic.manage.processors.balance_sheet.balance_sheet_etc import (
+    calculate_misc_summary_rows,
+)
 
 
-# 処理の統合
 def process(dfs: dict) -> pd.DataFrame:
-    logger = app_logger()
     """
-    Streamlitの選択に基づき、工場日報（処分パート）を処理するエントリーポイント関数。
-    """
+    複数のCSVから業務帳票データ（balance_sheet）を統合的に処理し、最終的なDataFrameを返す。
 
+    Parameters
+    ----------
+    dfs : dict
+        ファイル名（キー）と読み込まれたDataFrameの辞書
+
+    Returns
+    -------
+    pd.DataFrame
+        処理後のマスター帳票データ（master_csv）
+    """
     logger = app_logger()
 
-    # --- テンプレート設定の取得 ---
+    # --- ① マスターCSVの読み込み ---
+    config = get_template_config()["balance_sheet"]
+    master_path = config["master_csv_path"]["factory"]
+    master_csv = load_master_and_template(master_path)
+
+    # --- ② テンプレート設定と対象CSVの読み込み ---
     template_key = "balance_sheet"
     template_config = get_template_config()[template_key]
     template_name = template_config["key"]
     csv_keys = template_config["required_files"]
     logger.info(f"[テンプレート設定読込] key={template_key}, files={csv_keys}")
 
-    # --- CSVの読み込み ---
     df_dict = load_all_filtered_dataframes(dfs, csv_keys, template_name)
     df_receive = df_dict.get("receive")
     df_shipping = df_dict.get("shipping")
     df_yard = df_dict.get("yard")
 
-    # --- 個別処理 ---
+    # --- ③ 各処理の適用 ---
     logger.info("▶️ 搬出量データ処理開始")
-    master_csv_shobun = process_shobun(df_shipping)
+    master_csv = process_factory_report(dfs, master_csv)
 
-    # # --- 個別処理 ---
-    # logger.info("▶️ 工場日報からの読込")
-    # master_csv_shobun = process_factory_report(dfs)
+    logger.info("▶️ 処分費データ処理開始")
+    master_csv.loc[master_csv["大項目"] == "処分費", "値"] = (
+        calculate_total_disposal_cost(df_yard, df_shipping)
+    )
 
-    # logger.info("▶️ 出荷有価データ処理開始")
-    # master_csv_yuka = process_yuuka(df_yard, df_shipping)
+    logger.info("▶️ 有価物データ処理開始")
+    master_csv.loc[master_csv["大項目"] == "有価物", "値"] = (
+        calculate_total_valuable_material_cost(df_yard, df_shipping)
+    )
 
-    # logger.info("▶️ 出荷ヤードデータ処理開始")
-    # master_csv_yard = process_yard(df_yard, df_shipping)
+    logger.info("▶️ 搬入台数データ処理開始")
+    master_csv.loc[master_csv["大項目"] == "搬入台数", "値"] = inbound_truck_count(
+        df_receive
+    )
 
-    # # --- 結合 ---
-    # logger.info("🧩 各処理結果を結合中...")
-    # combined_df = pd.concat(
-    #     [master_csv_yuka, master_csv_shobun, master_csv_yard], ignore_index=True
-    # )
+    logger.info("▶️ 搬入量データ処理開始")
+    master_csv.loc[master_csv["大項目"] == "搬入量", "値"] = inbound_weight(df_receive)
 
-    # # --- 合計・総合計行の追加/更新 ---
-    # combined_df = generate_summary_dataframe(combined_df)
+    logger.info("▶️ オネストkg / m3 データ処理開始")
+    honest_kg, honest_m3 = calculate_honest_sales_by_unit(df_receive)
+    master_csv.loc[master_csv["大項目"] == "オネストkg", "値"] = honest_kg
+    master_csv.loc[master_csv["大項目"] == "オネストm3", "値"] = honest_m3
 
-    # # 日付の挿入
-    # combined_df = date_format(combined_df, df_shipping)
+    logger.info("▶️ 有価買取データ処理開始")
+    master_csv.loc[master_csv["大項目"] == "有価買取", "値"] = (
+        calculate_purchase_value_of_valuable_items(df_receive)
+    )
 
-    # # --- セル行順にソート ---
-    # combined_df = sort_by_cell_row(combined_df, cell_col="セル")
+    logger.info("▶️ 売上・仕入・損益まとめ処理開始")
+    master_csv = calculate_misc_summary_rows(master_csv, df_receive)
 
-    # logger.debug("\n" + combined_df.to_string())
-
-    # # --- インデックスをリセットして返す ---
-    # return combined_df.reset_index(drop=True)
-
-
-# def process_balance_sheet():
+    return master_csv
