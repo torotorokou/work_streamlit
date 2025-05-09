@@ -109,54 +109,51 @@ def summary_apply_by_sheet(
 ) -> pd.DataFrame:
     """
     インポートCSVをgroupby＆sumし、マスターCSVの特定シートの値に書き込む汎用関数。
-
-    Parameters
-    ----------
-    master_csv : pd.DataFrame
-        全体のテンプレートCSV（複数シートを含む）
-    data_df : pd.DataFrame
-        処理対象のデータ（例：df_shipping）
-    sheet_name : str
-        処理対象とする "CSVシート名"（例："出荷"）
-    key_cols : list[str]
-        groupbyキー ＝ マージキー（例：["品名"], ["業者名", "品名"]）
-    source_col : str
-        集計対象の列（例："正味重量"）
-    target_col : str
-        書き込み先の列（例："値"）
-
-    Returns
-    -------
-    pd.DataFrame
-        処理済みのマスターCSV（"CSVシート名"以外も含む）
+    master_csv の key_level（数値）が key_cols の数と一致する行のみ処理対象とする。
+    一致しない行は削除されず保持される。source_col（例: 正味重量）は最終的に削除。
     """
     logger = app_logger()
-    logger.info(
-        f"▶️ 処理対象シート: {sheet_name}, キー: {key_cols}, 集計列: {source_col}"
-    )
+    logger.info(f"▶️ シート: {sheet_name}, キー: {key_cols}, 集計列: {source_col}")
 
-    # ① 該当シート部分を取り出す
-    target_df = master_csv[master_csv["CSVシート名"] == sheet_name].copy()
+    # シート全体を取得し、key_level一致行と不一致行に分ける
+    sheet_df = master_csv[master_csv["CSVシート名"] == sheet_name].copy()
 
-    # ② groupbyで合計
+    if "key_level" not in sheet_df.columns:
+        logger.warning("❌ key_level列が存在しません。スキップします。")
+        return master_csv
+
+    expected_level = len(key_cols)
+    try:
+        match_df = sheet_df[sheet_df["key_level"].astype(int) == expected_level].copy()
+        remain_df = sheet_df[sheet_df["key_level"].astype(int) != expected_level].copy()
+    except Exception as e:
+        logger.error(f"❌ key_level変換エラー: {e}")
+        return master_csv
+
+    if match_df.empty:
+        logger.info(f"⚠️ key_level={expected_level} に一致する行がありません。スキップします。")
+        return master_csv
+
+    # 集計とマージ
     agg_df = data_df.groupby(key_cols, as_index=False)[[source_col]].sum()
+    merged_df = safe_merge_by_keys(match_df, agg_df, key_cols)
 
-    # ③ 安全にマージ
-    merged_df = safe_merge_by_keys(
-        master_df=target_df, data_df=agg_df, key_cols=key_cols
-    )
-
-    # ④ 値を書き込み（NaN以外）
+    # 値を書き込み（NaNでないときだけ上書き）
     merged_df = summary_update_column_if_notna(merged_df, source_col, target_col)
 
-    # ⑤ 不要列を削除
-    merged_df.drop(columns=[source_col], inplace=True)
+    # ✅ source_col（例: 正味重量）は削除
+    if source_col in merged_df.columns:
+        merged_df.drop(columns=[source_col], inplace=True)
 
-    # ⑥ 元に戻す：シート以外はそのまま
+    # 同一シート内で合致しなかった行と、他シートを結合して戻す
     master_others = master_csv[master_csv["CSVシート名"] != sheet_name]
-    final_df = pd.concat([master_others, merged_df], ignore_index=True)
+    final_df = pd.concat([master_others, remain_df, merged_df], ignore_index=True)
 
     return final_df
+
+
+
+
 
 
 def safe_merge_by_keys(
