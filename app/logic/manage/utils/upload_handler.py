@@ -30,7 +30,7 @@ def handle_uploaded_files(required_keys, csv_label_map):
 
             # アップロードされたCSVファイルの種別名を検出
             detected_name = detect_csv_type(uploaded)
-            logger.info(f"{key} → expected: {expected_name}, detected: {detected_name}")
+            # logger.info(f"{key} → expected: {expected_name}, detected: {detected_name}")
 
             # 検出された種別名と期待値が一致しない場合、警告を出して除外
             if detected_name != expected_name:
