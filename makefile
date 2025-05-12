@@ -35,25 +35,26 @@ staging_rebuild:
 	try { docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml down -v } catch { Write-Host 'down failed (ignored)' }; \
 	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml up -d"
 
-# 本番ビルド＆起動
+# 本番ビルド＆起動（キャッシュあり）
 prod:
 	@echo "Starting production environment rebuild..."
-	@echo "Loading .env and starting services..."
+	@echo "Loading .env.prod and starting services..."
 
-	powershell -Command "$$envs = Get-Content .env | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
+	powershell -Command "$$envs = Get-Content .env.prod | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml build --build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN --build-arg REPO_TAG=$$env:REPO_TAG --build-arg REPO_URL=$$env:REPO_URL; \
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml down -v || true; \
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up -d"
 
-# 再ビルド（キャッシュ無効化）
+# 本番再ビルド（キャッシュ無効化）
 prod_rebuild:
-	@echo "Starting full rebuild with --no-cache..."
-	@echo "Reloading .env and rebuilding Docker image..."
+	@echo "Starting full production rebuild with --no-cache..."
+	@echo "Reloading .env.prod and rebuilding Docker image..."
 
-	powershell -Command "$$envs = Get-Content .env | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
+	powershell -Command "$$envs = Get-Content .env.prod | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml build --no-cache --build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN --build-arg REPO_TAG=$$env:REPO_TAG --build-arg REPO_URL=$$env:REPO_URL; \
 	try { docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml down -v } catch { Write-Host 'down failed (ignored)' }; \
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up -d"
+
 
 down:
 	docker-compose -p $(PROJECT_NAME) down
@@ -66,10 +67,15 @@ clean:
 # --- Streamlit操作 ---
 
 st-up:
-	streamlit run app/app.py --server.port=8504 --server.address=0.0.0.0 --server.headless=false --server.enableCORS=false
-
-st-kill:
+	@echo "🔌 Killing any process using port 8504..."
 	@fuser -k 8504/tcp || true
+	@echo "🚀 Starting Streamlit app on port 8504..."
+	streamlit run app/app.py \
+		--server.port=8504 \
+		--server.address=0.0.0.0 \
+		--server.headless=false \
+		--server.enableCORS=false \
+		--server.enableXsrfProtection=false
 
 
 # --- モニタリング・ログ用ユーティリティ ---

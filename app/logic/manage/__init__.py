@@ -21,6 +21,6 @@ for key in template_configs.keys():
         )  # ← ここがポイント
         func = getattr(module, "process")
         template_processors[key] = func
-        logger.info(f"✅ {key}.py の process 関数を登録しました")
+        # logger.info(f"✅ {key}.py の process 関数を登録しました")
     except Exception as e:
         logger.warning(f"❌ 処理関数の読み込みエラー: {key} → {type(e).__name__}: {e}")
