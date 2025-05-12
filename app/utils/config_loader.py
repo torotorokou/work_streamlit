@@ -63,12 +63,33 @@ def get_expected_dtypes() -> dict:
     raw_yaml = load_yaml("expected_dtypes", section="config_files")
 
     resolved = {}
+
     for template_key, file_map in raw_yaml.items():
         resolved[template_key] = {}
+
         for file_key, dtype_map in file_map.items():
-            resolved[template_key][file_key] = {
-                col: resolve_dtype(dtype_str) for col, dtype_str in dtype_map.items()
-            }
+            flattened = {}
+
+            # --- ✅ dict（通常の形式）の場合
+            if isinstance(dtype_map, dict):
+                flattened = {
+                    col: resolve_dtype(dtype_str)
+                    for col, dtype_str in dtype_map.items()
+                }
+
+            # --- ✅ list（アンカー＋追加型）の場合
+            elif isinstance(dtype_map, list):
+                for item in dtype_map:
+                    if isinstance(item, dict):
+                        for col, dtype_str in item.items():
+                            flattened[col] = resolve_dtype(dtype_str)
+                    else:
+                        raise TypeError(f"unexpected format in expected_dtypes: {item}")
+
+            else:
+                raise TypeError(f"unexpected format for {file_key}: {dtype_map}")
+
+            resolved[template_key][file_key] = flattened
 
     return resolved
 
