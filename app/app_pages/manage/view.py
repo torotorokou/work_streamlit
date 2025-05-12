@@ -56,55 +56,82 @@ def render_upload_header(title: str):
 
 
 def render_file_upload_section(required_keys, csv_label_map):
+    """
+    Streamlit UI上にCSVファイルのアップロードセクションを描画する関数。
+
+    Parameters:
+        required_keys (list[str]): 必須のCSVキー（例: ["receive", "shipping"]）
+        csv_label_map (dict): キーに対応する表示名（例: {"receive": "受入データ"}）
+
+    Returns:
+        dict[str, UploadedFile or None]: アップロードされたファイルの辞書（キーごと）
+    """
+
+    # --- セクションタイトル ---
     st.markdown("### 📂 CSVファイルのアップロード")
     st.info("以下のファイルをアップロードしてください。")
 
     uploaded_files = {}
+
+    # CSVキーの一覧（テンプレートに存在する全CSVファイルの種別）
     all_keys = list(csv_label_map.keys())
 
+    # --- 各CSVキーごとにアップロードUIを生成 ---
     for key in all_keys:
-        label = csv_label_map.get(key, key)
+        label = csv_label_map.get(key, key)  # 表示ラベルを取得
 
-        # --- 必要なCSVファイル（通常表示） ---
+        # ✅ 必要なCSVファイル（このテンプレートで使用する）
         if key in required_keys:
-            render_upload_header(label)  # ← 👈 カスタム見出し追加
+            render_upload_header(label)  # カスタム見出しの描画
+
+            # アップロードUI（ラベル非表示、typeはCSVのみ許可）
             uploaded_file = st.file_uploader(
-                label, type="csv", key=f"{key}", label_visibility="collapsed"
+                label,
+                type="csv",
+                key=f"{key}",  # セッションキーにkeyを使用
+                label_visibility="collapsed"
             )
 
+            # アップロードされた場合、セッションと戻り値に保存
             if uploaded_file is not None:
                 st.session_state[f"uploaded_{key}"] = uploaded_file
                 uploaded_files[key] = uploaded_file
             else:
+                # アップロードがない場合はセッションから削除
                 if f"uploaded_{key}" in st.session_state:
                     del st.session_state[f"uploaded_{key}"]
                 uploaded_files[key] = None
 
+            # ファイルの状態（アップロード済み or 未）を表示
             show_upload_status(uploaded_files[key])
 
-        # --- 不要なCSVファイル（グレー表示で保持＋案内） ---
+        # ❎ 不要なCSVファイル（他テンプレート用、参考表示のみ）
         else:
             with st.expander(
-                f"🗂 {label}（このテンプレートでは不要です）", expanded=False
+                f"🗂 {label}（このテンプレートでは不要です）",
+                expanded=False
             ):
-                st.caption(
-                    "このファイルは他のテンプレートで使用されます。削除する必要はありません。"
-                )
+                st.caption("このファイルは他のテンプレートで使用されます。削除する必要はありません。")
+
+                # アップロードUIは無効化（disabled=True）
                 uploaded_file = st.file_uploader(
                     label,
                     type="csv",
                     key=f"{key}",
                     disabled=True,
-                    label_visibility="collapsed",
+                    label_visibility="collapsed"
                 )
 
+                # セッションに保持されていれば表示用に残す
                 if uploaded_file is not None:
                     st.session_state[f"uploaded_{key}"] = uploaded_file
                     uploaded_files[key] = uploaded_file
                 else:
                     uploaded_files[key] = st.session_state.get(f"uploaded_{key}", None)
 
+    # アップロード状況を辞書で返す
     return uploaded_files
+
 
 
 # app_pages/manage/view.py
