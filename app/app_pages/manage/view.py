@@ -30,7 +30,7 @@ def show_upload_status(file):
         render_status_box(
             message="  未アップロード",
             bg_rgba="rgba(244, 67, 54, 0.07)",  # やや赤みのある背景
-            text_color="#e57373"               # 明るめの赤
+            text_color="#e57373",  # 明るめの赤
         )
 
 
@@ -96,8 +96,12 @@ def render_file_upload_section(required_keys, csv_label_map):
 
         # --- 不要なCSVファイル（グレー表示で保持＋案内） ---
         else:
-            with st.expander(f"🗂 {label}（このテンプレートでは不要です）", expanded=False):
-                st.caption("このファイルは他のテンプレートで使用されます。削除する必要はありません。")
+            with st.expander(
+                f"🗂 {label}（このテンプレートでは不要です）", expanded=False
+            ):
+                st.caption(
+                    "このファイルは他のテンプレートで使用されます。削除する必要はありません。"
+                )
                 uploaded_file = st.file_uploader(
                     label,
                     type="csv",
@@ -113,7 +117,6 @@ def render_file_upload_section(required_keys, csv_label_map):
                     uploaded_files[key] = st.session_state.get(f"uploaded_{key}", None)
 
     return uploaded_files
-
 
 
 # app_pages/manage/view.py

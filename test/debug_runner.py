@@ -16,6 +16,7 @@ from utils.value_setter import set_value_fast, set_value_fast_safe
 from logic.manage.utils.summary_tools import summary_apply
 from logic.manage.factory_report import process as process_factory
 from logic.manage.balance_sheet import process as process_balance_sheet
+from logic.manage.management_sheet import process as process_manage_sheet
 
 # 処理の統合
 def run_debug_process() -> pd.DataFrame:
@@ -67,4 +68,4 @@ logger = app_logger()
 dfs_after = run_debug_process()
 
 logger.info("デバッグ作業開始")
-process_balance_sheet(dfs_after)
+process_manage_sheet(dfs_after)
