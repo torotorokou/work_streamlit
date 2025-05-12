@@ -4,24 +4,11 @@ from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.utils.load_template import load_master_and_template
 from utils.config_loader import get_template_config
 from utils.value_setter import set_value_fast_safe
-from logic.manage.processors.management_sheet.factory_report import factory_report
-from logic.manage.processors.management_sheet.balance_sheet import balance_sheet
+from logic.manage.processors.management_sheet.factory_report import update_from_factory_report
+from logic.manage.processors.management_sheet.balance_sheet import update_from_balance_sheet
 
 
 def process(dfs: dict) -> pd.DataFrame:
-    """
-    複数のCSVから業務帳票データ（balance_sheet）を統合的に処理し、最終的なDataFrameを返す。
-
-    Parameters
-    ----------
-    dfs : dict
-        ファイル名（キー）と読み込まれたDataFrameの辞書
-
-    Returns
-    -------
-    pd.DataFrame
-        処理後のマスター帳票データ（master_csv）
-    """
     logger = app_logger()
 
     # --- ① マスターCSVの読み込み ---
@@ -43,10 +30,10 @@ def process(dfs: dict) -> pd.DataFrame:
 
     # --- ③ 各処理の適用 ---
     logger.info("▶️ 工場日報からの読込")
-    master_csv = factory_report(dfs, master_csv)
+    master_csv = update_from_factory_report(dfs, master_csv)
 
     logger.info("▶️ 搬出入データ処理開始")
-    master_csv = balance_sheet(dfs, master_csv)
+    master_csv = update_from_balance_sheet(dfs, master_csv)
 
     # logger.info("▶️ 有価物データ処理開始")
     # master_csv.loc[master_csv["大項目"] == "有価物", "値"] = (

@@ -3,7 +3,7 @@ from logic.manage.balance_sheet import process as process_bal
 
 
 # 工場日報からの読込
-def balance_sheet(dfs, master_csv):
+def update_from_balance_sheet(dfs, master_csv):
     csv_bal = process_bal(dfs)
 
     # 終了台数
