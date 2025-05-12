@@ -19,7 +19,8 @@ route_page()
 
 # 開発環境設定
 settings = load_settings()
-# logger = app_logger()
-# logger.info(f"現在の環境: {settings['ENV_NAME']}")
-# logger.info(f"ポート番号: {settings['STREAMLIT_SERVER_PORT']}")
-# logger.info(f"デバッグモード: {settings['DEBUG']}")
+
+if settings.get("ENV_NAME") in ["dev", "development"]:
+    st.write(f"🛠 現在の環境: {settings['ENV_NAME']}")
+    st.write(f"🔌 ポート番号: {settings['STREAMLIT_SERVER_PORT']}")
+    st.write(f"🐞 デバッグモード: {settings['DEBUG']}")
