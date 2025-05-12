@@ -1,5 +1,5 @@
 import pandas as pd
-from utils.value_setter import set_value_fast, set_value_fast_safe
+from utils.value_setter import set_value_fast_safe
 
 
 def get_search_word(df: pd.DataFrame, key_col: str, key_value: str, search_col: str) -> str:
@@ -83,6 +83,12 @@ def apply_summary_by_item(
     Returns:
         更新後の master_csv
     """
+    
+    # 対象項目（item_name）に対応する検索ワードをマスターから取得
     search_word = get_search_word(master_csv, key_col, item_name, search_col)
+
+    # 実績データから検索ワードに対応する値を取得
     value = get_value_by_key(csv_fac, key_col, search_word, value_col)
+
+    # マスターの item_name 行に値を反映
     return apply_value_to_master(master_csv, [key_col], [item_name], value)
