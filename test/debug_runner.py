@@ -42,7 +42,7 @@ def run_debug_process() -> pd.DataFrame:
 
 
     # --- テンプレート設定の取得 ---
-    template_key = "balance_sheet"
+    template_key = "management_sheet"
 
     template_config = get_template_config()[template_key]
     template_name = template_config["key"]

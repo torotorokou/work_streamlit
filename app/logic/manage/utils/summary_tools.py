@@ -147,5 +147,3 @@ def summary_update_column_if_notna(
     mask = df[source_col].notna()
     df.loc[mask, target_col] = df.loc[mask, source_col]
     return df
-
-
