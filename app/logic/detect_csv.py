@@ -39,7 +39,7 @@ def detect_csv_type(file) -> str:
         # logger.info(f"📊 アップロードCSVの先頭列: {cols}")
 
         for name, expected in signatures.items():
-            logger.info(f"🔍 比較中: 種別 = {name}, 期待ヘッダー = {expected}")
+            # logger.info(f"🔍 比較中: 種別 = {name}, 期待ヘッダー = {expected}")
             if cols[: len(expected)] == expected:
                 logger.info(f"✅ 種別判定成功: {name}")
                 return name

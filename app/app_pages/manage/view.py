@@ -1,6 +1,8 @@
 import streamlit as st
 from components.status_box import render_status_box
 from components.custom_button import centered_download_button
+from components.ui_message import show_warning_bubble
+from logic.detect_csv import detect_csv_type
 from io import BytesIO
 from typing import Optional
 
@@ -24,10 +26,12 @@ def render_manage_page(template_dict, template_descriptions):
 
 
 def show_upload_status(file):
-    if file:
-        render_status_box("アップロード済み", "rgba(76, 175, 80, 0.05)", "#b6e0b6")
-    else:
-        render_status_box("未アップロード", "rgba(255, 255, 255, 0.02)", "#cccccc")
+    if not file:
+        render_status_box(
+            message="  未アップロード",
+            bg_rgba="rgba(244, 67, 54, 0.07)",  # やや赤みのある背景
+            text_color="#e57373"               # 明るめの赤
+        )
 
 
 def render_upload_header(title: str):
@@ -67,14 +71,22 @@ def render_file_upload_section(required_keys, csv_label_map):
 
         # --- 必要なCSVファイル（通常表示） ---
         if key in required_keys:
-            render_upload_header(label)  # ← 👈 カスタム見出し追加
+            render_upload_header(label)
             uploaded_file = st.file_uploader(
                 label, type="csv", key=f"{key}", label_visibility="collapsed"
             )
 
             if uploaded_file is not None:
-                st.session_state[f"uploaded_{key}"] = uploaded_file
-                uploaded_files[key] = uploaded_file
+                expected_name = label
+                detected_name = detect_csv_type(uploaded_file)
+
+                if detected_name != expected_name:
+                    show_warning_bubble(expected_name, detected_name)
+                    st.session_state[f"uploaded_{key}"] = None
+                    uploaded_files[key] = None
+                else:
+                    st.session_state[f"uploaded_{key}"] = uploaded_file
+                    uploaded_files[key] = uploaded_file
             else:
                 if f"uploaded_{key}" in st.session_state:
                     del st.session_state[f"uploaded_{key}"]
@@ -84,12 +96,8 @@ def render_file_upload_section(required_keys, csv_label_map):
 
         # --- 不要なCSVファイル（グレー表示で保持＋案内） ---
         else:
-            with st.expander(
-                f"🗂 {label}（このテンプレートでは不要です）", expanded=False
-            ):
-                st.caption(
-                    "このファイルは他のテンプレートで使用されます。削除する必要はありません。"
-                )
+            with st.expander(f"🗂 {label}（このテンプレートでは不要です）", expanded=False):
+                st.caption("このファイルは他のテンプレートで使用されます。削除する必要はありません。")
                 uploaded_file = st.file_uploader(
                     label,
                     type="csv",
@@ -105,6 +113,7 @@ def render_file_upload_section(required_keys, csv_label_map):
                     uploaded_files[key] = st.session_state.get(f"uploaded_{key}", None)
 
     return uploaded_files
+
 
 
 # app_pages/manage/view.py
