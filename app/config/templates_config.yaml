@@ -41,3 +41,6 @@ management_sheet:
     label: 管理票
     description: 受入・ヤード・出荷の一覧を使って管理用の帳票を出力します。
     required_files: [receive, yard, shipping]
+    master_csv_path:
+        management_sheet: data/master/management_sheet/management_sheet.csv
+        etc: ''
