@@ -44,6 +44,16 @@ balance_sheet:
         - 数量
     receive: *receive_cols
 
+block_unit_price:
+    shipping:
+        - 業者CD
+        - 業者名
+        - 正味重量
+        - 単価
+        - 金額
+        - 明細備考
+        - 伝票日付
+
 management_sheet:
     shipping: *shipping_cols
     yard:
