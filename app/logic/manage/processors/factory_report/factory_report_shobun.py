@@ -28,8 +28,6 @@ def process_shobun(df_shipping: pd.DataFrame) -> pd.DataFrame:
     # --- ② 処分重量を加算（業者別）---
     updated_master_csv = apply_shobun_weight(master_csv, df_shipping)
 
-
-
     # --- ⑤ 表全体を整形（列順・カテゴリ追加など） ---
     final_df = format_shobun_table(updated_master_csv)
 

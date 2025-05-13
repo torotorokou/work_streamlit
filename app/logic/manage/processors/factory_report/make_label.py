@@ -1,5 +1,8 @@
+from logic.manage.utils.excel_tools import (
+    add_label_rows_and_restore_sum,
+    add_label_rows,
+)
 
-from logic.manage.utils.excel_tools import add_label_rows_and_restore_sum,add_label_rows
 
 def make_label(df):
     # 有価ラベル
@@ -11,7 +14,6 @@ def make_label(df):
     # final_df = add_label_rows_and_restore_sum(
     #     final_df, label_col="業者名", offset=-1
     # )
-
 
     # # ヤードラベル
     # final_df = add_label_rows_and_restore_sum(

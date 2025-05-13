@@ -23,7 +23,13 @@ class UtilPage(BasePage):
 
         # --- 設定 ---
         locations = ["第一工場", "第二工場", "ライン"]
-        time_slots = ["7:00-16:00", "8:00-17:00", "9:00-18:00", "10:00-19:00", "14:00-23:00"]
+        time_slots = [
+            "7:00-16:00",
+            "8:00-17:00",
+            "9:00-18:00",
+            "10:00-19:00",
+            "14:00-23:00",
+        ]
         candidates = [f"作業者{i+1}" for i in range(25)]  # 25人の例
         history_file = "shift_assignment_history.csv"
 
@@ -54,7 +60,7 @@ class UtilPage(BasePage):
                     label=f"⏰ {time}",
                     options=candidates,
                     default=st.session_state[key],
-                    key=key
+                    key=key,
                 )
 
         # --- 集計と保存 ---
@@ -64,11 +70,7 @@ class UtilPage(BasePage):
                 for time in time_slots:
                     key = f"{loc}_{time}_vertical".replace(":", "").replace("-", "_")
                     for person in st.session_state.get(key, []):
-                        data.append({
-                            "場所": loc,
-                            "時間帯": time,
-                            "担当者": person
-                        })
+                        data.append({"場所": loc, "時間帯": time, "担当者": person})
 
             df_result = pd.DataFrame(data)
             st.success("✅ 割当結果")
