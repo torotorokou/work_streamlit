@@ -9,7 +9,6 @@ from logic.manage.utils.load_template import load_master_and_template
 def process(dfs):
     logger = app_logger()
 
-
     # --- テンプレート設定の取得 ---
     template_key = "block_unit_price"
     template_config = get_template_config()[template_key]
@@ -21,12 +20,9 @@ def process(dfs):
     df_dict = load_all_filtered_dataframes(dfs, csv_keys, template_name)
     df_shipping = df_dict.get("shipping")
 
-
     # --- 個別処理 ---
     logger.info("▶️ プロセス1")
     master_csv = process1(df_shipping)
-
-
 
     return master_csv
 
@@ -38,11 +34,7 @@ def process1(df_shipping):
     master_path = config["master_csv_path"]["vendor_code"]
     master_csv = load_master_and_template(master_path)
 
-
     # 必要行の抜き出し
     df_after = df_shipping[df_shipping["業者CD"].isin(master_csv["業者CD"])]
-
-
-
 
     return
