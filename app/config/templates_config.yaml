@@ -36,8 +36,21 @@ average_sheet:
     master_csv_path: data/master/average_sheet/average_sheet_map.csv
     template_excel_path: data/templates/average_sheet.xlsx
 
+# block_unit_price:
+#     key: block_unit_price
+#     label: ブロック単価表
+#     description: ブロック単価の計算
+#     required_files: [shipping]
+#     master_csv_path: data/master/block_unit_price/block_unit_price.csv
+#     template_excel_path: data/templates/block_unit_price.xlsx
+
 management_sheet:
     key: management_sheet
     label: 管理票
     description: 受入・ヤード・出荷の一覧を使って管理用の帳票を出力します。
     required_files: [receive, yard, shipping]
+    master_csv_path:
+        management_sheet: data/master/management_sheet/management_sheet.csv
+        scrap_senbetsu_map: data/master/management_sheet/scrap_senbetsu_map.csv
+        etc: data/master/management_sheet/etc.csv
+    template_excel_path: data/templates/management_sheet.xlsx

@@ -90,3 +90,8 @@ def to_reiwa_format(d: date) -> str:
 
     reiwa_year = d.year - 2018  # R1年＝2019年
     return f"R{reiwa_year}年{d.month}月{d.day}日"
+
+
+def get_title_from_date(d: date) -> str:
+    reiwa_year = d.year - 2018  # 令和元年は2019年
+    return f"管理票　R{reiwa_year} .{d.month}"

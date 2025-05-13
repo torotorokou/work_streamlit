@@ -37,10 +37,8 @@ def process_yuuka(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFr
 
     # --- ③ 品目単位で有価名をマージし、合計を計算 ---
     updated_with_sum = summarize_value_by_cell_with_label(
-        updated_master_csv,cell_col="有価名", label_col="セル"
+        updated_master_csv, cell_col="有価名", label_col="セル"
     )
-
-
 
     # フォーマット修正
     final_df = format_table(updated_with_sum)
