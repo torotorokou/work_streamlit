@@ -6,6 +6,7 @@ from logic.manage.processors.factory_report.factory_report_shobun import process
 from logic.manage.processors.factory_report.factory_report_yuuka import process_yuuka
 from logic.manage.processors.factory_report.factory_report_yard import process_yard
 from logic.manage.processors.factory_report.make_cell_num import make_cell_num
+from logic.manage.processors.factory_report.make_label import make_label
 from logic.manage.utils.excel_tools import sort_by_cell_row
 from logic.manage.processors.factory_report.etc import (
     generate_summary_dataframe,
@@ -56,6 +57,9 @@ def process(dfs: dict) -> pd.DataFrame:
 
     # セル番号の設定
     combined_df = make_cell_num(combined_df)
+
+    # ラベルの追加
+    combined_df = make_label(combined_df)
 
     # --- 合計・総合計行の追加/更新 ---
     combined_df = generate_summary_dataframe(combined_df)

@@ -34,10 +34,7 @@ def process_yard(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFra
     #     updated_with_sum, target_keys, target_values
     # )
 
-    # # # ラベル行追加
-    # final_df = add_label_rows_and_restore_sum(
-    #     updated_with_sum, label_col="品目名", offset=-1
-    # )
+
 
     # フォーマット修正
     final_df = format_table(updated_with_sum)
