@@ -17,6 +17,7 @@ from logic.manage.processors.management_sheet.sukurappu_senbetu import scrap_sen
 
 from logic.manage.processors.management_sheet.manage_etc import manage_etc
 
+
 def process(dfs: dict) -> pd.DataFrame:
     logger = app_logger()
 
@@ -54,7 +55,6 @@ def process(dfs: dict) -> pd.DataFrame:
     etc_df = manage_etc(df_receive)
 
     logger.info("▶️ 結合")
-    df_final = pd.concat([master_csv, etc_df],axis=0, ignore_index=True)
-
+    df_final = pd.concat([master_csv, etc_df], axis=0, ignore_index=True)
 
     return df_final

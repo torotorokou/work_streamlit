@@ -35,7 +35,7 @@ def write_sum_to_target_cell(
     return df
 
 
-#工場日報のみ使用
+# 工場日報のみ使用
 def summarize_value_by_cell_with_label(
     df: pd.DataFrame,
     value_col: str = "値",
