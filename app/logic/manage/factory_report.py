@@ -5,6 +5,7 @@ from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.processors.factory_report.factory_report_shobun import process_shobun
 from logic.manage.processors.factory_report.factory_report_yuuka import process_yuuka
 from logic.manage.processors.factory_report.factory_report_yard import process_yard
+from logic.manage.processors.factory_report.make_cell_num import make_cell_num
 from logic.manage.utils.excel_tools import sort_by_cell_row
 from logic.manage.processors.factory_report.etc import (
     generate_summary_dataframe,
@@ -52,6 +53,10 @@ def process(dfs: dict) -> pd.DataFrame:
     combined_df = pd.concat(
         [master_csv_yuka, master_csv_shobun, master_csv_yard], ignore_index=True
     )
+
+    # セル番号の設定
+    combined_df= make_cell_num(combined_df)
+
 
     # --- 合計・総合計行の追加/更新 ---
     combined_df = generate_summary_dataframe(combined_df)
