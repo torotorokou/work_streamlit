@@ -24,7 +24,7 @@ def process_yard(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFra
 
     # # --- ③ 品目名単位でマージし、合計を計算 ---
     updated_with_sum = summarize_value_by_cell_with_label(
-        updated_master_csv,cell_col="品目名", label_col="セル"
+        updated_master_csv, cell_col="品目名", label_col="セル"
     )
 
     # # # --- ④ 合計行などを追加集計 ---
@@ -33,8 +33,6 @@ def process_yard(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFra
     # updated_with_sum2 = write_sum_to_target_cell(
     #     updated_with_sum, target_keys, target_values
     # )
-
-
 
     # フォーマット修正
     final_df = format_table(updated_with_sum)

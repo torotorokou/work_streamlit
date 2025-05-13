@@ -55,6 +55,9 @@ def process(dfs: dict) -> pd.DataFrame:
     # 集計処理ステップ
     master_csv = process_average_sheet(df_receive, master_csv)
 
+    # カラム名の置換
+    master_csv = tikan(master_csv)
+
     return master_csv
 
 
@@ -71,6 +74,11 @@ def process(dfs: dict) -> pd.DataFrame:
 #         pd.DataFrame: 指定されたカラムのみを持つDataFrame（フィルタ済み）
 #     """
 #     return dfs[key][target_columns]
+
+
+def tikan(df):
+    df = df.rename(columns={"ABC業者_他": "大項目"})
+    return df
 
 
 def process_average_sheet(
@@ -226,9 +234,9 @@ def calculate_item_summary(
             )
 
             # ログ出力
-            logger.info(
-                f"[{abc_key}] {item_name} → 売上: {total_sell:.0f}, 重量: {total_weight:.2f}, 単価: {ave_sell:.2f}"
-            )
+            # logger.info(
+            #     f"[{abc_key}] {item_name} → 売上: {total_sell:.0f}, 重量: {total_weight:.2f}, 単価: {ave_sell:.2f}"
+            # )
 
             if total_weight == 0:
                 logger.warning(
