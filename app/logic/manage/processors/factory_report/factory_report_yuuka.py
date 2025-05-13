@@ -40,10 +40,7 @@ def process_yuuka(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFr
         updated_master_csv,cell_col="有価名", label_col="セル"
     )
 
-    # # ラベル行追加
-    # final_df = add_label_rows_and_restore_sum(
-    #     updated_with_sum, label_col="有価名", offset=-1
-    # )
+
 
     # フォーマット修正
     final_df = format_table(updated_with_sum)
