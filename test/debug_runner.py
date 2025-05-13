@@ -68,4 +68,8 @@ logger = app_logger()
 dfs_after = run_debug_process()
 
 logger.info("デバッグ作業開始")
+<<<<<<< HEAD
 process_manage_sheet(dfs_after)
+=======
+process_factory(dfs_after)
+>>>>>>> main

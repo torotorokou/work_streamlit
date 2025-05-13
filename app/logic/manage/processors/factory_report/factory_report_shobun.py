@@ -28,14 +28,10 @@ def process_shobun(df_shipping: pd.DataFrame) -> pd.DataFrame:
     # --- ② 処分重量を加算（業者別）---
     updated_master_csv = apply_shobun_weight(master_csv, df_shipping)
 
-    # ラベル行追加
-    updated_master_csv3 = add_label_rows_and_restore_sum(
-        updated_master_csv, label_col="業者名", offset=-1
-    )
-    # logger.info(f"updated_mater_csv3:{updated_master_csv3}")
+
 
     # --- ⑤ 表全体を整形（列順・カテゴリ追加など） ---
-    final_df = format_shobun_table(updated_master_csv3)
+    final_df = format_shobun_table(updated_master_csv)
 
     logger.info("✅ 出荷処分の帳票生成が完了しました。")
 
@@ -93,7 +89,7 @@ def format_shobun_table(master_csv: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame : 整形後の出荷処分データ
     """
     # 必要列を抽出
-    shobun_df = master_csv[["業者名", "セル", "値"]].copy()
+    shobun_df = master_csv[["業者名", "セル", "値", "セルロック", "順番"]].copy()
 
     # 不要な列を除外・置換
     shobun_df.rename(columns={"業者名": "大項目"}, inplace=True)
