@@ -24,7 +24,7 @@ def process_yard(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFra
 
     # # --- ③ 品目名単位でマージし、合計を計算 ---
     updated_with_sum = summarize_value_by_cell_with_label(
-        updated_master_csv, label_col="品目名"
+        updated_master_csv,cell_col="品目名", label_col="セル"
     )
 
     # # # --- ④ 合計行などを追加集計 ---
@@ -34,13 +34,10 @@ def process_yard(df_yard: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFra
     #     updated_with_sum, target_keys, target_values
     # )
 
-    # # ラベル行追加
-    final_df = add_label_rows_and_restore_sum(
-        updated_with_sum, label_col="品目名", offset=-1
-    )
+
 
     # フォーマット修正
-    final_df = format_table(final_df)
+    final_df = format_table(updated_with_sum)
 
     logger.info("✅ 出荷ヤードの帳票生成が完了しました。")
     return final_df
@@ -82,9 +79,9 @@ def format_table(master_csv: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame : 整形後の出荷処分データ
     """
     # 必要列を抽出
-    format_df = master_csv[["品目名", "セル", "値"]].copy()
+    format_df = master_csv[["品目名", "セル", "値", "セルロック", "順番"]].copy()
 
-    # 不要な列を除外・置換
+    # 列の置換
     format_df.rename(columns={"品目名": "大項目"}, inplace=True)
 
     # カテゴリ列を追加
