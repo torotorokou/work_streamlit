@@ -41,7 +41,7 @@ def run_debug_process() -> pd.DataFrame:
 
 
     # --- テンプレート設定の取得 ---
-    template_key = "balance_sheet"
+    template_key = "factory_report"
 
     template_config = get_template_config()[template_key]
     template_name = template_config["key"]
@@ -67,4 +67,4 @@ logger = app_logger()
 dfs_after = run_debug_process()
 
 logger.info("デバッグ作業開始")
-process_balance_sheet(dfs_after)
+process_factory(dfs_after)
