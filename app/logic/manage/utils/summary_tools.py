@@ -35,6 +35,7 @@ def write_sum_to_target_cell(
     return df
 
 
+#工場日報のみ使用
 def summarize_value_by_cell_with_label(
     df: pd.DataFrame,
     value_col: str = "値",
@@ -43,25 +44,26 @@ def summarize_value_by_cell_with_label(
     fill_missing_cells: bool = False,
 ) -> pd.DataFrame:
     """
-    セルごとに数値を合計し、ラベルを付けて返す。
+    セルごとに数値を合計し、ラベル・セルロック・順番を付けて返す。
     セルがNaNの行はgroupbyから自動的に除外されます。
     """
 
-    # 任意：セルがNaNの行を '未設定' に置き換え（残したいとき）
+    # NaNセル処理（任意）
     if fill_missing_cells:
         df[cell_col] = df[cell_col].fillna("未設定")
 
     # 数値変換（NaNはそのまま）
     df[value_col] = pd.to_numeric(df[value_col], errors="coerce")
 
-    # セルごとに合計（NaNセルは自動的に除外される）
+    # セルごとに値を合計
     grouped = df.groupby(cell_col, as_index=False)[value_col].sum()
 
-    # セルとラベルのマッピングを取得（重複除外）
-    cell_to_label = df[[cell_col, label_col]].drop_duplicates()
+    # 補足情報（ラベル・セルロック・順番）を取り出し、重複除去
+    cols_to_preserve = [cell_col, label_col, "セルロック", "順番"]
+    cell_info = df[cols_to_preserve].drop_duplicates(subset=cell_col)
 
-    # 合計結果にラベルを付けて返す
-    grouped_named = pd.merge(grouped, cell_to_label, on=cell_col, how="left")
+    # マージして返す
+    grouped_named = pd.merge(grouped, cell_info, on=cell_col, how="left")
 
     return grouped_named
 
