@@ -34,7 +34,8 @@ def write_sum_to_target_cell(
 
     return df
 
-# 
+
+#工場日報のみ使用
 def summarize_value_by_cell_with_label(
     df: pd.DataFrame,
     value_col: str = "値",
@@ -65,7 +66,6 @@ def summarize_value_by_cell_with_label(
     grouped_named = pd.merge(grouped, cell_info, on=cell_col, how="left")
 
     return grouped_named
-
 
 
 def summary_apply(

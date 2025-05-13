@@ -55,8 +55,7 @@ def process(dfs: dict) -> pd.DataFrame:
     )
 
     # セル番号の設定
-    combined_df= make_cell_num(combined_df)
-
+    combined_df = make_cell_num(combined_df)
 
     # --- 合計・総合計行の追加/更新 ---
     combined_df = generate_summary_dataframe(combined_df)
