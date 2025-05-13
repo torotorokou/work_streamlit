@@ -65,8 +65,6 @@ def manage_work_controller():
     # --- CSVファイルの妥当性確認（毎回確認）---
     validated_files = handle_uploaded_files(required_keys, csv_label_map)
 
-
-
     # --- アップロードされていないファイルを確認 ---
     all_uploaded, missing_keys = check_missing_files(uploaded_files, required_keys)
 
