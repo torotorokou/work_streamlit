@@ -93,7 +93,7 @@ def format_shobun_table(master_csv: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame : 整形後の出荷処分データ
     """
     # 必要列を抽出
-    shobun_df = master_csv[["業者名", "セル", "値","セルロック","順番"]].copy()
+    shobun_df = master_csv[["業者名", "セル", "値", "セルロック", "順番"]].copy()
 
     # 不要な列を除外・置換
     shobun_df.rename(columns={"業者名": "大項目"}, inplace=True)
