@@ -28,7 +28,7 @@ def save_debug_parquets(
     dfs: Dict[str, pd.DataFrame],
 ) -> None:
     mainpath = MainPath()
-    folder = mainpath.get_path("input",section="directories")
+    folder = mainpath.get_path("input", section="directories")
     print("📁 フォルダパス:", folder)
     os.makedirs(folder, exist_ok=True)
     for name, df in dfs.items():

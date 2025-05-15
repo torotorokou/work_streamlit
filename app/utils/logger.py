@@ -13,8 +13,8 @@ def jst_time(*args):
 
 def app_logger(to_console=True) -> logging.Logger:
     mainpath = MainPath()
-    log_path = mainpath.get_path("app", section = "logs")
-    print(f"📄 ログファイルパス: {log_path}")
+    log_path = mainpath.get_path("app", section="logs")
+    # print(f"📄 ログファイルパス: {log_path}")
 
     # ログフォルダがなければ作成
     os.makedirs(os.path.dirname(log_path), exist_ok=True)

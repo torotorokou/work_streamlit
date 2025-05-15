@@ -5,7 +5,8 @@ csv:
     receive_header_definition: 'data/master/receive_header_definition.csv' # 種別判定用ヘッダー
     required_columns_definition: 'config/required_columns_definition.csv' # 必須カラムの定義
     expected_dtypes: 'config/expected_dtypes.json' # データ型の期待定義
-    unit_price_table: 'data/master/unit_price_table.csv' # 単価
+    unit_price_table: 'data/master/costs/unit_price_table.csv'
+    transport_costs: 'data/master/costs/transport_costs.csv' #
 
 # # excelテンプレートパス
 # excel:
