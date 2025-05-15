@@ -3,7 +3,7 @@ import os
 import socket
 import getpass
 import time
-from utils.config_loader import get_path_config
+from config.loader.main_path import MainPath
 
 
 # 日本時間に変換する関数（UTC + 9時間）
@@ -12,8 +12,9 @@ def jst_time(*args):
 
 
 def app_logger(to_console=True) -> logging.Logger:
-    config = get_path_config()
-    log_path = config["logs"]["app"]
+    mainpath = MainPath()
+    log_path = mainpath.get_path("app", section = "logs")
+    print(f"📄 ログファイルパス: {log_path}")
 
     # ログフォルダがなければ作成
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
@@ -51,9 +52,9 @@ def app_logger(to_console=True) -> logging.Logger:
 
 
 def debug_logger(to_console=True) -> logging.Logger:
-    config = get_path_config()
-    log_path = config["logs"]["debug"]  # config.yaml内で debug.log を別定義
-
+    mainpath = MainPath()
+    log_path = mainpath.get_path("debug", section="logs")
+    print("debug_logger_path: ", log_path)
     # ログフォルダがなければ作成
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
 

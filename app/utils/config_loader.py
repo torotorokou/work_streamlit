@@ -4,37 +4,40 @@ from pathlib import Path
 from utils.type_converter import resolve_dtype
 import os
 from typing import Optional
+from config.loader.main_path import MainPath
 
 # from utils.logger import app_logger
 
 
-def get_path_config() -> dict:
-    """main_paths.yamlを辞書として取得"""
-    return load_yaml("config/main_paths.yaml")
+# def get_path_config() -> dict:
+#     """main_paths.yamlを辞書として取得"""
+#     return load_yaml("config/main_paths.yaml")
 
 
-def resolve_path(key_or_path: str, section: Optional[str] = None) -> Path:
-    """
-    main_paths.yamlから定義されたパス、または直接の相対パスをBASE_DIRから解決。
+# def resolve_path(key_or_path: str, section: Optional[str] = None) -> Path:
+#     """
+#     main_paths.yamlから定義されたパス、または直接の相対パスをBASE_DIRから解決。
 
-    Parameters:
-        key_or_path (str): 相対パス文字列、または configセクションのキー名
-        section (str, optional): main_paths.yamlのセクション名（例: 'csv', 'config_files'）
+#     Parameters:
+#         key_or_path (str): 相対パス文字列、または configセクションのキー名
+#         section (str, optional): main_paths.yamlのセクション名（例: 'csv', 'config_files'）
 
-    Returns:
-        Path: 絶対パス
-    """
-    base_dir = Path(os.getenv("BASE_DIR", "/work/app"))
-    if section:
-        path_config = get_path_config()
-        relative = path_config.get(section, {}).get(key_or_path)
-        if relative is None:
-            raise KeyError(
-                f"'{section}.{key_or_path}' は main_paths.yaml に存在しません"
-            )
-        return base_dir / relative
-    else:
-        return base_dir / key_or_path
+#     Returns:
+#         Path: 絶対パス
+#     """
+#     base_dir = Path(os.getenv("BASE_DIR", "/work/app"))
+#     if section:
+#         mainpath = MainPath()
+#         path_config = get_path_config()
+#         relative = mainpath.get_config
+#         relative = path_config.get(section, {}).get(key_or_path)
+#         if relative is None:
+#             raise KeyError(
+#                 f"'{section}.{key_or_path}' は main_paths.yaml に存在しません"
+#             )
+#         return base_dir / relative
+#     else:
+#         return base_dir / key_or_path
 
 
 def load_yaml(key_or_path: str, section: Optional[str] = None) -> dict:
@@ -48,7 +51,8 @@ def load_yaml(key_or_path: str, section: Optional[str] = None) -> dict:
     Returns:
         dict: YAMLから読み込まれた辞書データ
     """
-    path = resolve_path(key_or_path, section)
+    mainpath = MainPath()
+    path = mainpath.get_path(key_or_path, section)
     with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
@@ -108,7 +112,8 @@ def get_unit_price_table_csv() -> pd.DataFrame:
     """
     単価表CSVを読み込んでDataFrameとして返す。
     """
-    csv_path = resolve_path("unit_price_table", section="csv")
+    mainpath = MainPath()
+    csv_path = mainpath.get_path("unit_price_table", section="csv")
     return pd.read_csv(csv_path, encoding="utf-8-sig")
 
 
@@ -116,7 +121,8 @@ def receive_header_definition() -> pd.DataFrame:
     """
     受入ヘッダー定義CSVを読み込んでDataFrameとして返す。
     """
-    csv_path = resolve_path("receive_header_definition", section="csv")
+    mainpath = MainPath()
+    csv_path = mainpath.get_path("receive_header_definition", section="csv")
     return pd.read_csv(csv_path, encoding="utf-8-sig")
 
 
