@@ -27,24 +27,34 @@ class ReadTransportDiscount:
 
 
 class TransportDiscountService:
-    """
-    合積（合積 == 1）に基づいて、運搬費を割引するサービスクラス。
-    """
     def __init__(self, discount_rate: float = 0.5):
-        self.discount_rate = discount_rate  # デフォルトで50%割引
+        self.discount_rate = discount_rate
 
     def apply_discount(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        合積列に基づいて、該当行の運搬費に割引を適用する。
+        合積 == 1 の行をコピーし、運搬業者名に「・合積」を追加し、
+        運搬費を割引して新たな行として追加する。
+        元の行はそのまま残す。
         """
         df = df.copy()
 
-        # 必須列の存在チェック
         if "合積" not in df.columns:
             raise KeyError("入力データに '合積' 列が存在しません")
 
-        # 合積 == 1 の行に割引を適用
+        # 合積対象の行を抽出
         mask = df["合積"] == 1
-        df.loc[mask, "運搬費"] = df.loc[mask, "運搬費"].astype(float) * self.discount_rate
+        discount_rows = df[mask].copy()
+
+        # 運搬業者名に「・合積」を付与
+        discount_rows["運搬業者"] = discount_rows["運搬業者"].astype(str) + "・合積"
+
+        # 運搬費を割引
+        discount_rows["運搬費"] = discount_rows["運搬費"].astype(float) * self.discount_rate
+
+        # 合積フラグを 0 に（新しい行なので既に適用済）
+        discount_rows["合積"] = 0
+
+        # 元のdfに追加
+        df = pd.concat([df, discount_rows], ignore_index=True)
 
         return df

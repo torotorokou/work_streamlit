@@ -101,67 +101,6 @@ def summary_apply(
     return updated_df
 
 
-def summary_add_column_if_notna(
-    df: pd.DataFrame, from_col: str, to_col: str
-) -> pd.DataFrame:
-    if from_col not in df.columns or to_col not in df.columns:
-        return df
-
-    df[to_col] = df[to_col].fillna(0) + df[from_col].fillna(0)
-    return df
-
-
-def apply_column_addition_by_keys(
-    base_df: pd.DataFrame,
-    addition_df: pd.DataFrame,
-    join_keys: list[str],
-    value_col_to_add: str = "加算",
-    update_target_col: str = "単価",
-) -> pd.DataFrame:
-    """
-    指定キーで2つのDataFrameを結合し、加算列の値を更新対象列に加算する。
-
-    Parameters:
-        base_df (pd.DataFrame): 更新対象の元データ（例: 単価マスタ）
-        addition_df (pd.DataFrame): 加算元データ（例: 加算情報を含むデータ）
-        join_keys (list[str]): 結合キー（例: ["業者CD"]）
-        value_col_to_add (str): 加算元の列名（例: "加算"）
-        update_target_col (str): 加算先の列名（例: "単価"）
-
-    Returns:
-        pd.DataFrame: 加算適用済みのDataFrame
-    """
-    logger = app_logger()
-    logger.info(
-        f"▶️ カラム加算処理（重複除外）: キー={join_keys}, 加算列={value_col_to_add} ➕ 対象列={update_target_col}"
-    )
-
-    # ① 重複を除いた加算対象データの作成
-    unique_add_df = addition_df.drop_duplicates(subset=join_keys)[
-        join_keys + [value_col_to_add]
-    ]
-
-    # ② base_df にマージして加算対象列を結合
-    merged_df = safe_merge_by_keys(
-        master_df=base_df.copy(),
-        data_df=unique_add_df,
-        key_cols=join_keys
-    )
-
-    # ③ 加算処理の実行（NaNは0として扱う）
-    updated_df = summary_add_column_if_notna(
-        merged_df,
-        from_col=value_col_to_add,
-        to_col=update_target_col
-    )
-
-    # ④ 加算用の一時列は削除
-    if value_col_to_add in updated_df.columns:
-        updated_df.drop(columns=[value_col_to_add], inplace=True)
-
-    return updated_df
-
-
 
 def safe_merge_by_keys(
     master_df: pd.DataFrame,
