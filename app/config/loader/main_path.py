@@ -7,46 +7,43 @@ from typing import Optional,Union
 
 
 class MainPath:
-    """
-    main_paths.yaml を読み込んで、パスの解決を行う専用クラス。
-    """
+    def __init__(self, config_path: str = "config/main_paths.yaml"):
+        self.base_dir = BaseDirProvider().get_base_dir()
+        config_dict = YamlLoader(self.base_dir).load(config_path)
+        self.resolver = MainPathResolver(config_dict, self.base_dir)
 
-    def __init__(self, config_path: str = "config/main_paths.yaml", base_dir: Optional[str] = None):
-        # --- BASEディレクトリの決定 ---
-        env_base = os.getenv("BASE_DIR")
-        self.base_dir = Path(base_dir or env_base or "/work/app")
+    def get_path(self, keys: Union[str, list[str]], section: Optional[str] = None) -> Path:
+        return self.resolver.get_path(keys, section)
 
-        # --- YAMLファイルの絶対パス ---
-        self.yaml_path = self.base_dir / config_path
-
-        # --- YAMLの読み込み ---
-        self._config_data = self._load_yaml()
+    def get_config(self) -> dict:
+        return self.resolver.config_data
 
 
+class BaseDirProvider:
+    def __init__(self, default_path: str = "/work/app"):
+        self.base_dir = Path(os.getenv("BASE_DIR", default_path))
 
-    def _load_yaml(self) -> dict:
-        with open(self.yaml_path, encoding="utf-8") as f:
+    def get_base_dir(self) -> Path:
+        return self.base_dir
+
+
+class YamlLoader:
+    def __init__(self, base_dir: Path):
+        self.base_dir = base_dir
+
+    def load(self, relative_path: str) -> dict:
+        full_path = self.base_dir / relative_path
+        with open(full_path, encoding="utf-8") as f:
             return yaml.safe_load(f)
 
 
-    def get_config(self) -> dict:
-        """main_paths.yaml の辞書全体を取得"""
-        return self._config_data
-
+class MainPathResolver:
+    def __init__(self, config_data: dict, base_dir: Path):
+        self.config_data = config_data
+        self.base_dir = base_dir
 
     def get_path(self, keys: Union[str, list[str]], section: Optional[str] = None) -> Path:
-        """
-        任意の階層のキーをたどって、パスを取得。
-
-        Parameters:
-            keys (str or list[str]): 取得したいキー、またはネストされたキーのリスト
-            section (str, optional): 最初のセクション（省略時はkeysだけで探索）
-
-        Returns:
-            Path: 絶対パス
-        """
-        target = self._config_data
-
+        target = self.config_data
         if section:
             target = target.get(section, {})
             if target is None:
