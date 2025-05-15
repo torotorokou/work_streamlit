@@ -53,6 +53,7 @@ block_unit_price:
         - 金額
         - 明細備考
         - 伝票日付
+        - 品名
 
 management_sheet:
     shipping: *shipping_cols

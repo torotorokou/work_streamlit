@@ -64,6 +64,7 @@ block_unit_price:
         金額: int
         明細備考: str
         伝票日付: datetime
+        品名: str
 
 management_sheet:
     shipping: *shipping_schema
