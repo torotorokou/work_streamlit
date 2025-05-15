@@ -5,7 +5,7 @@
 import os
 import pandas as pd
 from typing import Dict
-from utils.config_loader import get_path_config
+from config.loader.main_path import MainPath
 
 
 def save_debug_csvs(dfs: Dict[str, pd.DataFrame], folder: str = "debug_data") -> None:
@@ -27,7 +27,9 @@ def check_dfs(dfs: dict, rows: int = 5, show_columns: bool = True):
 def save_debug_parquets(
     dfs: Dict[str, pd.DataFrame],
 ) -> None:
-    folder = get_path_config()["directories"]["input"]
+    mainpath = MainPath()
+    folder = mainpath.get_path("input",section="directories")
+    print("📁 フォルダパス:", folder)
     os.makedirs(folder, exist_ok=True)
     for name, df in dfs.items():
         file_path = os.path.join(folder, f"debug_{name}.parquet")
