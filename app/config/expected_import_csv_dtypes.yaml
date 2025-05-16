@@ -61,7 +61,6 @@ block_unit_price:
         業者名: str
         正味重量: int
         単価: int
-        金額: int
         明細備考: str
         伝票日付: datetime
         品名: str

@@ -85,7 +85,16 @@ def process(dfs):
         # 整形・セル記入欄追加
         df_after = eksc(df_after)
 
-    return df_after
+        # セル記入用df作成
+        master_csv = ekuserubunkai(df_after)
+
+        # 合計行の追加
+        master_csv = goukei(master_csv, df_shipping)
+
+        # ステートの初期化
+        st.session_state.process_mini_step = 0
+
+    return master_csv
 
 
 def make_df_shipping_after_use(master_csv, df_shipping):
@@ -179,38 +188,49 @@ def process2(df_after, df_transport):
     import pandas as pd
     import re
 
-    # --- ① 対象行の抽出 ---
     target_rows = df_after[df_after["運搬社数"] != 1].copy()
 
-    # --- ② 状態初期化（スコープ明示） ---
     if "block_unit_price_confirmed" not in st.session_state:
         st.session_state.block_unit_price_confirmed = False
     if "block_unit_price_transport_map" not in st.session_state:
         st.session_state.block_unit_price_transport_map = {}
 
-    # --- ③ タイトル・スタイル調整 ---
     st.title("運搬業者の選択")
 
     st.markdown(
         """
-        <style>
-        h3 {
-            border: none !important;
-            margin-bottom: 0.5rem !important;
-        }
-        div[data-baseweb="select"] > div {
-            border-width: 1px !important;
-            border-color: #475569 !important;
-        }
-        div[data-baseweb="select"]:focus-within {
-            box-shadow: 0 0 0 1px #3b82f6 !important;
-        }
-        </style>
-        """,
+    <style>
+    h3 {
+        border: none !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* ✅ selectbox 白黒両対応 */
+    div[data-baseweb="select"] > div {
+        border-width: 1.5px !important;
+        border-color: #999999 !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    div[data-baseweb="select"]:focus-within {
+        box-shadow: 0 0 0 2px #cbd5e1 !important;
+    }
+
+    div[data-baseweb="select"] span {
+        color: #f1f5f9 !important;
+        font-weight: 600;
+    }
+
+    /* ✅ ラベルの色も調整（明暗両方見やすく） */
+    label[data-testid="stWidgetLabel"] {
+        color: #e5e7eb !important;
+        font-size: 14px;
+    }
+    </style>
+    """,
         unsafe_allow_html=True,
     )
 
-    # --- ④ UI構築（未確定時） ---
     if not st.session_state.block_unit_price_confirmed:
         with st.form("transport_selection_form"):
             selected_map = {}
@@ -260,7 +280,7 @@ def process2(df_after, df_transport):
                             <div style='
                                 font-size:18px;
                                 font-weight:600;
-                                color:inherit;
+                                color:#38bdf8;
                             '>
                                 🗑️ {gyousha_name_clean}
                             </div>
@@ -283,6 +303,20 @@ def process2(df_after, df_transport):
                         unsafe_allow_html=True,
                     )
 
+                # ✅ selectbox ラベルの色を事前に定義しておく
+                st.markdown(
+                    """
+                <style>
+                label[data-testid="stWidgetLabel"] {
+                    color: #555555 !important;
+                    font-size: 14.5px;
+                }
+                </style>
+                """,
+                    unsafe_allow_html=True,
+                )
+
+                # ✅ その後に selectbox を通常通り書く
                 with col2:
                     selected = st.selectbox(
                         label="🚚 運搬業者を選択してください",
@@ -320,14 +354,15 @@ def process2(df_after, df_transport):
 
 def yes_no_box(df_after: pd.DataFrame) -> None:
     # --- ① 表示処理 ---
+
     filtered_df = df_after[df_after["運搬業者"].notna()]
     df_view = filtered_df[["業者名", "品名", "明細備考", "運搬業者"]]
 
-    st.write("✅ 運搬業者選択結果（確認用）")
+    st.title("運搬業者の確認")
     st.dataframe(df_view)
 
     # --- ② Yes/No ボタン形式UI ---
-    st.markdown("### この運搬業者選択で確定しますか？")
+    st.write("この運搬業者選択で確定しますか？")
     col1, col2 = st.columns([1, 1])
 
     with col1:
@@ -425,44 +460,54 @@ def eksc(df):
     from openpyxl.utils import get_column_letter
 
     # dfカラムのフィルタリング
-    df = df[["業者名", "正味重量", "総額", "明細備考", "品名", "ブロック単価"]]
-    df = df.sort_values(by="業者名").reset_index(drop=True)
+    df = df[["業者名", "明細備考", "正味重量", "総額", "ブロック単価"]]
 
-    # DataFrame を作成して Excel に書き込み
-    df.to_excel("提出用_帳票.xlsx", index=False, startrow=2)
+    #     # カラム名の変更
+    #     df = df.rename(columns={
+    #     # "業者名": "取引先名",
+    #     "明細備考": "明細備考",
+    #     "正味重量": "数量",
+    #     "総額": "金額",
+    #     "ブロック単価": "単価"
+    # })
+    return df
 
-    # 書式整形処理
-    wb = load_workbook("提出用_帳票.xlsx")
-    ws = wb.active
 
-    # タイトル行追加
-    ws["A1"] = "📅 処理日：2025年5月7日（水）"
-    ws["A1"].font = Font(size=12, bold=True)
+def ekuserubunkai(df):
 
-    # 書式整形（右寄せ・桁区切り）
-    for row in ws.iter_rows(
-        min_row=3, max_row=ws.max_row, min_col=1, max_col=ws.max_column
-    ):
-        for cell in row:
-            if isinstance(cell.value, (int, float)):
-                cell.number_format = "#,##0.00" if "." in str(cell.value) else "#,##0"
-                cell.alignment = Alignment(horizontal="right")
+    start_row = 7
+    full_col_to_cell = {
+        "業者名": "B",
+        "明細備考": "C",
+        "正味重量": "D",
+        "総額": "E",
+        "ブロック単価": "F",
+    }
 
-    # 太線（表頭）
-    for cell in ws[3]:
-        cell.font = Font(bold=True)
-        cell.border = Border(
-            bottom=Side(border_style="medium"),
-            top=Side(border_style="medium"),
-            left=Side(border_style="thin"),
-            right=Side(border_style="thin"),
-        )
+    # セル情報を再構築
+    full_cell_info = []
 
-    # 列幅自動調整（ざっくり）
-    for col in ws.columns:
-        max_length = max(len(str(cell.value)) for cell in col if cell.value)
-        ws.column_dimensions[get_column_letter(col[0].column)].width = max_length + 2
+    for idx, row in df.iterrows():
+        for col, col_letter in full_col_to_cell.items():
+            cell = f"{col_letter}{start_row + idx}"
+            value = row[col]
+            full_cell_info.append({"大項目": col, "セル": cell, "値": value})
 
-    wb.save("提出用_帳票_整形済.xlsx")
+    full_cell_df = pd.DataFrame(full_cell_info)
+
+    return full_cell_df
+
+
+def goukei(df, df_shipping):
+    from utils.date_tools import to_reiwa_format
+
+    # 日付を令和表記に変換（例: "令和6年5月16日"）
+    date = to_reiwa_format(df_shipping["伝票日付"].iloc[0])
+
+    # 追加行を定義
+    new_row = pd.DataFrame([{"大項目": "日付", "セル": "E4", "値": date}])
+
+    # df に行を追加
+    df = pd.concat([df, new_row], ignore_index=True)
 
     return df
