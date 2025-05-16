@@ -8,6 +8,11 @@ from config.loader.main_path import MainPath
 from logic.readers.read_transport_discount import ReadTransportDiscount
 import streamlit as st
 
+import time
+
+# デバッグ用
+from utils.debug_tools import debug_pause
+
 
 def process(dfs):
     import streamlit as st
@@ -38,22 +43,24 @@ def process(dfs):
     df_dict = load_all_filtered_dataframes(dfs, csv_keys, template_name)
     df_shipping = df_dict.get("shipping")
 
+    # 各処理の実行
     if mini_step == 0:
         logger.info("▶️ Step0: フィルタリング・単価追加・固定運搬費")
-        df_after = make_df_shipping_after_use(master_csv, df_shipping)
-        df_after = apply_unit_price_addition(master_csv, df_after)
-        df_after = process1(df_after, df_transport)
-        st.session_state.df_after = df_after
+        df_shipping = make_df_shipping_after_use(master_csv, df_shipping)
+        df_shipping = apply_unit_price_addition(master_csv, df_shipping)
+        df_shipping = process1(df_shipping, df_transport)
+        st.session_state.df_shipping_first = df_shipping
         st.session_state.process_mini_step = 1
         st.rerun()
         return None
 
     elif mini_step == 1:
         logger.info("▶️ Step1: 選択式運搬費（process2）")
-        df_after = st.session_state.df_after
-        if not st.session_state.get("transport_confirmed", False):
+        df_after = st.session_state.df_shipping_first
+        if not st.session_state.get("block_unit_price_confirmed", False):
             df_after = process2(df_after, df_transport)
-            st.session_state.df_after = df_after
+            st.session_state.df_shipping = df_after
+            st.rerun()
             return None
         else:
             logger.info("▶️ 選択済みなのでスキップ")
@@ -63,9 +70,16 @@ def process(dfs):
 
     elif mini_step == 2:
         logger.info("▶️ Step2: 加算処理実行中")
-        df_after = st.session_state.df_after
-        df_after = apply_selected_transport_cost(df_after, df_transport)
-        return df_after
+        df_after = st.session_state.df_shipping
+
+        # YESNOの選択
+        yes_no_box(df_after)
+
+        # 運搬費の計算
+        df_after = process3(df_after, df_transport)
+        return None
+
+    return df_after
 
 
 def make_df_shipping_after_use(master_csv, df_shipping):
@@ -110,17 +124,17 @@ def make_df_shipping_after_use(master_csv, df_shipping):
 
 def apply_unit_price_addition(master_csv, df_shipping: pd.DataFrame) -> pd.DataFrame:
     """
-    出荷データ（df）に対して、1円追加情報を業者CD単位でマスターと照合し、
+    出荷データ（df）に対して、手数料情報を業者CD単位でマスターと照合し、
     対象業者の単価に加算を行う処理。
     """
     from logic.manage.utils.column_utils import apply_column_addition_by_keys
 
-    # --- 単価への1円追加処理（業者CDで結合） ---
+    # --- 単価への手数料処理（業者CDで結合） ---
     df_after = apply_column_addition_by_keys(
         base_df=df_shipping,
         addition_df=master_csv,
         join_keys=["業者CD"],
-        value_col_to_add="1円追加",
+        value_col_to_add="手数料",
         update_target_col="単価",
     )
 
@@ -264,36 +278,66 @@ def process2(df_after, df_transport):
                 else:
                     st.session_state.block_unit_price_transport_map = selected_map
                     st.session_state.block_unit_price_confirmed = True
+                    selected_df = pd.DataFrame.from_dict(
+                        st.session_state.block_unit_price_transport_map,
+                        orient="index",
+                        columns=["運搬業者"],
+                    )
+
+                    selected_df.index.name = df_after.index.name
+                    df_after = df_after.merge(
+                        selected_df, how="left", left_index=True, right_index=True
+                    )
                     st.success("✅ 選択が確定されました。")
-                    st.rerun()
-                    return
+                    # st.rerun()
+                    return df_after
 
         st.stop()
-
-    # --- ⑤ 確定後の表示とマージ ---
-    st.success("以下の行で選択された運搬業者：")
-    st.json(st.session_state.block_unit_price_transport_map)
-
-    selected_df = pd.DataFrame.from_dict(
-        st.session_state.block_unit_price_transport_map,
-        orient="index",
-        columns=["選択運搬業者"],
-    )
-    selected_df.index.name = df_after.index.name
-    df_after = df_after.merge(
-        selected_df, how="left", left_index=True, right_index=True
-    )
-
     return df_after
 
 
-def apply_selected_transport_cost(
-    df_after: pd.DataFrame, cost_master_df: pd.DataFrame
-) -> pd.DataFrame:
-    import streamlit as st
+def yes_no_box(df_after: pd.DataFrame) -> None:
+    # --- ① 表示処理 ---
+    filtered_df = df_after[df_after["運搬業者"].notna()]
+    df_view = filtered_df[["業者名", "運搬業者"]]
 
-    # 表示
-    st.write("✅ 運搬費加算後データ")
-    st.dataframe(df_after)
+    st.write("✅ 運搬業者選択結果（確認用）")
+    st.dataframe(df_view)
+
+    # --- ② Yes/No ボタン形式UI ---
+    st.markdown("### この運搬業者選択で確定しますか？")
+    col1, col2 = st.columns([1, 1])
+
+    with col1:
+        yes_clicked = st.button("✅ はい（この内容で確定）", key="yes_button")
+    with col2:
+        no_clicked = st.button("🔁 いいえ（やり直す）", key="no_button")
+
+    # --- ③ 処理分岐 ---
+    if yes_clicked:
+        st.success("✅ 確定されました。次に進みます。")
+        return
+
+    if no_clicked:
+        st.warning("🔁 選択をやり直します（Step1に戻ります）")
+        st.session_state.block_unit_price_confirmed = False
+        st.session_state.process_mini_step = 1
+        st.rerun()
+
+    # --- ④ ユーザー操作を待機（中断） ---
+    st.stop()
+
+
+def process3(df_after, df_transport):
+    from logic.manage.utils.column_utils import apply_column_addition_by_keys
+
+    # --- 単価への手数料処理（業者CDで結合） ---
+    df_after = apply_column_addition_by_keys(
+        base_df=df_after,
+        addition_df=df_transport,
+        join_keys=["業者CD", "運搬業者"],
+        value_col_to_add="運搬費",
+        update_target_col="運搬費",
+    )
 
     return df_after
