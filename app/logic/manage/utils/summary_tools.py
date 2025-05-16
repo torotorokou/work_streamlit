@@ -101,7 +101,6 @@ def summary_apply(
     return updated_df
 
 
-
 def safe_merge_by_keys(
     master_df: pd.DataFrame,
     data_df: pd.DataFrame,
