@@ -1,7 +1,10 @@
 import streamlit as st
 
+
 class CustomProgressBar:
-    def __init__(self, total_steps: int = 3, labels: list[str] = None, bar_color: str = "#4f8df7"):
+    def __init__(
+        self, total_steps: int = 3, labels: list[str] = None, bar_color: str = "#4f8df7"
+    ):
         self.total_steps = total_steps
         self.bar_color = bar_color
         self.labels = labels or ["📥 データ読み込み", "🧮 処理中", "📄 完了"]
@@ -10,7 +13,8 @@ class CustomProgressBar:
         percentage = int((current_step + 1) / self.total_steps * 100)
         label = self.labels[min(current_step, len(self.labels) - 1)]
 
-        st.markdown(f"""
+        st.markdown(
+            f"""
             <style>
             .cpb-wrapper {{
                 margin: 1em 0;
@@ -43,5 +47,6 @@ class CustomProgressBar:
                     <div class="cpb-fill"></div>
                 </div>
             </div>
-        """, unsafe_allow_html=True)
-
+        """,
+            unsafe_allow_html=True,
+        )

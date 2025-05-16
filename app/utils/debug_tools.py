@@ -119,3 +119,17 @@ class DevTools:
                 show(df)
             except ImportError:
                 print("⚠️ pandasgui が未インストール")
+
+
+import time
+from config.settings.loader import load_settings
+from utils.logger import app_logger
+
+
+def debug_pause(message: str = "🛑 DEBUG PAUSE", seconds: int = 3):
+    """開発環境でのみ一時停止するユーティリティ"""
+    settings = load_settings()
+    if settings.get("ENV_NAME") in ["dev", "development"]:
+        logger = app_logger()
+        logger.info(f"{message} ({seconds}秒停止)")
+        time.sleep(seconds)

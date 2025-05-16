@@ -34,6 +34,7 @@ from utils.config_loader import (
     get_template_config,
 )
 
+
 def manage_work_controller():
     logger = app_logger()
 
@@ -97,8 +98,7 @@ def manage_work_controller():
         # --- ステップ制御とプログレス描画 ---
         step = st.session_state.get("process_step", 0)
         progress_bar = CustomProgressBar(
-            total_steps=3,
-            labels=["📥 読込中", "🧮 処理中", "📄 出力"]
+            total_steps=3, labels=["📥 読込中", "🧮 処理中", "📄 出力"]
         )
 
         # ✅ プログレスバーの描画
@@ -128,7 +128,9 @@ def manage_work_controller():
         elif step == 2:
             st.success("✅ 書類作成完了")
             df_result = st.session_state.df_result
-            template_path = get_template_config()[selected_template]["template_excel_path"]
+            template_path = get_template_config()[selected_template][
+                "template_excel_path"
+            ]
             output_excel = write_values_to_template(
                 df_result, template_path, st.session_state.extracted_date
             )
