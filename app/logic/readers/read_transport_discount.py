@@ -6,6 +6,7 @@ class ReadTransportDiscount:
     """
     運搬費CSVを読み込み、合積割引を自動適用したDataFrameを返すクラス。
     """
+
     def __init__(self, mainpath: MainPath):
         self.mainpath = mainpath
         self.discount_service = TransportDiscountService()
@@ -49,7 +50,9 @@ class TransportDiscountService:
         discount_rows["運搬業者"] = discount_rows["運搬業者"].astype(str) + "・合積"
 
         # 運搬費を割引
-        discount_rows["運搬費"] = discount_rows["運搬費"].astype(float) * self.discount_rate
+        discount_rows["運搬費"] = (
+            discount_rows["運搬費"].astype(float) * self.discount_rate
+        )
 
         # 合積フラグを 0 に（新しい行なので既に適用済）
         discount_rows["合積"] = 0

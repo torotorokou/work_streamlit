@@ -8,8 +8,10 @@ from config.loader.main_path import MainPath
 from logic.readers.read_transport_discount import ReadTransportDiscount
 import streamlit as st
 
+
 def process(dfs):
     import streamlit as st
+
     logger = app_logger()
 
     # --- 内部ミニステップ管理 ---
@@ -90,10 +92,11 @@ def make_df_shipping_after_use(master_csv, df_shipping):
     # 正味重量が0を除外
     df_after = df_after[df_after["正味重量"].fillna(0) != 0]
 
-
     # 運搬費をmaster_csvから追加
     # 業者CDごとに1件に絞ってからマージ
-    unique_master = master_csv.drop_duplicates(subset=["業者CD"])[["業者CD", "運搬社数"]]
+    unique_master = master_csv.drop_duplicates(subset=["業者CD"])[
+        ["業者CD", "運搬社数"]
+    ]
     df_after = df_after.merge(unique_master, on="業者CD", how="left")
 
     # 運搬費カラムを作成
@@ -101,7 +104,6 @@ def make_df_shipping_after_use(master_csv, df_shipping):
 
     # 業者CDで並び替え
     df_after = df_after.sort_values(by="業者CD").reset_index(drop=True)
-
 
     return df_after
 
@@ -125,10 +127,9 @@ def apply_unit_price_addition(master_csv, df_shipping: pd.DataFrame) -> pd.DataF
     return df_after
 
 
-def process1(df_shipping,df_transport):
+def process1(df_shipping, df_transport):
     from logic.manage.utils.column_utils import apply_column_addition_by_keys
 
- 
     # --- ① 運搬社数 = 1 の行だけを抽出（対象行）
     target_rows = df_shipping[df_shipping["運搬社数"] == 1].copy()
 
@@ -138,7 +139,7 @@ def process1(df_shipping,df_transport):
         addition_df=df_transport,
         join_keys=["業者CD"],
         value_col_to_add="運搬費",
-        update_target_col="運搬費"
+        update_target_col="運搬費",
     )
 
     # --- ③ 運搬社数 != 1 の行をそのまま残す（非対象行）
@@ -170,7 +171,8 @@ def process2(df_after, df_transport):
     # --- ③ タイトル・スタイル調整 ---
     st.title("運搬業者の選択")
 
-    st.markdown("""
+    st.markdown(
+        """
         <style>
         h3 {
             border: none !important;
@@ -184,7 +186,9 @@ def process2(df_after, df_transport):
             box-shadow: 0 0 0 1px #3b82f6 !important;
         }
         </style>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # --- ④ UI構築（未確定時） ---
     if not st.session_state.block_unit_price_confirmed:
@@ -199,16 +203,21 @@ def process2(df_after, df_transport):
                 gyousha_name_clean = re.sub(r"（\s*\d+\s*）", "", gyousha_name)
                 meisai_display = meisai if meisai else "-"
 
-                options = df_transport[df_transport["業者CD"] == gyousha_cd]["運搬業者"].tolist()
+                options = df_transport[df_transport["業者CD"] == gyousha_cd][
+                    "運搬業者"
+                ].tolist()
                 if not options:
-                    st.warning(f"{gyousha_name_clean} に対応する運搬業者が見つかりません。")
+                    st.warning(
+                        f"{gyousha_name_clean} に対応する運搬業者が見つかりません。"
+                    )
                     continue
 
                 select_key = f"select_block_unit_price_row_{idx}"
                 if select_key not in st.session_state:
                     st.session_state[select_key] = options[0]
 
-                st.markdown(f"""
+                st.markdown(
+                    f"""
                     <div style='
                         background-color:#1e293b;
                         padding:1px 4px;
@@ -216,12 +225,15 @@ def process2(df_after, df_transport):
                         border-radius:2px;
                         border:0.3px solid #3b4252;
                     '>
-                """, unsafe_allow_html=True)
+                """,
+                    unsafe_allow_html=True,
+                )
 
                 col1, col2 = st.columns([2, 3])
 
                 with col1:
-                    st.markdown(f"""
+                    st.markdown(
+                        f"""
                         <div style='padding-right:10px;'>
                             <div style='font-size:18px; font-weight:600; color:#1e293b;'>
                                 🗑️ {gyousha_name_clean}
@@ -230,7 +242,9 @@ def process2(df_after, df_transport):
                                 明細備考：{meisai_display}
                             </div>
                         </div>
-                    """, unsafe_allow_html=True)
+                    """,
+                        unsafe_allow_html=True,
+                    )
 
                 with col2:
                     selected = st.selectbox(
@@ -261,18 +275,21 @@ def process2(df_after, df_transport):
     st.json(st.session_state.block_unit_price_transport_map)
 
     selected_df = pd.DataFrame.from_dict(
-        st.session_state.block_unit_price_transport_map, orient="index", columns=["選択運搬業者"]
+        st.session_state.block_unit_price_transport_map,
+        orient="index",
+        columns=["選択運搬業者"],
     )
     selected_df.index.name = df_after.index.name
-    df_after = df_after.merge(selected_df, how="left", left_index=True, right_index=True)
+    df_after = df_after.merge(
+        selected_df, how="left", left_index=True, right_index=True
+    )
 
     return df_after
 
 
-
-
-
-def apply_selected_transport_cost(df_after: pd.DataFrame, cost_master_df: pd.DataFrame) -> pd.DataFrame:
+def apply_selected_transport_cost(
+    df_after: pd.DataFrame, cost_master_df: pd.DataFrame
+) -> pd.DataFrame:
     import streamlit as st
 
     # 表示
