@@ -69,26 +69,33 @@ def to_japanese_month_day(dt) -> str:
     return f"{dt.month}月{dt.day}日"
 
 
-def to_reiwa_format(d: date) -> str:
+def to_reiwa_format(d) -> str:
     """
     日付を「R7年〇月〇日」のような令和表記に変換する。
 
     Parameters
     ----------
-    d : datetime.date
-        対象の日付オブジェクト
+    d : datetime.date, datetime.datetime, pandas.Timestamp など
+        対象の日付オブジェクト（型を問わず対応）
 
     Returns
     -------
     str
         令和表記の文字列（例: R7年5月8日）
     """
-    # 令和は2019年5月1日から開始
-    reiwa_start = date(2019, 5, 1)
+    # 令和開始日（比較しやすいように pd.Timestamp に統一）
+    reiwa_start = pd.Timestamp("2019-05-01")
+
+    if pd.isna(d):
+        return ""
+
+    # 型が文字列などの場合にも対応
+    d = pd.to_datetime(d)
+
     if d < reiwa_start:
         raise ValueError("令和以前の日付は対応していません")
 
-    reiwa_year = d.year - 2018  # R1年＝2019年
+    reiwa_year = d.year - 2018  # R1年 = 2019年
     return f"R{reiwa_year}年{d.month}月{d.day}日"
 
 
