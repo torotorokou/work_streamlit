@@ -12,8 +12,8 @@ def process(dfs):
     import streamlit as st
     logger = app_logger()
 
-    # --- transport_confirmed の状態確認 ---
-    logger.info(f"🧭 transport_confirmed 状態: {st.session_state.get('transport_confirmed')}")
+    # --- 内部ミニステップ管理 ---
+    mini_step = st.session_state.get("process_mini_step", 0)
 
     # --- テンプレート設定の取得 ---
     template_key = "block_unit_price"
@@ -36,29 +36,34 @@ def process(dfs):
     df_dict = load_all_filtered_dataframes(dfs, csv_keys, template_name)
     df_shipping = df_dict.get("shipping")
 
-    # --- 個別処理 ---
-    logger.info("▶️ フィルタリング")
-    df_after = make_df_shipping_after_use(master_csv, df_shipping)
+    if mini_step == 0:
+        logger.info("▶️ Step0: フィルタリング・単価追加・固定運搬費")
+        df_after = make_df_shipping_after_use(master_csv, df_shipping)
+        df_after = apply_unit_price_addition(master_csv, df_after)
+        df_after = process1(df_after, df_transport)
+        st.session_state.df_after = df_after
+        st.session_state.process_mini_step = 1
+        st.rerun()
+        return None
 
-    logger.info("▶️ 単価1円追加")
-    df_after = apply_unit_price_addition(master_csv, df_after)
+    elif mini_step == 1:
+        logger.info("▶️ Step1: 選択式運搬費（process2）")
+        df_after = st.session_state.df_after
+        if not st.session_state.get("transport_confirmed", False):
+            df_after = process2(df_after, df_transport)
+            st.session_state.df_after = df_after
+            return None
+        else:
+            logger.info("▶️ 選択済みなのでスキップ")
+            st.session_state.process_mini_step = 2
+            st.rerun()
+            return None
 
-    logger.info("▶️ 運搬費（固定）")
-    df_after = process1(df_after, df_transport)
-
-    # --- 選択式運搬費の算出 ---
-    logger.info("▶️ 運搬費（選択式）")
-    if not st.session_state.get("transport_confirmed", False):
-        df_after = process2(df_after, df_transport)
-        return df_after  # process2 で中断されたらここで止める
-        st.stop()        # 明示的に止めてもよい（呼び出し側でNone扱いしない場合）
-
-    logger.info("▶️ 選択済みなのでスキップ")
-
-    df_after = apply_selected_transport_cost(df_after, df_transport)
-
-    return df_after  # ✅ 呼び出し元が必要とするのは master_csv ではなく df_after
-
+    elif mini_step == 2:
+        logger.info("▶️ Step2: 加算処理実行中")
+        df_after = st.session_state.df_after
+        df_after = apply_selected_transport_cost(df_after, df_transport)
+        return df_after
 
 
 def make_df_shipping_after_use(master_csv, df_shipping):
@@ -156,9 +161,11 @@ def process2(df_after, df_transport):
     # --- ① 対象行の抽出 ---
     target_rows = df_after[df_after["運搬社数"] != 1].copy()
 
-    # --- ② 状態初期化（初期化しないことでセッション再描画後も保持） ---
-    if "selected_transport_map" not in st.session_state:
-        st.session_state.selected_transport_map = {}
+    # --- ② 状態初期化（スコープ明示） ---
+    if "block_unit_price_confirmed" not in st.session_state:
+        st.session_state.block_unit_price_confirmed = False
+    if "block_unit_price_transport_map" not in st.session_state:
+        st.session_state.block_unit_price_transport_map = {}
 
     # --- ③ タイトル・スタイル調整 ---
     st.title("運搬業者の選択")
@@ -180,7 +187,7 @@ def process2(df_after, df_transport):
     """, unsafe_allow_html=True)
 
     # --- ④ UI構築（未確定時） ---
-    if "transport_confirmed" not in st.session_state or not st.session_state.transport_confirmed:
+    if not st.session_state.block_unit_price_confirmed:
         with st.form("transport_selection_form"):
             selected_map = {}
 
@@ -197,7 +204,7 @@ def process2(df_after, df_transport):
                     st.warning(f"{gyousha_name_clean} に対応する運搬業者が見つかりません。")
                     continue
 
-                select_key = f"select_row_{idx}"
+                select_key = f"select_block_unit_price_row_{idx}"
                 if select_key not in st.session_state:
                     st.session_state[select_key] = options[0]
 
@@ -241,21 +248,20 @@ def process2(df_after, df_transport):
                 if len(selected_map) < len(target_rows):
                     st.warning("未選択の行があります。すべての行を選択してください。")
                 else:
-                    st.session_state.selected_transport_map = selected_map
-                    st.session_state.transport_confirmed = True
+                    st.session_state.block_unit_price_transport_map = selected_map
+                    st.session_state.block_unit_price_confirmed = True
                     st.success("✅ 選択が確定されました。")
                     st.rerun()
-                    return  # ← 明示的に return
+                    return
 
-        # 🚨 UIフォームの後、確定されていない限り強制中断！
         st.stop()
 
     # --- ⑤ 確定後の表示とマージ ---
     st.success("以下の行で選択された運搬業者：")
-    st.json(st.session_state.selected_transport_map)
+    st.json(st.session_state.block_unit_price_transport_map)
 
     selected_df = pd.DataFrame.from_dict(
-        st.session_state.selected_transport_map, orient="index", columns=["選択運搬業者"]
+        st.session_state.block_unit_price_transport_map, orient="index", columns=["選択運搬業者"]
     )
     selected_df.index.name = df_after.index.name
     df_after = df_after.merge(selected_df, how="left", left_index=True, right_index=True)
