@@ -77,7 +77,13 @@ def process(dfs):
 
         # 運搬費の計算
         df_after = process3(df_after, df_transport)
-        return None
+        df_after = process4(df_after, df_transport)
+
+        # ブロック単価の計算
+        df_after = process5(df_after)
+
+        # 整形・セル記入欄追加
+        df_after = eksc(df_after)
 
     return df_after
 
@@ -200,7 +206,7 @@ def process2(df_after, df_transport):
             box-shadow: 0 0 0 1px #3b82f6 !important;
         }
         </style>
-    """,
+        """,
         unsafe_allow_html=True,
     )
 
@@ -212,9 +218,11 @@ def process2(df_after, df_transport):
             for idx, row in target_rows.iterrows():
                 gyousha_cd = row["業者CD"]
                 gyousha_name = str(row.get("業者名", gyousha_cd))
+                hinmei = str(row.get("品名", "")).strip()
                 meisai = str(row.get("明細備考", "")).strip()
 
                 gyousha_name_clean = re.sub(r"（\s*\d+\s*）", "", gyousha_name)
+                hinmei_display = hinmei if hinmei else "-"
                 meisai_display = meisai if meisai else "-"
 
                 options = df_transport[df_transport["業者CD"] == gyousha_cd][
@@ -239,7 +247,7 @@ def process2(df_after, df_transport):
                         border-radius:2px;
                         border:0.3px solid #3b4252;
                     '>
-                """,
+                    """,
                     unsafe_allow_html=True,
                 )
 
@@ -249,14 +257,29 @@ def process2(df_after, df_transport):
                     st.markdown(
                         f"""
                         <div style='padding-right:10px;'>
-                            <div style='font-size:18px; font-weight:600; color:#1e293b;'>
+                            <div style='
+                                font-size:18px;
+                                font-weight:600;
+                                color:inherit;
+                            '>
                                 🗑️ {gyousha_name_clean}
                             </div>
-                            <div style='font-size:16px; color:#334155;'>
+                            <div style='
+                                font-size:15px;
+                                color:inherit;
+                                margin-top: 2px;
+                            '>
+                                品名：{hinmei_display}
+                            </div>
+                            <div style='
+                                font-size:14.5px;
+                                color:inherit;
+                                margin-top: 2px;
+                            '>
                                 明細備考：{meisai_display}
                             </div>
                         </div>
-                    """,
+                        """,
                         unsafe_allow_html=True,
                     )
 
@@ -283,23 +306,22 @@ def process2(df_after, df_transport):
                         orient="index",
                         columns=["運搬業者"],
                     )
-
                     selected_df.index.name = df_after.index.name
                     df_after = df_after.merge(
                         selected_df, how="left", left_index=True, right_index=True
                     )
                     st.success("✅ 選択が確定されました。")
-                    # st.rerun()
                     return df_after
 
         st.stop()
+
     return df_after
 
 
 def yes_no_box(df_after: pd.DataFrame) -> None:
     # --- ① 表示処理 ---
     filtered_df = df_after[df_after["運搬業者"].notna()]
-    df_view = filtered_df[["業者名", "運搬業者"]]
+    df_view = filtered_df[["業者名", "品名", "明細備考", "運搬業者"]]
 
     st.write("✅ 運搬業者選択結果（確認用）")
     st.dataframe(df_view)
@@ -331,13 +353,116 @@ def yes_no_box(df_after: pd.DataFrame) -> None:
 def process3(df_after, df_transport):
     from logic.manage.utils.column_utils import apply_column_addition_by_keys
 
+    # --- ① 運搬業者が入っている行を抽出（対象行）
+    target_rows = df_after[df_after["運搬業者"].notna()].copy()
+
     # --- 単価への手数料処理（業者CDで結合） ---
-    df_after = apply_column_addition_by_keys(
-        base_df=df_after,
+    updated_target_rows = apply_column_addition_by_keys(
+        base_df=target_rows,
         addition_df=df_transport,
         join_keys=["業者CD", "運搬業者"],
         value_col_to_add="運搬費",
         update_target_col="運搬費",
     )
 
+    # --- ③ 運搬社数 != 1 の行をそのまま残す（非対象行）
+    other_rows = df_after[df_after["運搬業者"].isna()].copy()
+
+    # --- ④ 両方を結合（行順は変更される可能性あり）
+    df_after = pd.concat([updated_target_rows, other_rows], ignore_index=True)
+
     return df_after
+
+
+def process4(df_after: pd.DataFrame, df_transport: pd.DataFrame) -> pd.DataFrame:
+    # --- ① df_transport 側で "数字 * weight" 形式の行だけ抽出 ---
+    運搬費_col = df_transport["運搬費"].astype(str).str.replace(r"\s+", "", regex=True)
+    mask = 運搬費_col.str.fullmatch(r"\d+\*weight", na=False)
+
+    df_transport_filtered = df_transport[mask].copy()
+
+    # --- ② 数字部分だけを抽出して float に変換（計算係数）---
+    df_transport_filtered["運搬費係数"] = (
+        df_transport_filtered["運搬費"].str.extract(r"^(\d+)")[0].astype(float)
+    )
+
+    # --- ③ 必要な列だけにして、業者CD + 運搬業者でユニーク化 ---
+    df_transport_filtered = df_transport_filtered.drop_duplicates(
+        subset=["業者CD", "運搬業者"]
+    )
+    df_transport_filtered = df_transport_filtered[["業者CD", "運搬業者", "運搬費係数"]]
+
+    # --- ④ df_after にマージ（業者CD＋運搬業者） ---
+    df_target = df_after.merge(
+        df_transport_filtered,
+        how="left",
+        on=["業者CD", "運搬業者"],
+        suffixes=("", "_formula"),
+    )
+
+    # --- ⑤ 係数が存在する行だけ掛け算して反映 ---
+    calc_mask = df_target["運搬費係数"].notna()
+    df_target.loc[calc_mask, "運搬費"] = (
+        df_target.loc[calc_mask, "運搬費係数"] * df_target.loc[calc_mask, "正味重量"]
+    ).astype(float)
+
+    # --- ⑥ マージ済み df_target を返す or 元の df_after に反映して返す ---
+    return df_target
+
+
+def process5(df):
+
+    # 総額
+    df["総額"] = df["単価"] * df["正味重量"] + df["運搬費"]
+    df["ブロック単価"] = (df["総額"] / df["正味重量"].replace(0, pd.NA)).round(2)
+    return df
+
+
+def eksc(df):
+    import pandas as pd
+    from openpyxl import load_workbook
+    from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    # dfカラムのフィルタリング
+    df = df[["業者名", "正味重量", "総額", "明細備考", "品名", "ブロック単価"]]
+    df = df.sort_values(by="業者名").reset_index(drop=True)
+
+    # DataFrame を作成して Excel に書き込み
+    df.to_excel("提出用_帳票.xlsx", index=False, startrow=2)
+
+    # 書式整形処理
+    wb = load_workbook("提出用_帳票.xlsx")
+    ws = wb.active
+
+    # タイトル行追加
+    ws["A1"] = "📅 処理日：2025年5月7日（水）"
+    ws["A1"].font = Font(size=12, bold=True)
+
+    # 書式整形（右寄せ・桁区切り）
+    for row in ws.iter_rows(
+        min_row=3, max_row=ws.max_row, min_col=1, max_col=ws.max_column
+    ):
+        for cell in row:
+            if isinstance(cell.value, (int, float)):
+                cell.number_format = "#,##0.00" if "." in str(cell.value) else "#,##0"
+                cell.alignment = Alignment(horizontal="right")
+
+    # 太線（表頭）
+    for cell in ws[3]:
+        cell.font = Font(bold=True)
+        cell.border = Border(
+            bottom=Side(border_style="medium"),
+            top=Side(border_style="medium"),
+            left=Side(border_style="thin"),
+            right=Side(border_style="thin"),
+        )
+
+    # 列幅自動調整（ざっくり）
+    for col in ws.columns:
+        max_length = max(len(str(cell.value)) for cell in col if cell.value)
+        ws.column_dimensions[get_column_letter(col[0].column)].width = max_length + 2
+
+    wb.save("提出用_帳票_整形済.xlsx")
+
+    return df
