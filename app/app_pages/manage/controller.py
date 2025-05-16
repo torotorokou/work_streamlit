@@ -76,7 +76,6 @@ def manage_work_controller():
         st.markdown("---")
         if centered_button("📊 書類作成"):
             progress = st.progress(0)
-
             progress.progress(10, "📥 ファイルを処理中...")
             time.sleep(0.3)
 
@@ -91,12 +90,13 @@ def manage_work_controller():
             save_debug_parquets(dfs)
 
             processor_func = template_processors.get(selected_template)
-            # テンプレートに従い、処理実行
             if processor_func:
-                update_progress(progress, 40, "🧮 データを計算中...")
+                update_progress(progress, 40, "🧲 データを計算中...")
 
-                # 個々のprocessにより、dfを取得
                 df = processor_func(dfs)
+
+                if df is None:
+                    st.stop()  # 選択未完了などで途中中断された場合は処理を止める
 
                 update_progress(progress, 70, "📄 テンプレートに書き込み中...")
 
@@ -115,7 +115,7 @@ def manage_work_controller():
                     "✅ ファイルが生成されました。下のボタンからダウンロードできます👇"
                 )
                 centered_download_button(
-                    label="📥 Excelファイルをダウンロード",
+                    label="📅 Excelファイルをダウンロード",
                     data=output_excel.getvalue(),
                     file_name=f"{selected_template_label}_{extracted_date}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
