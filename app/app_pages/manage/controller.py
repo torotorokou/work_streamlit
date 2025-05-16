@@ -105,6 +105,7 @@ def manage_work_controller():
         with st.container():
             progress_bar.render(step)
 
+        # CSVデータの処理
         if step == 0:
             dfs, extracted_date = prepare_csv_data(
                 uploaded_files, date_columns, selected_template
@@ -126,6 +127,7 @@ def manage_work_controller():
             st.rerun()
 
         elif step == 2:
+            st.markdown("### ダウンロード")
             st.success("✅ 書類作成完了")
             df_result = st.session_state.df_result
             template_path = get_template_config()[selected_template][
