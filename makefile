@@ -124,6 +124,7 @@ push-all-tags:
 
 
 commit:
+	make black
 	@git add .
 	@read -p "Enter commit message: " msg; \
 	git commit -m "$$msg" --no-verify && git push origin HEAD

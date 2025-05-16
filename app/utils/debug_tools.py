@@ -5,7 +5,7 @@
 import os
 import pandas as pd
 from typing import Dict
-from utils.config_loader import get_path_config
+from config.loader.main_path import MainPath
 
 
 def save_debug_csvs(dfs: Dict[str, pd.DataFrame], folder: str = "debug_data") -> None:
@@ -27,7 +27,9 @@ def check_dfs(dfs: dict, rows: int = 5, show_columns: bool = True):
 def save_debug_parquets(
     dfs: Dict[str, pd.DataFrame],
 ) -> None:
-    folder = get_path_config()["directories"]["input"]
+    mainpath = MainPath()
+    folder = mainpath.get_path("input", section="directories")
+    print("📁 フォルダパス:", folder)
     os.makedirs(folder, exist_ok=True)
     for name, df in dfs.items():
         file_path = os.path.join(folder, f"debug_{name}.parquet")
@@ -117,3 +119,17 @@ class DevTools:
                 show(df)
             except ImportError:
                 print("⚠️ pandasgui が未インストール")
+
+
+import time
+from config.settings.loader import load_settings
+from utils.logger import app_logger
+
+
+def debug_pause(message: str = "🛑 DEBUG PAUSE", seconds: int = 3):
+    """開発環境でのみ一時停止するユーティリティ"""
+    settings = load_settings()
+    if settings.get("ENV_NAME") in ["dev", "development"]:
+        logger = app_logger()
+        logger.info(f"{message} ({seconds}秒停止)")
+        time.sleep(seconds)

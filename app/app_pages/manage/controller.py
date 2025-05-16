@@ -6,21 +6,17 @@ import streamlit as st
 
 # ✅ プロジェクト内 - components（UI共通パーツ）
 from components.custom_button import centered_button, centered_download_button
-
-# from components.ui_message import show_warning_bubble
+from components.custom_progress_bar import CustomProgressBar
 
 # ✅ プロジェクト内 - view（UIビュー）
 from app_pages.manage.view import (
     render_file_upload_section,
     render_manage_page,
-    # render_status_message_ui,
 )
 
 # ✅ プロジェクト内 - logic（処理・データ変換など）
 from logic.manage import template_processors
 from logic.controllers.csv_controller import prepare_csv_data
-
-# from logic.detect_csv import detect_csv_type
 from logic.manage.utils.upload_handler import handle_uploaded_files
 from logic.manage.utils.file_validator import check_missing_files
 
@@ -56,6 +52,15 @@ def manage_work_controller():
     )
     selected_template = template_dict.get(selected_template_label)
 
+    # 🔽 再計算用
+    if "selected_template_cache" not in st.session_state:
+        st.session_state.selected_template_cache = selected_template
+    elif st.session_state.selected_template_cache != selected_template:
+        st.session_state.process_step = None
+        st.session_state.df_result = None
+        st.session_state.extracted_date = None
+        st.session_state.selected_template_cache = selected_template
+
     # --- 必要ファイルキーを取得 ---
     required_keys = required_files.get(selected_template, [])
 
@@ -68,58 +73,75 @@ def manage_work_controller():
     # --- アップロードされていないファイルを確認 ---
     all_uploaded, missing_keys = check_missing_files(uploaded_files, required_keys)
 
-    # 書類作成
-    # --- ステータス表示 ---
+    # ✅ ファイルがなくなった場合はセッション状態をリセット
+    if not all_uploaded and "process_step" in st.session_state:
+        st.session_state.process_step = None
+        st.session_state.dfs = None
+        st.session_state.df_result = None
+        st.session_state.extracted_date = None
+
     if all_uploaded:
         st.success("✅ 必要なファイルがすべてアップロードされました！")
-
         st.markdown("---")
-        if centered_button("📊 書類作成"):
-            progress = st.progress(0)
 
-            progress.progress(10, "📥 ファイルを処理中...")
-            time.sleep(0.3)
+        # --- ステップ管理の初期化（ボタン押下前は None）---
+        if "process_step" not in st.session_state:
+            st.session_state.process_step = None
 
-            # dfsとcsv日付の作成
+        # --- 書類作成ボタンを最初に表示し、押されたらステップ0へ移行 ---
+        if st.session_state.process_step is None:
+            if centered_button("⏩ 書類作成を開始する"):
+                st.session_state.process_step = 0
+                st.rerun()
+            return  # ボタンが押されるまでは処理しない
+
+        # --- ステップ制御とプログレス描画 ---
+        step = st.session_state.get("process_step", 0)
+        progress_bar = CustomProgressBar(
+            total_steps=3, labels=["📥 読込中", "🧮 処理中", "📄 出力"]
+        )
+
+        # ✅ プログレスバーの描画
+        with st.container():
+            progress_bar.render(step)
+
+        # CSVデータの処理
+        if step == 0:
             dfs, extracted_date = prepare_csv_data(
                 uploaded_files, date_columns, selected_template
             )
-            extracted_date = extracted_date[0].strftime("%Y%m%d")
-            logger.info("dfsの読込完了")
+            st.session_state.dfs = dfs
+            st.session_state.extracted_date = extracted_date[0].strftime("%Y%m%d")
+            st.session_state.process_step = 1
+            st.rerun()
 
-            # デバッグ用に保存
-            save_debug_parquets(dfs)
-
+        elif step == 1:
             processor_func = template_processors.get(selected_template)
-            # テンプレートに従い、処理実行
-            if processor_func:
-                update_progress(progress, 40, "🧮 データを計算中...")
+            df_result = processor_func(st.session_state.dfs)
 
-                # 個々のprocessにより、dfを取得
-                df = processor_func(dfs)
+            if df_result is None:
+                st.stop()  # UI選択画面などで中断されている
 
-                update_progress(progress, 70, "📄 テンプレートに書き込み中...")
+            st.session_state.df_result = df_result
+            st.session_state.process_step = 2
+            st.rerun()
 
-                # テンプレートへの書き込み
-                template_path = get_template_config()[selected_template][
-                    "template_excel_path"
-                ]
-                output_excel = write_values_to_template(
-                    df, template_path, extracted_date
-                )
-
-                update_progress(progress, 100, "✅ 整理完了")
-
-                # ダウンロードボタン表示
-                st.info(
-                    "✅ ファイルが生成されました。下のボタンからダウンロードできます👇"
-                )
-                centered_download_button(
-                    label="📥 Excelファイルをダウンロード",
-                    data=output_excel.getvalue(),
-                    file_name=f"{selected_template_label}_{extracted_date}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                )
+        elif step == 2:
+            st.markdown("### ダウンロード")
+            st.success("✅ 書類作成完了")
+            df_result = st.session_state.df_result
+            template_path = get_template_config()[selected_template][
+                "template_excel_path"
+            ]
+            output_excel = write_values_to_template(
+                df_result, template_path, st.session_state.extracted_date
+            )
+            centered_download_button(
+                label="📥 Excelファイルをダウンロード",
+                data=output_excel.getvalue(),
+                file_name=f"{selected_template_label}_{st.session_state.extracted_date}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
 
     else:
         uploaded_count = len(required_keys) - len(missing_keys)
