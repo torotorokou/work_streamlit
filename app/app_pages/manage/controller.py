@@ -65,6 +65,8 @@ def manage_work_controller():
     required_keys = required_files.get(selected_template, [])
 
     # --- ファイルアップロードUI表示 & 取得 ---
+    st.markdown("### 📂 CSVファイルのアップロード")
+    st.info("以下のファイルをアップロードしてください。")
     uploaded_files = render_file_upload_section(required_keys, csv_label_map)
 
     # --- CSVファイルの妥当性確認（毎回確認）---

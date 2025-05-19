@@ -30,7 +30,7 @@ def check_date_alignment(dfs: dict, date_columns: dict) -> dict:
         if date_sets[k] != base_dates:
             return {
                 "status": False,
-                "error": f"`{keys[0]}` と `{k}` の日付セットが一致していません。",
+                "error": f"`{keys[0]}` と `{k}` の日付セットが一致していません。CSVの日付を確認して、再実行して下さい",
                 "details": {keys[0]: sorted(base_dates), k: sorted(date_sets[k])},
             }
 
