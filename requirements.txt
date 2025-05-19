@@ -1,7 +1,7 @@
-streamlit
-pandas
-openpyxl
-xlsxwriter
-streamlit-calendar
-PyYAML
-scikit-learn
+streamlit==1.45.0
+pandas==2.2.3
+openpyxl==3.1.5
+xlsxwriter==3.2.3
+streamlit-calendar==1.2.1
+PyYAML==6.0.2
+scikit-learn==1.6.1
