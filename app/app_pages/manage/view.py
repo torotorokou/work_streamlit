@@ -59,10 +59,12 @@ def render_upload_header(title: str):
     )
 
 
-def render_file_upload_section(required_keys, csv_label_map):
-    st.markdown("### 📂 CSVファイルのアップロード")
-    st.info("以下のファイルをアップロードしてください。")
+import tempfile
+import pandas as pd
+import streamlit as st
 
+
+def render_file_upload_section(required_keys, csv_label_map):
     uploaded_files = {}
     all_keys = list(csv_label_map.keys())
 
@@ -77,16 +79,28 @@ def render_file_upload_section(required_keys, csv_label_map):
             )
 
             if uploaded_file is not None:
-                expected_name = label
-                detected_name = detect_csv_type(uploaded_file)
+                try:
+                    # ✅ tempfile に書き込み（日本語ファイル名問題回避）
+                    with tempfile.NamedTemporaryFile(
+                        delete=False, suffix=".csv"
+                    ) as tmp:
+                        tmp.write(uploaded_file.read())
+                        tmp_path = tmp.name
 
-                if detected_name != expected_name:
-                    show_warning_bubble(expected_name, detected_name)
-                    st.session_state[f"uploaded_{key}"] = None
+                    expected_name = label
+                    detected_name = detect_csv_type(
+                        tmp_path
+                    )  # ← 関数側もパス受け取りに変更すること
+                    if detected_name != expected_name:
+                        show_warning_bubble(expected_name, detected_name)
+                        st.session_state[f"uploaded_{key}"] = None
+                        uploaded_files[key] = None
+                    else:
+                        st.session_state[f"uploaded_{key}"] = tmp_path
+                        uploaded_files[key] = tmp_path
+                except Exception as e:
+                    st.error(f"ファイルの保存または検出に失敗しました: {e}")
                     uploaded_files[key] = None
-                else:
-                    st.session_state[f"uploaded_{key}"] = uploaded_file
-                    uploaded_files[key] = uploaded_file
             else:
                 if f"uploaded_{key}" in st.session_state:
                     del st.session_state[f"uploaded_{key}"]
@@ -94,7 +108,7 @@ def render_file_upload_section(required_keys, csv_label_map):
 
             show_upload_status(uploaded_files[key])
 
-        # --- 不要なCSVファイル（グレー表示で保持＋案内） ---
+        # --- 不要なCSVファイル（保持） ---
         else:
             with st.expander(
                 f"🗂 {label}（このテンプレートでは不要です）", expanded=False
@@ -109,7 +123,6 @@ def render_file_upload_section(required_keys, csv_label_map):
                     disabled=True,
                     label_visibility="collapsed",
                 )
-
                 if uploaded_file is not None:
                     st.session_state[f"uploaded_{key}"] = uploaded_file
                     uploaded_files[key] = uploaded_file
