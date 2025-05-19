@@ -8,9 +8,12 @@ RUN apt-get update && apt-get install -y \
     fonts-noto-cjk \
     fonts-noto \
     git \
+    curl \
+    ca-certificates \
     make \
     procps \
     && rm -rf /var/lib/apt/lists/*
+
 
 # Python依存ライブラリ（本番 + 開発）
 COPY requirements.txt .

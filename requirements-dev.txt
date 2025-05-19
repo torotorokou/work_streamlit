@@ -1,7 +1,7 @@
 # ▶ 対話的開発（任意・Jupyterなど使う場合に便利）
 ipython>=8.0
-matplotlib
-pandasgui
+matplotlib==3.10.3
+pandasgui==0.2.14
 
 # ▶ コード整形・静的解析・型チェック（pre-commit連携）
 black==24.4.2
@@ -12,5 +12,5 @@ isort==5.13.2
 pre-commit==3.7.0
 
 # ▶ 型補完（mypy用 stub パッケージ）
-types-PyYAML
-pandas-stubs
+types-PyYAML==6.0.12.20250402
+pandas-stubs==2.2.3.250308
