@@ -2,6 +2,13 @@ from utils.logger import app_logger  # ← Streamlit環境用のロガー取得
 from utils.file_loader import read_csv
 from utils.config_loader import receive_header_definition
 import pandas as pd
+from pathlib import Path
+
+# import io
+# import pandas as pd
+# from utils.logger import app_logger
+# from logic.controllers.header_loader import receive_header_definition, load_template_signatures
+# from utils.readers import read_csv  # 独自のread_csvを使っている場合
 
 
 def load_template_signatures(df) -> dict:
@@ -19,27 +26,30 @@ def load_template_signatures(df) -> dict:
 
 
 def detect_csv_type(file) -> str:
+
     logger = app_logger()
+
     try:
         logger.info("📥 detect_csv_type(): 開始")
 
-        # 判別ルール読み込み
+        # 判別ルールの読み込み
         df_csv = receive_header_definition()
-        # logger.info(
-        #     f"🧾 ヘッダー定義DataFrame（先頭5行）:\n{df_csv.head().to_string(index=False)}"
-        # )
-
         signatures = load_template_signatures(df_csv)
-        # logger.info(f"📌 判別ルール（signatures）: {signatures}")
 
-        # ✅ ファイルのカーソルを先頭に戻す（重要）
-        file.seek(0)
-        df = read_csv(file, nrows=1)
+        # ✅ ファイル形式に応じて開く
+        if isinstance(file, str) or isinstance(file, Path):
+            # ファイルパスの場合（staging環境など）
+            with open(file, "r", encoding="utf-8") as f:
+                df = read_csv(f, nrows=1)
+        else:
+            # UploadedFileなどのBytesIO系（dev環境）
+            file.seek(0)
+            df = read_csv(file, nrows=1)
+
         cols = list(df.columns)[:5]
-        # logger.info(f"📊 アップロードCSVの先頭列: {cols}")
+        logger.info(f"📊 アップロードCSVの先頭列: {cols}")
 
         for name, expected in signatures.items():
-            # logger.info(f"🔍 比較中: 種別 = {name}, 期待ヘッダー = {expected}")
             if cols[: len(expected)] == expected:
                 logger.info(f"✅ 種別判定成功: {name}")
                 return name
