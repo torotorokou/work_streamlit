@@ -10,6 +10,11 @@ pages:
       id: manage_work
       function: manage_work_controller
 
+    - label: 工場管理
+      title: 工場管理トップページ
+      id: factory_manage
+      function: factory_manage_work_controller
+
     - label: 便利ツール
       title: 便利ツール
       id: util
