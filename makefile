@@ -11,7 +11,11 @@ dev:
 	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml up
 
 dev_rebuild:
-	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml up --build --force-recreate
+	@echo "Starting dev rebuild with --no-cache..."
+	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml down -v
+	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml build --no-cache
+	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml up -d
+
 
 
 # ステージングビルド＆起動（キャッシュあり）
