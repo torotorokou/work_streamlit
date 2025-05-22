@@ -5,7 +5,7 @@ from utils.config_loader import get_template_config
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.utils.load_template import load_master_and_template
 from config.loader.main_path import MainPath
-from logic.readers.read_transport_discount import ReadTransportDiscount
+from logic.manage.readers.read_transport_discount import ReadTransportDiscount
 import streamlit as st
 
 import time

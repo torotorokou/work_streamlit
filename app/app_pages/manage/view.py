@@ -5,6 +5,7 @@ from components.ui_message import show_warning_bubble
 from logic.detect_csv import detect_csv_type
 from io import BytesIO
 from typing import Optional
+from utils.config_loader import get_csv_label_map
 
 
 def render_manage_page(template_dict, template_descriptions):
@@ -60,11 +61,10 @@ def render_upload_header(title: str):
 
 
 import tempfile
-import pandas as pd
-import streamlit as st
 
 
-def render_file_upload_section(required_keys, csv_label_map):
+def render_file_upload_section(required_keys):
+    csv_label_map = get_csv_label_map()
     uploaded_files = {}
     all_keys = list(csv_label_map.keys())
 

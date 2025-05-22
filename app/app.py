@@ -6,7 +6,7 @@ from config.settings.loader import load_settings
 from utils.logger import app_logger
 
 
-# ページ設定
+# 総ページ設定
 title = get_app_config()
 st.set_page_config(page_title=title["title"], layout="centered")
 
@@ -14,6 +14,7 @@ st.set_page_config(page_title=title["title"], layout="centered")
 apply_global_style()
 
 # ルーティング制御（URLとsession_state）
+# 以下に個々の作業を記す
 route_page()
 
 
