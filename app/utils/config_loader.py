@@ -229,3 +229,9 @@ def get_required_columns_definition(template_name: str) -> dict:
 def load_factory_menu_options() -> list[dict]:
     config = load_yaml("factory_manage_menu_config", section="config_files")
     return config["menu_options"]  # ✅ dict list を返す
+
+
+# 工場用_必要なファイルを辞書形式で返す
+def load_factory_required_files() -> list[dict]:
+    config = load_yaml("factory_manage_menu_config", section="config_files")
+    return config["required_files"]  # ✅ dict list を返す

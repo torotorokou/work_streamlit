@@ -3,3 +3,7 @@ menu_options:
       label: 搬入量予測
     - key: monitor
       label: 工場収支モニタリング表
+
+required_files:
+    monitor: [shipping]
+    inbound_volume: [yard, shipping]
