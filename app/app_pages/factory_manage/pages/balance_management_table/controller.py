@@ -1,45 +1,26 @@
 import streamlit as st
 
 # ✅ 標準ライブラリ
-import time
 
 # ✅ サードパーティ
-import streamlit as st
 import pandas as pd
 
 # ✅ プロジェクト内 - components（UI共通パーツ）
-from components.custom_button import centered_button, centered_download_button
+from components.custom_button import centered_button
 from components.custom_progress_bar import CustomProgressBar
 
 # ✅ プロジェクト内 - view（UIビュー）
-from app_pages.manage.view import (
-    render_file_upload_section,
-    render_manage_page,
-)
 
 # ✅ プロジェクト内 - logic（処理・データ変換など）
-from logic.manage import template_processors
-from logic.controllers.csv_controller import prepare_csv_data
 from logic.manage.utils.upload_handler import handle_uploaded_files
-from logic.manage.utils.file_validator import check_missing_files
 
 # ✅ プロジェクト内 - utils（共通ユーティリティ）
-from utils.progress_helper import update_progress
-from utils.logger import app_logger
-from utils.write_excel import write_values_to_template
 from utils.debug_tools import save_debug_parquets
 from utils.config_loader import (
-    get_csv_date_columns,
     get_csv_label_map,
-    get_required_files_map,
-    get_template_descriptions,
-    get_template_dict,
-    get_template_config,
 )
 
 from utils.config_loader import load_factory_required_files
-from utils.config_loader import get_csv_label_map
-from utils.file_loader import load_uploaded_csv_files
 
 
 def factory_manage_controller():
@@ -190,9 +171,7 @@ def factory_manage_controller():
     #     st.info(f"📥 {uploaded_count} / {total_count} ファイルがアップロードされました")
 
 
-from components.custom_button import centered_download_button
-from utils.config_loader import get_csv_label_map
-from app_pages.manage.view import render_upload_header, show_upload_status
+from app_pages.manage.view import render_upload_header
 import tempfile
 
 

@@ -4,13 +4,17 @@ os.chdir("/work/app")
 
 import pandas as pd
 from utils.logger import app_logger
-from app_pages.factory_manage.pages.balance_management_table.process import processor_func
+from app_pages.factory_manage.pages.balance_management_table.process import (
+    processor_func,
+)
+
 # factory_manageのコントローラーをインポート
 try:
     from app_pages.factory_manage.controller import factory_manage_work_controller
 except ImportError as e:
     print(f"factory_manage_work_controllerのインポートに失敗: {e}")
     factory_manage_work_controller = None
+
 
 def run_debug_process() -> pd.DataFrame:
     logger = app_logger()
@@ -28,5 +32,5 @@ def run_debug_process() -> pd.DataFrame:
     return dfs
 
 
-dfs=run_debug_process()
+dfs = run_debug_process()
 processor_func(dfs)
