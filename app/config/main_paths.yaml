@@ -34,3 +34,4 @@ config_files:
     templates_config: 'config/templates_config.yaml'
     csv_sources_config: 'config/csv_sources_config.yaml'
     required_columns_definition: 'config/required_columns_definition.yaml'
+    factory_manage_menu_config: 'app_pages/factory_manage/config/menu_config.yaml'
