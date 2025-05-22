@@ -223,3 +223,9 @@ def get_expected_dtypes_by_template(template_key: str) -> dict:
 def get_required_columns_definition(template_name: str) -> dict:
     all_defs = load_yaml("required_columns_definition", section="config_files")
     return all_defs.get(template_name, {})
+
+
+# 工場用のメニューリストを辞書形式で返す
+def load_factory_menu_options() -> list[dict]:
+    config = load_yaml("factory_manage_menu_config", section="config_files")
+    return config["menu_options"]  # ✅ dict list を返す
