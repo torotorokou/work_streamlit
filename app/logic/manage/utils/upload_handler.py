@@ -1,10 +1,11 @@
 import streamlit as st
 from logic.detect_csv import detect_csv_type
 from components.ui_message import show_warning_bubble
+from utils.config_loader import get_csv_label_map
 from utils.logger import app_logger  # ロガーのインポート
 
 
-def handle_uploaded_files(required_keys, csv_label_map):
+def handle_uploaded_files(required_keys):
     """
     アップロードされたCSVファイルの整合性を確認し、正しいもののみを返す関数。
 
@@ -17,6 +18,7 @@ def handle_uploaded_files(required_keys, csv_label_map):
     """
     logger = app_logger()
     uploaded_files = {}
+    csv_label_map = get_csv_label_map()
 
     # アップロード対象のキー（例: "receive", "shipping"）ごとに確認
     for key in required_keys:

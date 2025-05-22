@@ -55,3 +55,11 @@ management_sheet:
         scrap_senbetsu_map: data/master/management_sheet/scrap_senbetsu_map.csv
         etc: data/master/management_sheet/etc.csv
     template_excel_path: data/templates/management_sheet.xlsx
+
+balance_management_table:
+    key: balance_management_table
+    label: 工場収支モニタリング表
+    description: 工場の収支をモニタリングするための関数
+    required_files: [shipping]
+    master_csv_path:
+        balance_management_table: data/master/factory_manage/balance/balance_management_table.csv
