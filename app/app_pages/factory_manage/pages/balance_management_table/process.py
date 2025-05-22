@@ -2,8 +2,6 @@ import pandas as pd
 from .column_types import apply_column_types
 from utils.config_loader import get_template_config
 from logic.manage.utils.load_template import load_master_and_template
-import pandas as pd
-from utils.config_loader import get_template_config
 
 
 def processor_func(dfs: dict) -> pd.DataFrame:
@@ -32,9 +30,6 @@ def processor_func(dfs: dict) -> pd.DataFrame:
     # df_shippingからデータを取得
     df_after = process2(master_csv, shipping_df)
     return shipping_df
-
-
-import numpy as np
 
 
 def process1(df: pd.DataFrame) -> pd.DataFrame:
