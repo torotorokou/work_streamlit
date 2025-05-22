@@ -38,19 +38,18 @@ from utils.config_loader import (
 def manage_work_controller():
     logger = app_logger()
 
-    # --- 設定を取得 ---
+    # --- UI:テンプレート選択 ---
     template_dict = get_template_dict()
     template_descriptions = get_template_descriptions()
-    required_files = get_required_files_map()
-    csv_label_map = get_csv_label_map()
-    date_columns = get_csv_date_columns()
-
-    # --- UI:テンプレート選択 ---
     selected_template_label = render_manage_page(
         template_dict,
         template_descriptions,
     )
     selected_template = template_dict.get(selected_template_label)
+
+    # --- 必要ファイルキーを取得 ---
+    required_files = get_required_files_map()
+    required_keys = required_files.get(selected_template, [])
 
     # 🔽 再計算用
     if "selected_template_cache" not in st.session_state:
@@ -61,16 +60,13 @@ def manage_work_controller():
         st.session_state.extracted_date = None
         st.session_state.selected_template_cache = selected_template
 
-    # --- 必要ファイルキーを取得 ---
-    required_keys = required_files.get(selected_template, [])
-
     # --- ファイルアップロードUI表示 & 取得 ---
     st.markdown("### 📂 CSVファイルのアップロード")
     st.info("以下のファイルをアップロードしてください。")
-    uploaded_files = render_file_upload_section(required_keys, csv_label_map)
+    uploaded_files = render_file_upload_section(required_keys)
 
     # --- CSVファイルの妥当性確認（毎回確認）---
-    validated_files = handle_uploaded_files(required_keys, csv_label_map)
+    handle_uploaded_files(required_keys)
 
     # --- アップロードされていないファイルを確認 ---
     all_uploaded, missing_keys = check_missing_files(uploaded_files, required_keys)
@@ -83,6 +79,7 @@ def manage_work_controller():
         st.session_state.extracted_date = None
 
     if all_uploaded:
+        date_columns = get_csv_date_columns()
         st.success("✅ 必要なファイルがすべてアップロードされました！")
         st.markdown("---")
 

@@ -1,7 +1,7 @@
 import streamlit as st
 from utils.config_loader import load_factory_menu_options
-from app_pages.factory_manage.pages.balance_management_table.render import (
-    render_waste_management_table,
+from app_pages.factory_manage.pages.balance_management_table.controller import (
+    factory_manage_controller,
 )
 from app_pages.factory_manage.pages.inbound_volume_forecast.render import (
     render_import_volume,
@@ -33,4 +33,4 @@ class FactoryManageWorkController:
         if self.selected_menu_key == "inbound_volume":
             render_import_volume()
         elif self.selected_menu_key == "monitor":
-            render_waste_management_table()
+            factory_manage_controller()
