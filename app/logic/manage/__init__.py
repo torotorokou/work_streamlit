@@ -10,7 +10,9 @@ from utils.logger import app_logger
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 logger = app_logger()
-template_configs = get_template_config()
+template_configs = dict(
+    list(get_template_config().items())[:5]
+)  # 最初の5つのテンプレートのみを取得
 
 template_processors = {}
 

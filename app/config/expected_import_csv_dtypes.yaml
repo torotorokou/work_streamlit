@@ -70,3 +70,23 @@ management_sheet:
     yard: *yard_schema
     receive:
         - *receive_schema
+
+# 出荷管理テーブル用の設定
+balance_management_table:
+    shipping:
+        伝票日付: datetime
+        出荷番号: str
+        取引先名: str
+        業者CD: str
+        業者名: str
+        現場CD: str
+        現場名: str
+        品名: str
+        正味重量: int
+        数量: int
+        単位名: str
+        単価: float
+        金額: int
+        運搬業者名: str
+        伝票区分: str
+        明細備考: str
