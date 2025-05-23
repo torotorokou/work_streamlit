@@ -7,134 +7,140 @@ from logic.manage.utils.load_template import load_master_and_template
 from config.loader.main_path import MainPath
 from logic.manage.readers.read_transport_discount import ReadTransportDiscount
 import streamlit as st
-
 import time
+
+
+from logic.manage.processors.block_unit_price.make_df import make_df_shipping_after_use
 
 # デバッグ用
 from utils.debug_tools import debug_pause
 
 
 def process(dfs):
-    import streamlit as st
+    """
+    ブロック単価計算の主処理を行う関数
 
+    Args:
+        dfs: 入力データフレーム群
+
+    Returns:
+        pd.DataFrame: 計算結果を含むマスターCSV
+    """
     logger = app_logger()
 
-    # --- 内部ミニステップ管理 ---
+    # --- 内部ステップ管理 ---
     mini_step = st.session_state.get("process_mini_step", 0)
 
-    # --- テンプレート設定の取得 ---
+    # --- 設定とマスターデータの読み込み ---
+    # テンプレート設定
     template_key = "block_unit_price"
     template_config = get_template_config()[template_key]
     template_name = template_config["key"]
     csv_keys = template_config["required_files"]
     logger.info(f"[テンプレート設定読込] key={template_key}, files={csv_keys}")
 
-    # --- コンフィグとマスター読み込み ---
+    # マスターデータ
     config = get_template_config()["block_unit_price"]
     master_path = config["master_csv_path"]["vendor_code"]
     master_csv = load_master_and_template(master_path)
 
-    # 運搬費の読込
+    # 運搬費データ
     mainpath = MainPath()
     reader = ReadTransportDiscount(mainpath)
     df_transport = reader.load_discounted_df()
 
-    # --- CSVの読み込み ---
+    # 出荷データ
     df_dict = load_all_filtered_dataframes(dfs, csv_keys, template_name)
     df_shipping = df_dict.get("shipping")
 
-    # 各処理の実行
+    # --- 段階的処理の実行 ---
     if mini_step == 0:
-        logger.info("▶️ Step0: フィルタリング・単価追加・固定運搬費")
-        df_shipping = make_df_shipping_after_use(master_csv, df_shipping)
-        df_shipping = apply_unit_price_addition(master_csv, df_shipping)
-        df_shipping = process1(df_shipping, df_transport)
-        st.session_state.df_shipping_first = df_shipping
-        st.session_state.process_mini_step = 1
-        st.rerun()
+        _process_step0(df_shipping, master_csv, df_transport)
         return None
-
     elif mini_step == 1:
-        logger.info("▶️ Step1: 選択式運搬費（process2）")
-        df_after = st.session_state.df_shipping_first
-        if not st.session_state.get("block_unit_price_confirmed", False):
-            df_after = process2(df_after, df_transport)
-            st.session_state.df_shipping = df_after
-            st.rerun()
-            return None
-        else:
-            logger.info("▶️ 選択済みなのでスキップ")
-            st.session_state.process_mini_step = 2
-            st.rerun()
-            return None
-
+        _process_step1(df_transport)
+        return None
     elif mini_step == 2:
-        logger.info("▶️ Step2: 加算処理実行中")
-        df_after = st.session_state.df_shipping
+        return _process_step2(df_shipping, df_transport)
 
-        # YESNOの選択
-        yes_no_box(df_after)
+    return None
 
-        # 運搬費の計算
-        df_after = process3(df_after, df_transport)
-        df_after = process4(df_after, df_transport)
 
-        # ブロック単価の計算
-        df_after = process5(df_after)
+def _process_step0(
+    df_shipping: pd.DataFrame, master_csv: pd.DataFrame, df_transport: pd.DataFrame
+) -> None:
+    """基本データ処理を行うステップ0の実装
 
-        # 整形・セル記入欄追加
-        df_after = eksc(df_after)
+    Args:
+        df_shipping: 出荷データ
+        master_csv: マスターデータ
+        df_transport: 運搬費データ
+    """
+    logger = app_logger()
+    logger.info("▶️ Step0: フィルタリング・単価追加・固定運搬費")
 
-        # セル記入用df作成
-        master_csv = ekuserubunkai(df_after)
+    df_shipping = make_df_shipping_after_use(master_csv, df_shipping)  # フィルタリング
+    df_shipping = apply_unit_price_addition(master_csv, df_shipping)  # 単価追加
+    df_shipping = process1(df_shipping, df_transport)  # 固定運搬費
 
-        # 合計行の追加
-        master_csv = goukei(master_csv, df_shipping)
+    st.session_state.df_shipping_first = df_shipping
+    st.session_state.process_mini_step = 1
+    st.rerun()
 
-        # ステートの初期化
-        st.session_state.process_mini_step = 0
+
+def _process_step1(df_transport: pd.DataFrame) -> None:
+    """運搬業者選択を行うステップ1の実装
+
+    Args:
+        df_transport: 運搬費データ
+    """
+    logger = app_logger()
+    logger.info("▶️ Step1: 選択式運搬費（process2）")
+    df_after = st.session_state.df_shipping_first
+
+    if not st.session_state.get("block_unit_price_confirmed", False):
+        df_after = process2(df_after, df_transport)
+        st.session_state.df_shipping = df_after
+        st.rerun()
+    else:
+        logger.info("▶️ 選択済みなのでスキップ")
+        st.session_state.process_mini_step = 2
+        st.rerun()
+
+
+def _process_step2(
+    df_shipping: pd.DataFrame, df_transport: pd.DataFrame
+) -> pd.DataFrame:
+    """最終計算処理を行うステップ2の実装
+
+    Args:
+        df_shipping: 出荷データ
+        df_transport: 運搬費データ
+
+    Returns:
+        pd.DataFrame: 計算結果を含むマスターCSV
+    """
+    logger = app_logger()
+    logger.info("▶️ Step2: 加算処理実行中")
+    df_after = st.session_state.df_shipping
+
+    # 運搬業者選択の確認
+    yes_no_box(df_after)
+
+    # 運搬費の計算
+    df_after = process3(df_after, df_transport)  # 選択された運搬業者の運搬費を追加
+    df_after = process4(df_after, df_transport)  # 重量に応じた運搬費を計算
+
+    # 最終計算
+    df_after = process5(df_after)  # ブロック単価の計算
+    df_after = eksc(df_after)  # 表示用に整形
+    master_csv = ekuserubunkai(df_after)  # セル記入用データ作成
+    master_csv = goukei(master_csv, df_shipping)  # 合計行の追加
+
+    # ステートの初期化
+    st.session_state.process_mini_step = 0
 
     return master_csv
-
-
-def make_df_shipping_after_use(master_csv, df_shipping):
-    # --- 業者CDでフィルタ ---
-    df_after = df_shipping[df_shipping["業者CD"].isin(master_csv["業者CD"])].copy()
-
-    # --- 品名指定があるものをマージしてフィルタリング ---
-    item_filter_df = master_csv[master_csv["品名"].notna()][
-        ["業者CD", "品名"]
-    ].drop_duplicates()
-
-    # 丸源処理。品名でソートする
-    if not item_filter_df.empty:
-        # 「業者CDと品名のペア」が一致する行だけ残す（外積フィルタ）
-        df_after = df_after.merge(
-            item_filter_df, on=["業者CD", "品名"], how="left", indicator=True
-        )
-        df_after = df_after[
-            (df_after["_merge"] == "both")
-            | (~df_after["業者CD"].isin(item_filter_df["業者CD"]))
-        ]
-        df_after = df_after.drop(columns=["_merge"])
-
-    # 正味重量が0を除外
-    df_after = df_after[df_after["正味重量"].fillna(0) != 0]
-
-    # 運搬費をmaster_csvから追加
-    # 業者CDごとに1件に絞ってからマージ
-    unique_master = master_csv.drop_duplicates(subset=["業者CD"])[
-        ["業者CD", "運搬社数"]
-    ]
-    df_after = df_after.merge(unique_master, on="業者CD", how="left")
-
-    # 運搬費カラムを作成
-    df_after["運搬費"] = 0
-
-    # 業者CDで並び替え
-    df_after = df_after.sort_values(by="業者CD").reset_index(drop=True)
-
-    return df_after
 
 
 def apply_unit_price_addition(master_csv, df_shipping: pd.DataFrame) -> pd.DataFrame:
