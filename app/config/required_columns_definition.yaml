@@ -49,10 +49,13 @@ block_unit_price:
         - 業者CD
         - 業者名
         - 正味重量
+        - 数量
         - 単価
         - 明細備考
         - 伝票日付
         - 品名
+        - 単位名
+
 
 management_sheet:
     shipping: *shipping_cols
@@ -61,3 +64,17 @@ management_sheet:
         - 数量
     receive:
         - *receive_cols
+
+balance_management_table:
+    shipping:
+        - 伝票日付
+        - 業者CD
+        - 業者名
+        - 取引先CD
+        - 品名CD
+        - 単位CD
+        - 車種CD
+        - 運搬業者CD
+        - 種類CD
+        - 数量
+        - 金額
