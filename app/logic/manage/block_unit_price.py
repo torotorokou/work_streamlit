@@ -8,9 +8,20 @@ from config.loader.main_path import MainPath
 from logic.manage.readers.read_transport_discount import ReadTransportDiscount
 import streamlit as st
 import time
+import re
 
 
-from logic.manage.processors.block_unit_price.make_df import make_df_shipping_after_use
+from logic.manage.processors.block_unit_price.process0 import (
+    make_df_shipping_after_use,
+    apply_unit_price_addition,
+    apply_transport_fee_by1,
+)
+from logic.manage.processors.block_unit_price.process1 import (
+    create_transport_selection_form,
+)
+from logic.manage.processors.block_unit_price.process2 import (
+    confirm_transport_selection,
+)
 
 # デバッグ用
 from utils.debug_tools import debug_pause
@@ -69,7 +80,9 @@ def process(dfs):
 def _process_step0(
     df_shipping: pd.DataFrame, master_csv: pd.DataFrame, df_transport: pd.DataFrame
 ) -> None:
-    """基本データ処理を行うステップ0の実装
+    """繰り返し不必要な処理
+        基本データ処理と運搬費（固定のもの、社数１）を行うステップ0の実装
+        繰り返す必要がないため、このステップに入れる。
 
     Args:
         df_shipping: 出荷データ
@@ -81,7 +94,7 @@ def _process_step0(
 
     df_shipping = make_df_shipping_after_use(master_csv, df_shipping)  # フィルタリング
     df_shipping = apply_unit_price_addition(master_csv, df_shipping)  # 単価追加
-    df_shipping = process1(df_shipping, df_transport)  # 固定運搬費
+    df_shipping = apply_transport_fee_by1(df_shipping, df_transport)  # 固定運搬費
 
     st.session_state.df_shipping_first = df_shipping
     st.session_state.process_mini_step = 1
@@ -89,20 +102,36 @@ def _process_step0(
 
 
 def _process_step1(df_transport: pd.DataFrame) -> None:
-    """運搬業者選択を行うステップ1の実装
+    """繰り返し必要な処理
+        運搬業者選択を行うステップ1の実装
+
+    処理の流れ:
+        1. 前のステップで保存した出荷データを取得
+        2. 運搬業者の選択状態を確認
+            - 未選択：選択フォームを表示して選択を促す
+            - 選択済：次のステップに進む
+        3. 選択結果をセッションに保存してページを再読み込み
 
     Args:
         df_transport: 運搬費データ
     """
+    # ロガーの初期化
     logger = app_logger()
-    logger.info("▶️ Step1: 選択式運搬費（process2）")
+    logger.info("▶️ Step1: 選択式運搬費")
+
+    # ステップ1: 前のステップの出荷データを取得
     df_after = st.session_state.df_shipping_first
 
+    # ステップ2: 運搬業者の選択状態を確認
     if not st.session_state.get("block_unit_price_confirmed", False):
-        df_after = process2(df_after, df_transport)
+        # 未選択の場合：選択フォームを表示
+        df_after = create_transport_selection_form(df_after, df_transport)
+
+        # ステップ3: 選択結果を保存して再読み込み
         st.session_state.df_shipping = df_after
         st.rerun()
     else:
+        # 選択済みの場合：次のステップへ進む
         logger.info("▶️ 選択済みなのでスキップ")
         st.session_state.process_mini_step = 2
         st.rerun()
@@ -125,17 +154,17 @@ def _process_step2(
     df_after = st.session_state.df_shipping
 
     # 運搬業者選択の確認
-    yes_no_box(df_after)
+    confirm_transport_selection(df_after)
 
-    # 運搬費の計算
-    df_after = process3(df_after, df_transport)  # 選択された運搬業者の運搬費を追加
-    df_after = process4(df_after, df_transport)  # 重量に応じた運搬費を計算
+    # 運搬費の計算と適用
+    df_after = apply_transport_fee_by_vendor(df_after, df_transport)
+    df_after = apply_weight_based_transport_fee(df_after, df_transport)
 
-    # 最終計算
-    df_after = process5(df_after)  # ブロック単価の計算
-    df_after = eksc(df_after)  # 表示用に整形
-    master_csv = ekuserubunkai(df_after)  # セル記入用データ作成
-    master_csv = goukei(master_csv, df_shipping)  # 合計行の追加
+    # ブロック単価の計算と表示用データの作成
+    df_after = make_total_sum(df_after)
+    df_after = df_cul_filtering(df_after)
+    master_csv = first_cell_in_template(df_after)
+    master_csv = make_sum_date(master_csv, df_shipping)
 
     # ステートの初期化
     st.session_state.process_mini_step = 0
@@ -143,261 +172,24 @@ def _process_step2(
     return master_csv
 
 
-def apply_unit_price_addition(master_csv, df_shipping: pd.DataFrame) -> pd.DataFrame:
+def apply_transport_fee_by_vendor(
+    df_after: pd.DataFrame, df_transport: pd.DataFrame
+) -> pd.DataFrame:
+    """運搬業者ごとの運搬費を適用する関数
+
+    Args:
+        df_after: 処理対象の出荷データフレーム
+        df_transport: 運搬費データフレーム
+
+    Returns:
+        pd.DataFrame: 運搬費が適用された出荷データフレーム
     """
-    出荷データ（df）に対して、手数料情報を業者CD単位でマスターと照合し、
-    対象業者の単価に加算を行う処理。
-    """
     from logic.manage.utils.column_utils import apply_column_addition_by_keys
 
-    # --- 単価への手数料処理（業者CDで結合） ---
-    df_after = apply_column_addition_by_keys(
-        base_df=df_shipping,
-        addition_df=master_csv,
-        join_keys=["業者CD"],
-        value_col_to_add="手数料",
-        update_target_col="単価",
-    )
-
-    return df_after
-
-
-def process1(df_shipping, df_transport):
-    from logic.manage.utils.column_utils import apply_column_addition_by_keys
-
-    # --- ① 運搬社数 = 1 の行だけを抽出（対象行）
-    target_rows = df_shipping[df_shipping["運搬社数"] == 1].copy()
-
-    # --- ② 加算処理を適用
-    updated_target_rows = apply_column_addition_by_keys(
-        base_df=target_rows,
-        addition_df=df_transport,
-        join_keys=["業者CD"],
-        value_col_to_add="運搬費",
-        update_target_col="運搬費",
-    )
-
-    # --- ③ 運搬社数 != 1 の行をそのまま残す（非対象行）
-    other_rows = df_shipping[df_shipping["運搬社数"] != 1].copy()
-
-    # --- ④ 両方を結合（行順は変更される可能性あり）
-    df_after = pd.concat([updated_target_rows, other_rows], ignore_index=True)
-
-    # 業者CDで並び替え
-    df_after = df_after.sort_values(by="業者CD").reset_index(drop=True)
-
-    return df_after
-
-
-def process2(df_after, df_transport):
-    import streamlit as st
-    import pandas as pd
-    import re
-
-    target_rows = df_after[df_after["運搬社数"] != 1].copy()
-
-    if "block_unit_price_confirmed" not in st.session_state:
-        st.session_state.block_unit_price_confirmed = False
-    if "block_unit_price_transport_map" not in st.session_state:
-        st.session_state.block_unit_price_transport_map = {}
-
-    st.title("運搬業者の選択")
-
-    st.markdown(
-        """
-    <style>
-    h3 {
-        border: none !important;
-        margin-bottom: 0.5rem !important;
-    }
-
-    /* ✅ selectbox 白黒両対応 */
-    div[data-baseweb="select"] > div {
-        border-width: 1.5px !important;
-        border-color: #999999 !important;
-        background-color: rgba(255, 255, 255, 0.05) !important;
-    }
-
-    div[data-baseweb="select"]:focus-within {
-        box-shadow: 0 0 0 2px #cbd5e1 !important;
-    }
-
-    div[data-baseweb="select"] span {
-        color: #f1f5f9 !important;
-        font-weight: 600;
-    }
-
-    /* ✅ ラベルの色も調整（明暗両方見やすく） */
-    label[data-testid="stWidgetLabel"] {
-        color: #e5e7eb !important;
-        font-size: 14px;
-    }
-    </style>
-    """,
-        unsafe_allow_html=True,
-    )
-
-    if not st.session_state.block_unit_price_confirmed:
-        with st.form("transport_selection_form"):
-            selected_map = {}
-
-            for idx, row in target_rows.iterrows():
-                gyousha_cd = row["業者CD"]
-                gyousha_name = str(row.get("業者名", gyousha_cd))
-                hinmei = str(row.get("品名", "")).strip()
-                meisai = str(row.get("明細備考", "")).strip()
-
-                gyousha_name_clean = re.sub(r"（\s*\d+\s*）", "", gyousha_name)
-                hinmei_display = hinmei if hinmei else "-"
-                meisai_display = meisai if meisai else "-"
-
-                options = df_transport[df_transport["業者CD"] == gyousha_cd][
-                    "運搬業者"
-                ].tolist()
-                if not options:
-                    st.warning(
-                        f"{gyousha_name_clean} に対応する運搬業者が見つかりません。"
-                    )
-                    continue
-
-                select_key = f"select_block_unit_price_row_{idx}"
-                if select_key not in st.session_state:
-                    st.session_state[select_key] = options[0]
-
-                st.markdown(
-                    f"""
-                    <div style='
-                        background-color:#1e293b;
-                        padding:1px 4px;
-                        margin-bottom:6px;
-                        border-radius:2px;
-                        border:0.3px solid #3b4252;
-                    '>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                col1, col2 = st.columns([2, 3])
-
-                with col1:
-                    st.markdown(
-                        f"""
-                        <div style='padding-right:10px;'>
-                            <div style='
-                                font-size:18px;
-                                font-weight:600;
-                                color:#38bdf8;
-                            '>
-                                🗑️ {gyousha_name_clean}
-                            </div>
-                            <div style='
-                                font-size:15px;
-                                color:inherit;
-                                margin-top: 2px;
-                            '>
-                                品名：{hinmei_display}
-                            </div>
-                            <div style='
-                                font-size:14.5px;
-                                color:inherit;
-                                margin-top: 2px;
-                            '>
-                                明細備考：{meisai_display}
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
-                # ✅ selectbox ラベルの色を事前に定義しておく
-                st.markdown(
-                    """
-                <style>
-                label[data-testid="stWidgetLabel"] {
-                    color: #555555 !important;
-                    font-size: 14.5px;
-                }
-                </style>
-                """,
-                    unsafe_allow_html=True,
-                )
-
-                # ✅ その後に selectbox を通常通り書く
-                with col2:
-                    selected = st.selectbox(
-                        label="🚚 運搬業者を選択してください",
-                        options=options,
-                        key=select_key,
-                    )
-
-                st.markdown("</div>", unsafe_allow_html=True)
-
-                selected_map[idx] = selected
-
-            submitted = st.form_submit_button("✅ 選択を確定して次へ進む")
-            if submitted:
-                if len(selected_map) < len(target_rows):
-                    st.warning("未選択の行があります。すべての行を選択してください。")
-                else:
-                    st.session_state.block_unit_price_transport_map = selected_map
-                    st.session_state.block_unit_price_confirmed = True
-                    selected_df = pd.DataFrame.from_dict(
-                        st.session_state.block_unit_price_transport_map,
-                        orient="index",
-                        columns=["運搬業者"],
-                    )
-                    selected_df.index.name = df_after.index.name
-                    df_after = df_after.merge(
-                        selected_df, how="left", left_index=True, right_index=True
-                    )
-                    st.success("✅ 選択が確定されました。")
-                    return df_after
-
-        st.stop()
-
-    return df_after
-
-
-def yes_no_box(df_after: pd.DataFrame) -> None:
-    # --- ① 表示処理 ---
-
-    filtered_df = df_after[df_after["運搬業者"].notna()]
-    df_view = filtered_df[["業者名", "品名", "明細備考", "運搬業者"]]
-
-    st.title("運搬業者の確認")
-    st.dataframe(df_view)
-
-    # --- ② Yes/No ボタン形式UI ---
-    st.write("この運搬業者選択で確定しますか？")
-    col1, col2 = st.columns([1, 1])
-
-    with col1:
-        yes_clicked = st.button("✅ はい（この内容で確定）", key="yes_button")
-    with col2:
-        no_clicked = st.button("🔁 いいえ（やり直す）", key="no_button")
-
-    # --- ③ 処理分岐 ---
-    if yes_clicked:
-        st.success("✅ 確定されました。次に進みます。")
-        return
-
-    if no_clicked:
-        st.warning("🔁 選択をやり直します（Step1に戻ります）")
-        st.session_state.block_unit_price_confirmed = False
-        st.session_state.process_mini_step = 1
-        st.rerun()
-
-    # --- ④ ユーザー操作を待機（中断） ---
-    st.stop()
-
-
-def process3(df_after, df_transport):
-    from logic.manage.utils.column_utils import apply_column_addition_by_keys
-
-    # --- ① 運搬業者が入っている行を抽出（対象行）
+    # 運搬業者が設定されている行を抽出
     target_rows = df_after[df_after["運搬業者"].notna()].copy()
 
-    # --- 単価への手数料処理（業者CDで結合） ---
+    # 運搬費の適用（業者CDで結合）
     updated_target_rows = apply_column_addition_by_keys(
         base_df=target_rows,
         addition_df=df_transport,
@@ -406,52 +198,63 @@ def process3(df_after, df_transport):
         update_target_col="運搬費",
     )
 
-    # --- ③ 運搬社数 != 1 の行をそのまま残す（非対象行）
-    other_rows = df_after[df_after["運搬業者"].isna()].copy()
+    # 運搬業者が未設定の行を保持
+    non_transport_rows = df_after[df_after["運搬業者"].isna()].copy()
 
-    # --- ④ 両方を結合（行順は変更される可能性あり）
-    df_after = pd.concat([updated_target_rows, other_rows], ignore_index=True)
+    # 処理済みデータの結合
+    df_after = pd.concat([updated_target_rows, non_transport_rows], ignore_index=True)
 
     return df_after
 
 
-def process4(df_after: pd.DataFrame, df_transport: pd.DataFrame) -> pd.DataFrame:
-    # --- ① df_transport 側で "数字 * weight" 形式の行だけ抽出 ---
-    運搬費_col = df_transport["運搬費"].astype(str).str.replace(r"\s+", "", regex=True)
-    mask = 運搬費_col.str.fullmatch(r"\d+\*weight", na=False)
+def apply_weight_based_transport_fee(
+    df_after: pd.DataFrame, df_transport: pd.DataFrame
+) -> pd.DataFrame:
+    """重量に基づく運搬費を計算して適用する関数
 
-    df_transport_filtered = df_transport[mask].copy()
+    Args:
+        df_after: 処理対象の出荷データフレーム
+        df_transport: 運搬費データフレーム（"数字*weight"形式の運搬費を含む）
 
-    # --- ② 数字部分だけを抽出して float に変換（計算係数）---
-    df_transport_filtered["運搬費係数"] = (
-        df_transport_filtered["運搬費"].str.extract(r"^(\d+)")[0].astype(float)
+    Returns:
+        pd.DataFrame: 重量に基づく運搬費が適用された出荷データフレーム
+    """
+    # 重量ベースの運搬費行を抽出
+    transport_fee_col = (
+        df_transport["運搬費"].astype(str).str.replace(r"\s+", "", regex=True)
+    )
+    weight_based_mask = transport_fee_col.str.fullmatch(r"\d+\*weight", na=False)
+    weight_based_transport = df_transport[weight_based_mask].copy()
+
+    # 運搬費係数の抽出と変換
+    weight_based_transport["運搬費係数"] = (
+        weight_based_transport["運搬費"].str.extract(r"^(\d+)")[0].astype(float)
     )
 
-    # --- ③ 必要な列だけにして、業者CD + 運搬業者でユニーク化 ---
-    df_transport_filtered = df_transport_filtered.drop_duplicates(
+    # 必要な列の選択と重複除去
+    weight_based_transport = weight_based_transport.drop_duplicates(
         subset=["業者CD", "運搬業者"]
-    )
-    df_transport_filtered = df_transport_filtered[["業者CD", "運搬業者", "運搬費係数"]]
+    )[["業者CD", "運搬業者", "運搬費係数"]]
 
-    # --- ④ df_after にマージ（業者CD＋運搬業者） ---
-    df_target = df_after.merge(
-        df_transport_filtered,
+    # 運搬費係数の適用
+    df_result = df_after.merge(
+        weight_based_transport,
         how="left",
         on=["業者CD", "運搬業者"],
         suffixes=("", "_formula"),
     )
 
-    # --- ⑤ 係数が存在する行だけ掛け算して反映 ---
-    calc_mask = df_target["運搬費係数"].notna()
-    df_target.loc[calc_mask, "運搬費"] = (
-        df_target.loc[calc_mask, "運搬費係数"] * df_target.loc[calc_mask, "正味重量"]
+    # 重量ベースの運搬費計算
+    has_coefficient_mask = df_result["運搬費係数"].notna()
+    df_result.loc[has_coefficient_mask, "運搬費"] = (
+        df_result.loc[has_coefficient_mask, "運搬費係数"]
+        * df_result.loc[has_coefficient_mask, "正味重量"]
     ).astype(float)
 
-    # --- ⑥ マージ済み df_target を返す or 元の df_after に反映して返す ---
-    return df_target
+    return df_result
 
 
-def process5(df):
+def make_total_sum(df):
 
     # 総額
     df["総額"] = df["単価"] * df["正味重量"] + df["運搬費"]
@@ -459,7 +262,7 @@ def process5(df):
     return df
 
 
-def eksc(df):
+def df_cul_filtering(df):
     import pandas as pd
     from openpyxl import load_workbook
     from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
@@ -479,7 +282,7 @@ def eksc(df):
     return df
 
 
-def ekuserubunkai(df):
+def first_cell_in_template(df):
 
     start_row = 7
     full_col_to_cell = {
@@ -504,7 +307,7 @@ def ekuserubunkai(df):
     return full_cell_df
 
 
-def goukei(df, df_shipping):
+def make_sum_date(df, df_shipping):
     from utils.date_tools import to_reiwa_format
 
     # 日付を令和表記に変換（例: "令和6年5月16日"）
@@ -517,3 +320,84 @@ def goukei(df, df_shipping):
     df = pd.concat([df, new_row], ignore_index=True)
 
     return df
+
+
+def calculate_block_unit_price(df: pd.DataFrame) -> pd.DataFrame:
+    """ブロック単価を計算する関数
+
+    Args:
+        df: 処理対象のデータフレーム
+
+    Returns:
+        pd.DataFrame: ブロック単価が計算されたデータフレーム
+    """
+    # 総額の計算（単価 × 正味重量 + 運搬費）
+    df["総額"] = df["単価"] * df["正味重量"] + df["運搬費"]
+
+    # ブロック単価の計算（総額 ÷ 正味重量）、0除算を回避
+    df["ブロック単価"] = (df["総額"] / df["正味重量"].replace(0, pd.NA)).round(2)
+    return df
+
+
+def filter_display_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """表示用の列を選択する関数
+
+    Args:
+        df: 処理対象のデータフレーム
+
+    Returns:
+        pd.DataFrame: 表示用に列が選択されたデータフレーム
+    """
+    display_columns = ["業者名", "明細備考", "正味重量", "総額", "ブロック単価"]
+    return df[display_columns]
+
+
+def create_cell_mapping(df: pd.DataFrame) -> pd.DataFrame:
+    """データフレームの値をExcelセルにマッピングする関数
+
+    Args:
+        df: 処理対象のデータフレーム
+
+    Returns:
+        pd.DataFrame: セルマッピング情報を含むデータフレーム
+    """
+    start_row = 7
+    column_to_cell = {
+        "業者名": "B",
+        "明細備考": "C",
+        "正味重量": "D",
+        "総額": "E",
+        "ブロック単価": "F",
+    }
+
+    # セルマッピング情報の作成
+    cell_mappings = []
+    for idx, row in df.iterrows():
+        for column, cell_letter in column_to_cell.items():
+            cell_position = f"{cell_letter}{start_row + idx}"
+            cell_mappings.append(
+                {"大項目": column, "セル": cell_position, "値": row[column]}
+            )
+
+    return pd.DataFrame(cell_mappings)
+
+
+def add_date_information(df: pd.DataFrame, df_shipping: pd.DataFrame) -> pd.DataFrame:
+    """日付情報を追加する関数
+
+    Args:
+        df: セルマッピング情報を含むデータフレーム
+        df_shipping: 出荷データフレーム
+
+    Returns:
+        pd.DataFrame: 日付情報が追加されたデータフレーム
+    """
+    from utils.date_tools import to_reiwa_format
+
+    # 伝票日付を令和形式に変換
+    reiwa_date = to_reiwa_format(df_shipping["伝票日付"].iloc[0])
+
+    # 日付情報の追加
+    date_row = pd.DataFrame([{"大項目": "日付", "セル": "E4", "値": reiwa_date}])
+
+    return pd.concat([df, date_row], ignore_index=True)
