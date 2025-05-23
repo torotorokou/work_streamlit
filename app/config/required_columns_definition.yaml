@@ -49,10 +49,13 @@ block_unit_price:
         - 業者CD
         - 業者名
         - 正味重量
+        - 数量
         - 単価
         - 明細備考
         - 伝票日付
         - 品名
+        - 単位名
+
 
 management_sheet:
     shipping: *shipping_cols
