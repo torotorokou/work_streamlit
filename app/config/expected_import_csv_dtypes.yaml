@@ -60,10 +60,12 @@ block_unit_price:
         業者CD: int
         業者名: str
         正味重量: int
-        単価: int
+        数量: int
+        単価: float
         明細備考: str
         伝票日付: datetime
         品名: str
+        単位名: str
 
 management_sheet:
     shipping: *shipping_schema
@@ -75,18 +77,23 @@ management_sheet:
 balance_management_table:
     shipping:
         伝票日付: datetime
-        出荷番号: str
-        取引先名: str
-        業者CD: str
+        業者CD: int
         業者名: str
-        現場CD: str
-        現場名: str
-        品名: str
-        正味重量: int
-        数量: int
-        単位名: str
-        単価: float
-        金額: int
-        運搬業者名: str
-        伝票区分: str
-        明細備考: str
+        取引先CD: str
+        品名CD: int
+        単位CD: int
+        車種CD: int
+        運搬業者CD: int
+        種類CD: int
+        数量: float
+        金額: float
+    master:
+        大項目: str
+        中項目: str
+        業者CD: int
+        取引先CD: str
+        品名CD: int
+        単位CD: int
+        車種CD: int
+        運搬業者CD: int
+        種類CD: int
