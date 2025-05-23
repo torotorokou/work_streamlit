@@ -35,7 +35,8 @@ def manage_work_controller():
     logger = app_logger()
 
     # --- UI:テンプレート選択 ---
-    template_dict = get_template_dict()
+    template_dict = dict(list(get_template_dict().items())[:5])
+
     template_descriptions = get_template_descriptions()
     selected_template_label = render_manage_page(
         template_dict,
