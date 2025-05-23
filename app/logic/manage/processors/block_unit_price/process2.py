@@ -153,11 +153,24 @@ def apply_weight_based_transport_fee(
     return df_result
 
 
-def make_total_sum(df):
+def make_total_sum(df, master_csv):
+    # 個々の金額計算と計算用重量の設定
+    def calculate_row(row):
+        if row["単位名"] == "kg":
+            row["金額"] = row["単価"] * row["正味重量"]
+        elif row["単位名"] == "台":
+            row["金額"] = row["単価"] * row["数量"]
+        return row
 
-    # 総額
-    df["総額"] = df["単価"] * df["正味重量"] + df["運搬費"]
+    # 行ごとに計算を適用
+    df = df.apply(calculate_row, axis=1)
+
+    # 総額の計算
+    df["総額"] = df["金額"] + df["運搬費"]
+
+    # ブロック単価の計算（計算用重量を使用）
     df["ブロック単価"] = (df["総額"] / df["正味重量"].replace(0, pd.NA)).round(2)
+
     return df
 
 

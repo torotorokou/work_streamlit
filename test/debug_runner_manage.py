@@ -18,6 +18,15 @@ from logic.manage.factory_report import process as process_factory
 from logic.manage.balance_sheet import process as process_balance_sheet
 from logic.manage.management_sheet import process as process_manage_sheet
 from logic.manage.block_unit_price import process as process_block_unit_price
+import streamlit as st
+
+# Streamlitのセッション状態を初期化
+if 'process_mini_step' not in st.session_state:
+    st.session_state.process_mini_step = 0
+if 'block_unit_price_confirmed' not in st.session_state:
+    st.session_state.block_unit_price_confirmed = False
+if 'block_unit_price_transport_map' not in st.session_state:
+    st.session_state.block_unit_price_transport_map = {}
 
 # 処理の統合
 def run_debug_process() -> pd.DataFrame:
@@ -68,5 +77,22 @@ def run_debug_process() -> pd.DataFrame:
 logger = app_logger()
 dfs_after = run_debug_process()
 
+
 logger.info("デバッグ作業開始")
-process_block_unit_price(dfs_after)
+
+# 各ステップを手動で進める
+result = process_block_unit_price(dfs_after)
+
+if result is None and st.session_state.process_mini_step == 1:
+    # Step 1の場合、運搬業者の選択を自動化
+    st.session_state.block_unit_price_confirmed = True
+    result = process_block_unit_price(dfs_after)
+
+if result is None and st.session_state.process_mini_step == 2:
+    # Step 1の場合、運搬業者の選択を自動化
+    st.session_state.block_unit_price_confirmed = True
+    result = process_block_unit_price(dfs_after)
+
+
+print(f"Current mini_step: {st.session_state.process_mini_step}")
+print(f"Result: {result is not None}")

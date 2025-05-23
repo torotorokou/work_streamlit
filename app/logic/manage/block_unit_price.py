@@ -78,7 +78,7 @@ def process(dfs):
         _process_step1(df_transport_cost)
         return None
     elif mini_step == 2:
-        return _process_step2(df_shipping, df_transport_cost)
+        return _process_step2(df_shipping, master_csv, df_transport_cost)
 
     return None
 
@@ -144,7 +144,7 @@ def _process_step1(df_transport: pd.DataFrame) -> None:
 
 
 def _process_step2(
-    df_shipping: pd.DataFrame, df_transport: pd.DataFrame
+    df_shipping: pd.DataFrame, master_csv: pd.DataFrame, df_transport: pd.DataFrame
 ) -> pd.DataFrame:
     """最終計算処理を行うステップ2の実装
 
@@ -167,7 +167,7 @@ def _process_step2(
     df_after = apply_weight_based_transport_fee(df_after, df_transport)
 
     # ブロック単価の計算と表示用データの作成
-    df_after = make_total_sum(df_after)
+    df_after = make_total_sum(df_after, master_csv)
     df_after = df_cul_filtering(df_after)
     master_csv = first_cell_in_template(df_after)
     master_csv = make_sum_date(master_csv, df_shipping)
