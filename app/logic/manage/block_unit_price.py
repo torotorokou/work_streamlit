@@ -64,7 +64,7 @@ def process(dfs):
     # 運搬費データ
     mainpath = MainPath()
     reader = ReadTransportDiscount(mainpath)
-    df_transport = reader.load_discounted_df()
+    df_transport_cost = reader.load_discounted_df()
 
     # 出荷データ
     df_dict = load_all_filtered_dataframes(dfs, csv_keys, template_name)
@@ -72,19 +72,19 @@ def process(dfs):
 
     # --- 段階的処理の実行 ---
     if mini_step == 0:
-        _process_step0(df_shipping, master_csv, df_transport)
+        _process_step0(df_shipping, master_csv, df_transport_cost)
         return None
     elif mini_step == 1:
-        _process_step1(df_transport)
+        _process_step1(df_transport_cost)
         return None
     elif mini_step == 2:
-        return _process_step2(df_shipping, df_transport)
+        return _process_step2(df_shipping, df_transport_cost)
 
     return None
 
 
 def _process_step0(
-    df_shipping: pd.DataFrame, master_csv: pd.DataFrame, df_transport: pd.DataFrame
+    df_shipping: pd.DataFrame, master_csv: pd.DataFrame, df_transport_cost: pd.DataFrame
 ) -> None:
     """繰り返し不必要な処理
         基本データ処理と運搬費（固定のもの、社数１）を行うステップ0の実装
@@ -100,7 +100,7 @@ def _process_step0(
 
     df_shipping = make_df_shipping_after_use(master_csv, df_shipping)  # フィルタリング
     df_shipping = apply_unit_price_addition(master_csv, df_shipping)  # 単価追加
-    df_shipping = apply_transport_fee_by1(df_shipping, df_transport)  # 固定運搬費
+    df_shipping = apply_transport_fee_by1(df_shipping, df_transport_cost)  # 固定運搬費
 
     st.session_state.df_shipping_first = df_shipping
     st.session_state.process_mini_step = 1
