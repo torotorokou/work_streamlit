@@ -83,7 +83,7 @@ balance_management_table:
         車種CD: int
         運搬業者CD: int
         種類CD: int
-        数量: float
+        正味重量: int
         金額: float
     master:
         大項目: str
