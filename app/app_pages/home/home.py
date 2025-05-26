@@ -36,7 +36,7 @@ class HomePage(BasePage):
 
     def render_menu_buttons(self):
         st.markdown("---")
-        st.markdown("### 🚀 メニューを選択してください")
+        st.markdown("### 🚀 メニューを選択してください(未完成)")
 
         menu_groups = {
             "📂 管理業務": [
