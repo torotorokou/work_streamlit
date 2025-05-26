@@ -34,7 +34,15 @@ def processor_func(dfs: dict) -> pd.DataFrame:
     # master_csvにマージ
     master_csv = make_merge_df(master_csv, df_after)
 
-    return shipping_df
+    # 単価計算
+    master_csv = process3(master_csv)
+
+    # カラムの最終調整
+    master_csv = process4(master_csv)
+
+    # ダウンロードボタンの表示
+    # process5(master_csv)
+    return master_csv
 
 
 def make_csv(dfs):
@@ -129,11 +137,18 @@ def process2(master_df: pd.DataFrame, shipping_df: pd.DataFrame) -> pd.DataFrame
     # --- 結合
     final_result = pd.concat(result_list, ignore_index=True)
 
-    # --- もとの master_df の条件単位で groupby（例：すべてのカラムを groupby キーに）
+    # --- グループキー（大項目・中項目など）
     group_columns = master_df.columns.tolist()
-    final_result = (
-        final_result.groupby(group_columns)[["正味重量", "金額"]].sum().reset_index()
-    )
+
+    # --- 集計処理
+    sum_df = final_result.groupby(group_columns)[["正味重量", "金額"]].sum()
+
+    # ✅ 件数（行数）を追加
+    count_series = final_result.groupby(group_columns).size()
+    sum_df["台数"] = count_series
+
+    # リセットインデックスして整形
+    final_result = sum_df.reset_index()
 
     return final_result
 
@@ -155,6 +170,65 @@ def get_required_shipping_columns() -> list:
 
 
 def make_merge_df(master_csv, df_after):
+    # カラム名を変更
     df_after = df_after.rename(columns={"正味重量": "合計正味重量", "金額": "合計金額"})
-    master_csv = master_csv.merge(df_after, on="業者CD", how="left")
+
+    # マージ
+    master_csv = master_csv.merge(df_after, on=["大項目", "中項目"], how="left")
+
+    # 必要なカラムだけをピックアップ
+    selected_columns = ["大項目", "中項目", "合計正味重量", "合計金額", "台数"]
+    master_csv = master_csv[selected_columns]
     return master_csv
+
+
+def process3(master_csv):
+    # 合計正味重量が0の行は単価を0に、それ以外は通常の割り算
+    master_csv["単価"] = master_csv.apply(
+        lambda row: (
+            row["合計金額"] / row["合計正味重量"] if row["合計正味重量"] != 0 else 0
+        ),
+        axis=1,
+    )
+    return master_csv
+
+
+def process4(master_csv: pd.DataFrame) -> pd.DataFrame:
+    selected_columns = ["大項目", "中項目", "合計正味重量", "合計金額", "単価", "台数"]
+
+    # NaNを補完してから型変換（int列は0、float列は0.0など）
+    master_csv["合計正味重量"] = master_csv["合計正味重量"].fillna(0)
+    master_csv["合計金額"] = master_csv["合計金額"].fillna(0.0)
+    master_csv["単価"] = master_csv["単価"].fillna(0.0)
+    master_csv["台数"] = master_csv["台数"].fillna(0)
+
+    # 型変換
+    master_csv = master_csv.astype(
+        {
+            "大項目": str,
+            "中項目": str,
+            "合計正味重量": int,
+            "合計金額": float,
+            "単価": float,
+            "台数": int,
+        }
+    )
+
+    # 並び替え
+    master_csv = master_csv[selected_columns]
+
+    return master_csv
+
+
+# from components.custom_button import centered_download_button
+# from io import BytesIO
+
+# def process5(master_csv: pd.DataFrame):
+#     excel_bytes = convert_df_to_excel_bytes(master_csv)
+
+#     centered_download_button(
+#         label="📥 Excelファイルをダウンロード",
+#         data=excel_bytes,
+#         file_name="管理表.xlsx",
+#         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+#     )
