@@ -7,7 +7,7 @@ from utils.get_holydays import get_japanese_holidays
 
 
 def render_import_volume():
-    st.title("📊 搬入量予測")
+    st.title("📊 搬入量予測(仮)")
     st.markdown(
         """予測したい期間を選択して下さい。  
     デフォルトは今週の月曜日から土曜日までです。"""
