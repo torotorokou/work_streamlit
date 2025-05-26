@@ -21,10 +21,16 @@ from utils.config_loader import (
 )
 
 from utils.config_loader import load_factory_required_files
+from app_pages.factory_manage.pages.balance_management_table.process import (
+    processor_func,
+)
+from components.custom_button import centered_download_button
+from io import BytesIO
 
 
 def factory_manage_controller():
-    st.subheader("🗑 工場収支モニタリング表")
+    file_name = "工場収支モニタリング表"
+    st.subheader(f"🗑 {file_name}")
     st.write("処理実績や分類別の集計を表示します。")
 
     selected_template = "monitor"
@@ -116,7 +122,7 @@ def factory_manage_controller():
             ]
 
             # --- 常に表示したいメッセージ（セッションに保存して後でも表示可能） ---
-            message = f"{target_year}年{target_month}月の現在数量を作成します"
+            message = f"{target_year}年{target_month}月：現在数量"
             st.session_state.message = message  # ← セッションに保存しておく
 
             # --- 表示 ---
@@ -132,7 +138,7 @@ def factory_manage_controller():
 
         elif step == 1:
             # 日付の表示
-            st.markdown(f"### 📅 {st.session_state.message}")
+            # st.markdown(f"### 📅 {st.session_state.message}")
 
             # 詳細の処理
             df_result = processor_func(st.session_state.dfs)
@@ -147,28 +153,26 @@ def factory_manage_controller():
         elif step == 2:
             # 日付の表示
             st.markdown(f"### 📅 {st.session_state.message}")
-    #         st.markdown("### ダウンロード")
-    #         st.success("✅ 書類作成完了")
-    #         df_result = st.session_state.df_result
-    #         template_path = get_template_config()[selected_template][
-    #             "template_excel_path"
-    #         ]
-    #         output_excel = write_values_to_template(
-    #             df_result, template_path, st.session_state.extracted_date
-    #         )
-    #         centered_download_button(
-    #             label="📥 Excelファイルをダウンロード",
-    #             data=output_excel.getvalue(),
-    #             file_name=f"{selected_template_label}_{st.session_state.extracted_date}.xlsx",
-    #             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    #         )
+            st.markdown("### ダウンロード")
+            st.success("✅ 書類作成完了")
 
-    # else:
-    #     uploaded_count = len(required_keys) - len(missing_keys)
-    #     total_count = len(required_keys)
+            # ✅ セッションからdf_resultを取得
+            df_result = st.session_state.get("df_result")
 
-    #     st.progress(uploaded_count / total_count)
-    #     st.info(f"📥 {uploaded_count} / {total_count} ファイルがアップロードされました")
+            if df_result is None:
+                st.error(
+                    "❌ 書類データが存在しません。前のステップで処理が完了しているか確認してください。"
+                )
+                return
+
+            excel_bytes = convert_df_to_excel_bytes(df_result)
+
+            centered_download_button(
+                label="📥 Excelファイルをダウンロード",
+                data=excel_bytes,
+                file_name=f"{file_name}_{st.session_state.extracted_date}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
 
 
 from app_pages.manage.view import render_upload_header
@@ -221,3 +225,79 @@ def check_single_file_uploaded(
     is_uploaded = uploaded_file is not None
     missing_key = None if is_uploaded else required_key
     return is_uploaded, missing_key
+
+
+from io import BytesIO
+import pandas as pd
+
+
+def convert_df_to_excel_bytes(df: pd.DataFrame) -> BytesIO:
+    """
+    DataFrameをExcel形式のBytesIOに変換
+
+    - 中項目のNaNは空白に
+    - 游ゴシックフォント
+    - 単価は小数点2桁表示
+    - 全列同じ幅に揃える
+    - 罫線なし
+    """
+    output = BytesIO()
+
+    # --- NaNや文字列'nan'などを空白に変換（中項目のみ）
+    if "中項目" in df.columns:
+        df = df.copy()
+        df["中項目"] = (
+            df["中項目"]
+            .replace(["nan", "NaN", "None"], "")  # ← 文字列としてのnanも空白に
+            .fillna("")  # ← 本物のNaNも空白に
+            .astype(str)  # ← 念のためすべて文字列化
+        )
+
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False, sheet_name="Sheet1", startrow=1, header=False)
+
+        workbook = writer.book
+        worksheet = writer.sheets["Sheet1"]
+
+        # --- フォント定義（游ゴシック、罫線なし）
+        header_format = workbook.add_format(
+            {"font_name": "游ゴシック", "bold": True, "bg_color": "#F2F2F2"}
+        )
+
+        cell_format = workbook.add_format({"font_name": "游ゴシック"})
+
+        unit_price_format = workbook.add_format(
+            {"font_name": "游ゴシック", "num_format": "#,##0.00"}
+        )
+
+        # --- ヘッダー書き込み
+        for col_num, column_name in enumerate(df.columns):
+            worksheet.write(0, col_num, column_name, header_format)
+
+        # --- データ書き込み（単価だけフォーマットを分ける）
+        for row_num in range(len(df)):
+            for col_num in range(len(df.columns)):
+                col_name = df.columns[col_num]
+                value = df.iat[row_num, col_num]
+
+                if col_name == "単価":
+                    worksheet.write(row_num + 1, col_num, value, unit_price_format)
+                else:
+                    worksheet.write(row_num + 1, col_num, value, cell_format)
+
+        # --- 列幅を個別に指定（列名 → 幅）
+        column_widths = {
+            "大項目": 15,
+            "中項目": 10,
+            "合計正味重量": 10,
+            "合計金額": 10,
+            "単価": 7,
+            "台数": 7,
+        }
+
+        for i, col_name in enumerate(df.columns):
+            width = column_widths.get(col_name, 20)  # 未定義なら幅20に
+            worksheet.set_column(i, i, width)
+
+    output.seek(0)
+    return output

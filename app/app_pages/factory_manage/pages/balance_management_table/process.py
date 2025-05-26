@@ -22,6 +22,7 @@ def processor_func(dfs: dict) -> pd.DataFrame:
     Returns:
         pd.DataFrame: 処理結果のデータフレーム
     """
+    # 出荷一覧のdfを取得
     shipping_df = make_csv(dfs)
 
     # マスターCSVの読込
@@ -29,7 +30,19 @@ def processor_func(dfs: dict) -> pd.DataFrame:
 
     # df_shippingからデータを取得
     df_after = process2(master_csv, shipping_df)
-    return shipping_df
+
+    # master_csvにマージ
+    master_csv = make_merge_df(master_csv, df_after)
+
+    # 単価計算
+    master_csv = process3(master_csv)
+
+    # カラムの最終調整
+    master_csv = process4(master_csv)
+
+    # ダウンロードボタンの表示
+    # process5(master_csv)
+    return master_csv
 
 
 def make_csv(dfs):
@@ -99,99 +112,45 @@ from typing import List
 
 
 def process2(master_df: pd.DataFrame, shipping_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    shipping_dfから master_df の条件に基づいて集計を行う。
-
-    Args:
-        master_df (pd.DataFrame): 集計条件を含むマスターデータ
-        shipping_df (pd.DataFrame): 出荷データ
-
-    Returns:
-        pd.DataFrame: [大項目, 中項目, 件数, 数量, 金額]の集計結果
-    """
-    # デバッグ情報：入力データの確認
-    print("\n=== データフレーム情報 ===")
-    print("マスターデータ:")
-    print(f"行数: {len(master_df)}")
-    print("カラムと型:")
-    print(master_df.dtypes)
-    print("\n出荷データ:")
-    print(f"行数: {len(shipping_df)}")
-    print("カラムと型:")
-    print(shipping_df.dtypes)
-
-    # 集計条件として使用するカラム（大項目・中項目は除外）
-    condition_cols: List[str] = [
+    columns_to_match: List[str] = [
         col for col in master_df.columns if col not in ["大項目", "中項目"]
     ]
-    print("\n使用する条件カラム:", condition_cols)
 
-    results = []
+    # --- 結果を保持するリスト
+    result_list = []
 
-    for idx, condition_row in master_df.iterrows():
-        print(f"\n=== マスター行 {idx} の処理 ===")
-        # 条件適用：NaN以外のカラムだけを使う
-        mask = pd.Series(True, index=shipping_df.index)
+    for _, row in master_df.iterrows():
+        condition = shipping_df[columns_to_match[0]] == row[columns_to_match[0]]
+        for col in columns_to_match[1:]:
+            val = row[col]
+            if pd.notna(val) and str(val) not in ["0", "nan", "NaN"]:
+                condition &= shipping_df[col] == val
 
-        for col in condition_cols:
-            value = condition_row[col]
-            # 値が0またはnanの場合はその条件をスキップ
-            if pd.isna(value) or (isinstance(value, (int, float)) and value == 0):
-                print(f"列 {col} の条件をスキップ: 値が0またはnan")
-                continue
+        filtered = shipping_df[condition].copy()
 
-            if col in shipping_df.columns:
-                print(f"\n列 {col} の比較:")
-                print(f"  マスター値: {value} (型: {type(value)})")
-                print(f"  出荷データの一意な値: {shipping_df[col].unique()}")
+        # 💡 条件を保存（row から大項目・中項目なども含めて持ってくる）
+        for col in master_df.columns:
+            filtered[col] = row[col]
 
-                # 比較前のマスクの真の数
-                before_count = mask.sum()
-                mask &= shipping_df[col] == value
-                after_count = mask.sum()
+        result_list.append(filtered)
 
-                print(f"  比較前のマッチ数: {before_count}")
-                print(f"  比較後のマッチ数: {after_count}")
-                print(f"  この条件で除外された行数: {before_count - after_count}")
+    # --- 結合
+    final_result = pd.concat(result_list, ignore_index=True)
 
-        # 該当データで集計
-        matched_df = shipping_df[mask]
-        print(f"\nマッチした行数: {len(matched_df)}")
+    # --- グループキー（大項目・中項目など）
+    group_columns = master_df.columns.tolist()
 
-        if not matched_df.empty:
-            results.append(
-                {
-                    "大項目": condition_row["大項目"],
-                    "中項目": condition_row["中項目"],
-                    "件数": len(matched_df),
-                    "数量": (
-                        matched_df["数量"].sum() if "数量" in matched_df.columns else 0
-                    ),
-                    "金額": (
-                        matched_df["金額"].sum() if "金額" in matched_df.columns else 0
-                    ),
-                }
-            )
-        else:
-            print("警告: 条件に一致するデータがありません")
-            print("条件値:")
-            for col in condition_cols:
-                if pd.notna(condition_row[col]) and not (
-                    isinstance(condition_row[col], (int, float))
-                    and condition_row[col] == 0
-                ):
-                    print(
-                        f"  {col}: {condition_row[col]} (型: {type(condition_row[col])})"
-                    )
+    # --- 集計処理
+    sum_df = final_result.groupby(group_columns)[["正味重量", "金額"]].sum()
 
-    # 結果まとめ
-    result_df = pd.DataFrame(results)
-    if not result_df.empty:
-        result_df = result_df.sort_values(["大項目", "中項目"])
-    else:
-        print("\n警告: 最終的な結果が空です")
+    # ✅ 件数（行数）を追加
+    count_series = final_result.groupby(group_columns).size()
+    sum_df["台数"] = count_series
 
-    return result_df
+    # リセットインデックスして整形
+    final_result = sum_df.reset_index()
+
+    return final_result
 
 
 def get_required_shipping_columns() -> list:
@@ -208,3 +167,68 @@ def get_required_shipping_columns() -> list:
     shipping_cols = required_cols.get("shipping", [])
 
     return shipping_cols
+
+
+def make_merge_df(master_csv, df_after):
+    # カラム名を変更
+    df_after = df_after.rename(columns={"正味重量": "合計正味重量", "金額": "合計金額"})
+
+    # マージ
+    master_csv = master_csv.merge(df_after, on=["大項目", "中項目"], how="left")
+
+    # 必要なカラムだけをピックアップ
+    selected_columns = ["大項目", "中項目", "合計正味重量", "合計金額", "台数"]
+    master_csv = master_csv[selected_columns]
+    return master_csv
+
+
+def process3(master_csv):
+    # 合計正味重量が0の行は単価を0に、それ以外は通常の割り算
+    master_csv["単価"] = master_csv.apply(
+        lambda row: (
+            row["合計金額"] / row["合計正味重量"] if row["合計正味重量"] != 0 else 0
+        ),
+        axis=1,
+    )
+    return master_csv
+
+
+def process4(master_csv: pd.DataFrame) -> pd.DataFrame:
+    selected_columns = ["大項目", "中項目", "合計正味重量", "合計金額", "単価", "台数"]
+
+    # NaNを補完してから型変換（int列は0、float列は0.0など）
+    master_csv["合計正味重量"] = master_csv["合計正味重量"].fillna(0)
+    master_csv["合計金額"] = master_csv["合計金額"].fillna(0.0)
+    master_csv["単価"] = master_csv["単価"].fillna(0.0)
+    master_csv["台数"] = master_csv["台数"].fillna(0)
+
+    # 型変換
+    master_csv = master_csv.astype(
+        {
+            "大項目": str,
+            "中項目": str,
+            "合計正味重量": int,
+            "合計金額": float,
+            "単価": float,
+            "台数": int,
+        }
+    )
+
+    # 並び替え
+    master_csv = master_csv[selected_columns]
+
+    return master_csv
+
+
+# from components.custom_button import centered_download_button
+# from io import BytesIO
+
+# def process5(master_csv: pd.DataFrame):
+#     excel_bytes = convert_df_to_excel_bytes(master_csv)
+
+#     centered_download_button(
+#         label="📥 Excelファイルをダウンロード",
+#         data=excel_bytes,
+#         file_name="管理表.xlsx",
+#         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+#     )

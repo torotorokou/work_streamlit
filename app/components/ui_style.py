@@ -1,57 +1,115 @@
-import streamlit as st
+from streamlit import markdown
 
 
-def apply_global_style():
-    st.markdown(
-        """
-    <style>
-    /* サイドバー背景色 */
-    .css-1d391kg {
-        background-color: #fff8d6;
-        border-right: 1px solid #e5e0c3;
-    }
+class GlobalStyle:
+    def __init__(self):
+        self.base = BaseStyle()
+        self.button = ButtonStyle()
+        self.input = InputStyle()
+        self.sidebar = SidebarStyle()
+        self.table = TableStyle()
 
-    /* ボタンスタイル */
-    .stButton>button {
-        background-color: #f7c948;
-        color: #3d3d3d;
-        border: none;
-        padding: 0.5em 1.5em;
-        border-radius: 8px;
-        font-weight: bold;
-        transition: background-color 0.3s ease;
-    }
-    .stButton>button:hover {
-        background-color: #f0b429;
-        color: white;
-    }
+    def apply_all(self):
+        self.base.apply()
+        self.button.apply()
+        self.input.apply()
+        self.sidebar.apply()
+        self.table.apply()
 
-    /* エクスパンダーのヘッダー */
-    .streamlit-expanderHeader {
-        font-size: 1.1em;
-        color: #5a4d1c;
-        font-weight: 500;
-    }
 
-    /* 入力フォーム */
-    input, textarea {
-        border-radius: 6px;
-        border: 1px solid #ddd2a8;
-        padding: 0.4em;
-        background-color: #fffef5;
-    }
+# --- base_style.py ---
+class BaseStyle:
+    def apply(self):
+        markdown(
+            """
+            <style>
+            section.main > div:first-child {
+                padding-top: 0rem;
+                margin-top: 0rem;
+            }
+            h1, h2, h3 {
+                color: #1e3a8a;
+                font-family: 'Segoe UI', sans-serif;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    /* DataFrame 表 */
-    .stDataFrame {
-        background-color: #fffce6;
-    }
 
-    /* ✅ ページ上部の余白を詰める */
-    section.main > div:first-child {
-        padding-top: 0rem;
-        margin-top: 0rem;
-    }
-    </style>
-    """,
-        unsafe_allow_html=True,
-    )
+# --- button_style.py ---
+class ButtonStyle:
+    def apply(self):
+        markdown(
+            """
+            <style>
+            .stButton>button {
+                background: linear-gradient(to right, #3b82f6, #60a5fa);
+                color: white;
+                border: none;
+                padding: 0.6em 1.5em;
+                border-radius: 6px;
+                font-weight: 600;
+                font-size: 16px;
+                transition: all 0.3s ease-in-out;
+            }
+            .stButton>button:hover {
+                background: linear-gradient(to right, #1e40af, #2563eb);
+                color: white;
+                box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+                transform: translateY(-1px);
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+# --- input_style.py ---
+class InputStyle:
+    def apply(self):
+        markdown(
+            """
+            <style>
+            input, textarea {
+                background-color: #ffffff;
+                border: 1px solid #93c5fd;
+                border-radius: 6px;
+                padding: 0.5em;
+                color: #1e293b;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+# --- sidebar_style.py ---
+class SidebarStyle:
+    def apply(self):
+        markdown(
+            """
+            <style>
+            .css-1d391kg {
+                background-color: #e0f2ff;
+                border-right: 1px solid #b6e0fe;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+# --- table_style.py ---
+class TableStyle:
+    def apply(self):
+        markdown(
+            """
+            <style>
+            .stDataFrame {
+                background-color: #f0f9ff;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
