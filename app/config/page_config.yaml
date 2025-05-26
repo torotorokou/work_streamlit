@@ -11,7 +11,7 @@ pages:
       function: manage_work_controller
 
     - label: 工場管理
-      title: 工場管理トップページ
+      title: 工場管理
       id: factory_manage
       function: factory_manage_work_controller
 

@@ -13,7 +13,7 @@ class FactoryManageWorkPage(BasePage):
     def __init__(self):
         config = PageConfig(
             page_id="factory_manage",
-            title="工場管理トップページ",
+            title="工場管理",
             parent_title="工場管理",
         )
         super().__init__(config)
