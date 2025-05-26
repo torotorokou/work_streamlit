@@ -73,5 +73,5 @@ balance_management_table:
         - 車種CD
         - 運搬業者CD
         - 種類CD
-        - 数量
+        - 正味重量
         - 金額
