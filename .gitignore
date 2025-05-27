@@ -51,6 +51,7 @@ app/data/templates/*.bak.xlsx
 # ▶ pre-commit自動生成（使用時はコメント解除）
 # .pre-commit-config.yaml
 .env.staging
+.env.staging2
 
 
 # モデルのデータ
