@@ -49,6 +49,24 @@ staging_rebuild:
 	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml up -d"
 
 
+# ステージング再ビルド（キャッシュ無効化）
+another_staging_rebuild:
+	@echo "Starting full another_staging rebuild with --no-cache..."
+	@echo "Reloading .env.another_staging and rebuilding Docker image..."
+
+	powershell -Command "$$envs = Get-Content .env.another_staging | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
+	docker-compose -p sanbou_another_staging -f docker/docker-compose.prod.yml build --no-cache \
+		--build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN \
+		--build-arg REPO_TAG=$$env:REPO_TAG \
+		--build-arg REPO_URL=$$env:REPO_URL \
+		--build-arg STAGE_ENV=another_staging \
+		--build-arg ENV_FILE=.env.another_staging; \
+	try { docker-compose -p sanbou_another_staging -f docker/docker-compose.prod.yml down -v } catch { Write-Host 'down failed (ignored)' }; \
+	docker-compose -p sanbou_another_staging -f docker/docker-compose.prod.yml up -d"
+
+
+
+
 # 本番ビルド＆起動（キャッシュあり）
 prod:
 	@echo "Starting production environment rebuild..."
