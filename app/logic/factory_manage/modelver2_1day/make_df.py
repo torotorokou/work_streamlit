@@ -1,6 +1,6 @@
 import pandas as pd
 from utils.get_holydays import get_japanese_holidays
-from utils.sql import save_df_to_sqlite
+from utils.sql import save_df_to_sqlite_unique
 from utils.config_loader import get_path_from_yaml
 
 
@@ -8,22 +8,30 @@ def make_df_old():
     # --- 入力ディレクトリパスの取得 ---
     base_dir = get_path_from_yaml("input", section="directories")
 
-    # --- データ読み込み ---
-    df_new = pd.read_csv(f"{base_dir}/20240501-20250422.csv", encoding="utf-8")[
-        ["伝票日付", "正味重量", "品名"]
+    # --- 共通定義 ---
+    dtype_new = {"伝票日付": "str", "品名": "str", "正味重量": "float64"}
+    dtype_old = {"伝票日付": "str", "商品": "str", "正味重量_明細": "float64"}
+    usecols_new = ["伝票日付", "正味重量", "品名"]
+    usecols_old = ["伝票日付", "商品", "正味重量_明細"]
+
+    # --- CSV読み込み用関数 ---
+    def load_csv(filename: str, dtype: dict, usecols: list) -> pd.DataFrame:
+        return pd.read_csv(
+            f"{base_dir}/{filename}", dtype=dtype, usecols=usecols, encoding="utf-8"
+        )
+
+    # --- 新データ ---
+    df_new = load_csv("20240501-20250422.csv", dtype=dtype_new, usecols=usecols_new)
+
+    # --- 旧データ（複数年） ---
+    old_files = ["2020顧客.csv", "2021顧客.csv", "2022顧客.csv", "2023_all.csv"]
+    df_old_list = [
+        load_csv(fname, dtype=dtype_old, usecols=usecols_old) for fname in old_files
     ]
-    df_2020 = pd.read_csv(f"{base_dir}/2020顧客.csv")[
-        ["伝票日付", "商品", "正味重量_明細"]
-    ]
-    df_2021 = pd.read_csv(f"{base_dir}/2021顧客.csv")[
-        ["伝票日付", "商品", "正味重量_明細"]
-    ]
-    df_2023 = pd.read_csv(f"{base_dir}/2023_all.csv", low_memory=False)[
-        ["伝票日付", "商品", "正味重量_明細"]
-    ]
+    df_old = pd.concat(df_old_list, ignore_index=True)
 
     # --- df_old 整形 ---
-    df_old = pd.concat([df_2020, df_2021, df_2023])
+    # df_old = pd.concat([df_2020, df_2021, df_2022, df_2023])
     df_old.rename(columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True)
     df_old["伝票日付"] = (
         df_old["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True)
@@ -56,11 +64,38 @@ def make_df_old():
     try:
         db_path = get_path_from_yaml("weight_data", section="sql_database")
 
-        save_df_to_sqlite(
-            df=df_raw,
+        save_df_to_sqlite_unique(df=df_raw, db_path=db_path, table_name="ukeire")
+    except Exception as e:
+        print(f"❌ SQLite保存中にエラーが発生しました: {e}")
+
+
+def make_sql_db(df: pd.DataFrame):
+    # --- df_new 整形 ---
+    df["伝票日付"] = df["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True)
+    df["伝票日付"] = pd.to_datetime(df["伝票日付"], errors="coerce")
+    df["正味重量"] = pd.to_numeric(df["正味重量"], errors="coerce")
+    df = df.dropna(subset=["正味重量", "伝票日付"])
+
+    # --- 祝日フラグ追加 ---
+    start_date = df["伝票日付"].min().date()
+    end_date = df["伝票日付"].max().date()
+    holidays = get_japanese_holidays(start=start_date, end=end_date, as_str=False)
+    holiday_set = set(holidays)
+    df["祝日フラグ"] = df["伝票日付"].dt.date.apply(
+        lambda x: 1 if x in holiday_set else 0
+    )
+
+    # --- 必要な4列のみに限定 ---
+    df = df.loc[:, ["伝票日付", "正味重量", "品名", "祝日フラグ"]]
+
+    # --- SQLite保存 ---
+    try:
+        db_path = get_path_from_yaml("weight_data", section="sql_database")
+
+        save_df_to_sqlite_unique(
+            df=df,
             db_path=db_path,
             table_name="ukeire",
-            if_exists="replace",
         )
     except Exception as e:
         print(f"❌ SQLite保存中にエラーが発生しました: {e}")
