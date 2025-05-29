@@ -1,22 +1,22 @@
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import Ridge, LogisticRegression, ElasticNet
-from sklearn.ensemble import (
-    RandomForestRegressor,
-    GradientBoostingRegressor,
-    GradientBoostingClassifier,
-)
-from sklearn.model_selection import train_test_split, KFold
-from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.linear_model import ElasticNet
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.base import clone
 from utils.get_holydays import get_japanese_holidays
 import joblib
-import os
+from utils.config_loader import get_path_from_yaml
+from datetime import datetime
 
 
 def predict_with_saved_models(
-    start_date: str, end_date: str, holidays: list[str], model_dir: str = "models"
+    start_date: str, end_date: str, holidays: list[str]
 ) -> pd.DataFrame:
+    # モデルパスの設定
+    model_dir = get_path_from_yaml(
+        ["models", "predicted_import_volume"], section="directories"
+    )
+    print(model_dir)
 
     # --- モデル・特徴量・前処理済みデータ読み込み ---
     meta_model_stage1 = joblib.load(f"{model_dir}/meta_model_stage1.pkl")
@@ -152,19 +152,58 @@ def predict_with_saved_models(
     return df_result
 
 
-from datetime import datetime
+import pandas as pd
+from sqlalchemy import create_engine
+from typing import List, Union
+from datetime import date
+from utils.config_loader import get_path_from_yaml
 
 
-def predict_hanyu_ryou():
-    start_date = datetime.strptime("2025-05-27", "%Y-%m-%d").date()
+def get_holidays_from_sql(
+    start: date, end: date, as_str: bool = True
+) -> List[Union[date, str]]:
+    """
+    SQLiteから指定期間の祝日を取得する関数
+
+    Parameters:
+        start (date): 開始日
+        end (date): 終了日
+        as_str (bool): Trueなら'YYYY-MM-DD'形式、Falseならdate型のまま返す
+
+    Returns:
+        List[str or date]: 指定期間内の祝日一覧
+    """
+    db_path = get_path_from_yaml("weight_data", section="sql_database")
+    engine = create_engine(f"sqlite:///{db_path}")
+
+    query = f"""
+        SELECT DISTINCT 伝票日付
+        FROM ukeire
+        WHERE 祝日フラグ = 1
+        AND 伝票日付 BETWEEN '{start}' AND '{end}'
+        ORDER BY 伝票日付
+    """
+
+    df = pd.read_sql(query, engine)
+
+    if df.empty:
+        return []
+
+    if as_str:
+        return df["伝票日付"].dt.strftime("%Y-%m-%d").tolist()
+    else:
+        return df["伝票日付"].dt.date.tolist()
+
+
+if __name__ == "__main__":
+    start_date = datetime.strptime("2025-05-20", "%Y-%m-%d").date()
     end_date = datetime.strptime("2025-05-27", "%Y-%m-%d").date()
-    holidays = get_japanese_holidays(start=start_date, end=end_date, as_str=True)
-    model_dir = "/work/app/data/models"
 
-    df_result = predict_with_saved_models(start_date, end_date, holidays, model_dir)
+    holidays = get_holidays_from_sql(start=start_date, end=end_date, as_str=True)
+    print(holidays)
+
+    start_date_str = start_date.strftime("%Y-%m-%d")
+    end_date_str = end_date.strftime("%Y-%m-%d")
+    df_result = predict_with_saved_models(start_date_str, end_date_str, holidays)
 
     print(df_result)
-    return df_result
-
-
-predict_hanyu_ryou()

@@ -6,38 +6,15 @@ import os
 from typing import Optional
 from config.loader.main_path import MainPath
 
-# from utils.logger import app_logger
+from typing import Union
 
 
-# def get_path_config() -> dict:
-#     """main_paths.yamlを辞書として取得"""
-#     return load_yaml("config/main_paths.yaml")
-
-
-# def resolve_path(key_or_path: str, section: Optional[str] = None) -> Path:
-#     """
-#     main_paths.yamlから定義されたパス、または直接の相対パスをBASE_DIRから解決。
-
-#     Parameters:
-#         key_or_path (str): 相対パス文字列、または configセクションのキー名
-#         section (str, optional): main_paths.yamlのセクション名（例: 'csv', 'config_files'）
-
-#     Returns:
-#         Path: 絶対パス
-#     """
-#     base_dir = Path(os.getenv("BASE_DIR", "/work/app"))
-#     if section:
-#         mainpath = MainPath()
-#         path_config = get_path_config()
-#         relative = mainpath.get_config
-#         relative = path_config.get(section, {}).get(key_or_path)
-#         if relative is None:
-#             raise KeyError(
-#                 f"'{section}.{key_or_path}' は main_paths.yaml に存在しません"
-#             )
-#         return base_dir / relative
-#     else:
-#         return base_dir / key_or_path
+def get_path_from_yaml(
+    key: Union[str, list[str]], section: Optional[str] = None
+) -> str:
+    mainpath = MainPath()
+    path = mainpath.get_path(key, section)
+    return str(path)
 
 
 def load_yaml(key_or_path: str, section: Optional[str] = None) -> dict:
