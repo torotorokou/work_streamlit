@@ -7,3 +7,4 @@ PyYAML>=6.0.0
 scikit-learn==1.6.1
 numpy>=1.21.0
 jpholiday==1.0.2
+SQLAlchemy==2.0.41

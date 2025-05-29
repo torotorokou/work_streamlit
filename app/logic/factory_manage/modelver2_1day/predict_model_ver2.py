@@ -9,15 +9,17 @@ from sklearn.ensemble import (
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.base import clone
+from utils.config_loader import get_path_from_yaml
 
 
 # --- データ読込 ---
-df_raw = pd.read_csv("20240501-20250422.csv", encoding="utf-8")[
+base_dir = get_path_from_yaml("input", section="directories")
+df_raw = pd.read_csv(f"{base_dir}/20240501-20250422.csv", encoding="utf-8")[
     ["伝票日付", "正味重量", "品名"]
 ]
-df_2020 = pd.read_csv("2020顧客.csv")[["伝票日付", "商品", "正味重量_明細"]]
-df_2021 = pd.read_csv("2021顧客.csv")[["伝票日付", "商品", "正味重量_明細"]]
-df_2023 = pd.read_csv("2023_all.csv")[["伝票日付", "商品", "正味重量_明細"]]
+df_2020 = pd.read_csv(f"{base_dir}/2020顧客.csv")[["伝票日付", "商品", "正味重量_明細"]]
+df_2021 = pd.read_csv(f"{base_dir}/2021顧客.csv")[["伝票日付", "商品", "正味重量_明細"]]
+df_2023 = pd.read_csv(f"{base_dir}/2023_all.csv")[["伝票日付", "商品", "正味重量_明細"]]
 
 # --- 過去データの整形 ---
 df_all = pd.concat([df_2020, df_2021, df_2023])
@@ -40,6 +42,7 @@ def train_and_predict_with_holiday(
     df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"], errors="coerce")
     df_raw["正味重量"] = pd.to_numeric(df_raw["正味重量"], errors="coerce")
     df_raw = df_raw.dropna(subset=["正味重量"])
+    print(len(df_raw))
 
     # --- ピボット（日付×品名）→ 正味重量（合計） ---
     df_pivot = (

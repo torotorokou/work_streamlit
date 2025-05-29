@@ -5,7 +5,7 @@ import jpholiday
 
 def get_japanese_holidays(
     start: date, end: date, as_str: bool = True
-) -> List[Union[date, str]]:
+) -> Union[List[str], List[date]]:
     """
     指定した期間の日本の祝日を取得する関数。
 
@@ -15,7 +15,7 @@ def get_japanese_holidays(
         as_str (bool): Trueなら"YYYY-MM-DD"形式、Falseならdate型
 
     Returns:
-        List[str or date]: 祝日のリスト
+        Union[List[str], List[date]]: 祝日のリスト（文字列またはdate型）
     """
     holidays = [
         d

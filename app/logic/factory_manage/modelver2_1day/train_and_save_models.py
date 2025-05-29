@@ -1,33 +1,36 @@
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import Ridge, LogisticRegression, ElasticNet
+from sklearn.linear_model import ElasticNet
 from sklearn.ensemble import (
     RandomForestRegressor,
     GradientBoostingRegressor,
     GradientBoostingClassifier,
 )
 from sklearn.model_selection import train_test_split, KFold
-from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.base import clone
-from utils.get_holydays import get_japanese_holidays
-
-
 import joblib
 import os
+from sqlalchemy import create_engine, text
+from utils.get_holydays import get_japanese_holidays
+from utils.sql import get_training_date_range, load_data_from_sqlite
+from utils.config_loader import get_path_from_yaml
 
 
+# ===============================
+# 🤖 モデルの学習と保存処理
+# ===============================
 def train_and_save_models(
     df_raw: pd.DataFrame, holidays: list[str], save_dir: str = "models"
 ):
     os.makedirs(save_dir, exist_ok=True)
 
-    # --- ピボット ---
+    # --- データ加工（ピボット） ---
     df_pivot = (
         df_raw.groupby(["伝票日付", "品名"])["正味重量"].sum().unstack(fill_value=0)
     )
     df_pivot["合計"] = df_pivot.sum(axis=1)
 
-    # --- 特徴量作成 ---
+    # --- 特徴量エンジニアリング ---
     df_feat = pd.DataFrame(index=df_pivot.index)
     df_feat["混合廃棄物A_前日"] = df_pivot["混合廃棄物A"].shift(1)
     df_feat["混合廃棄物B_前日"] = df_pivot["混合廃棄物B"].shift(1)
@@ -36,14 +39,20 @@ def train_and_save_models(
     df_feat["合計_3日合計"] = df_pivot["合計"].shift(1).rolling(3).sum()
     df_feat["曜日"] = df_feat.index.dayofweek
     df_feat["週番号"] = df_feat.index.isocalendar().week
+
+    # 中央値を用いた安定的特徴量
     daily_avg = df_raw.groupby("伝票日付")["正味重量"].median()
     df_feat["1台あたり正味重量_前日中央値"] = daily_avg.shift(1).expanding().median()
+
+    # 祝日フラグ
     holiday_dates = pd.to_datetime(holidays)
     df_feat["祝日フラグ"] = df_feat.index.isin(holiday_dates).astype(int)
+
+    # 欠損除去
     df_feat = df_feat.dropna()
     df_pivot = df_pivot.loc[df_feat.index]
 
-    # --- 学習対象・特徴量 ---
+    # --- 特徴量・対象品目の定義 ---
     ab_features = [
         "混合廃棄物A_前日",
         "混合廃棄物B_前日",
@@ -57,6 +66,7 @@ def train_and_save_models(
     ]
     target_items = ["混合廃棄物A", "混合廃棄物B", "混合廃棄物(ｿﾌｧｰ･家具類)"]
 
+    # --- 各モデルの準備 ---
     base_models = [
         ("elastic", ElasticNet(alpha=0.1, l1_ratio=0.5)),
         ("rf", RandomForestRegressor(n_estimators=100, random_state=42)),
@@ -66,7 +76,7 @@ def train_and_save_models(
         n_estimators=150, learning_rate=0.05, max_depth=4, random_state=42
     )
 
-    # --- スタッキング学習 ---
+    # --- スタッキング学習（ステージ1） ---
     X_features_all = {}
     stacked_preds = {}
     kf = KFold(n_splits=5)
@@ -79,6 +89,7 @@ def train_and_save_models(
         )
         y = df_pivot[item]
         X_features_all[item] = X
+
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, shuffle=False
         )
@@ -91,6 +102,7 @@ def train_and_save_models(
                 train_meta[val_idx, i] = model_.predict(X_train.iloc[val_idx])
         meta_model_stage1.fit(train_meta, y_train)
 
+        # テストデータで予測（ステージ2用入力）
         test_meta = np.column_stack(
             [
                 clone(model).fit(X_train, y_train).predict(X_test)
@@ -99,7 +111,7 @@ def train_and_save_models(
         )
         stacked_preds[item] = meta_model_stage1.predict(test_meta)
 
-    # --- ステージ2入力 ---
+    # --- ステージ2入力の構築 ---
     index_final = X_test.index
     df_stage1 = pd.DataFrame(
         {f"{k}_予測": v for k, v in stacked_preds.items()}, index=index_final
@@ -113,16 +125,18 @@ def train_and_save_models(
     ]:
         df_stage1[col] = df_feat.loc[index_final, col]
 
-    # --- 合計モデル・分類モデル ---
+    # --- ステージ2: 合計予測モデル ---
     y_total_final = df_pivot.loc[df_stage1.index, "合計"]
     gbdt_model.fit(df_stage1, y_total_final)
+
+    # --- ステージ2: 分類モデル（警告判定） ---
     y_total_binary = (y_total_final < 90000).astype(int)
     clf_model = GradientBoostingClassifier(
         n_estimators=100, learning_rate=0.05, max_depth=3, random_state=42
     )
     clf_model.fit(df_stage1.drop(columns=["祝日フラグ"]), y_total_binary)
 
-    # --- 保存 ---
+    # --- モデル保存 ---
     joblib.dump(meta_model_stage1, f"{save_dir}/meta_model_stage1.pkl")
     joblib.dump(gbdt_model, f"{save_dir}/gbdt_model_stage2.pkl")
     joblib.dump(clf_model, f"{save_dir}/clf_model.pkl")
@@ -134,44 +148,39 @@ def train_and_save_models(
     print(f"✅ モデル学習＆保存完了 → {save_dir}/ に保存されました")
 
 
-def make_model():
-    # --- データ読込 ---
-    base_dir = "/work/app/data/input"
-    df_raw = pd.read_csv(f"{base_dir}/20240501-20250422.csv", encoding="utf-8")[
-        ["伝票日付", "正味重量", "品名"]
-    ]
-    df_2020 = pd.read_csv(f"{base_dir}/2020顧客.csv")[
-        ["伝票日付", "商品", "正味重量_明細"]
-    ]
-    df_2021 = pd.read_csv(f"{base_dir}/2021顧客.csv")[
-        ["伝票日付", "商品", "正味重量_明細"]
-    ]
-    df_2023 = pd.read_csv(f"{base_dir}/2023_all.csv", low_memory=False)[
-        ["伝票日付", "商品", "正味重量_明細"]
-    ]
+# ===============================
+# 🚀 モデル作成を実行するメイン関数
+# ===============================
+def create_model():
+    # SQLの設定
+    sql_url = get_path_from_yaml("weight_data", section="sql_database")
+    print(sql_url)
+    table_name = "ukeire"
 
-    # --- 過去データの整形 ---
-    df_all = pd.concat([df_2020, df_2021, df_2023])
-    df_all.rename(columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True)
-    df_all["伝票日付"] = pd.to_datetime(df_all["伝票日付"], errors="coerce")
+    # 祝日の設定
+    start, end = get_training_date_range(sql_url, table_name)
+    holidays = get_japanese_holidays(start=start, end=end, as_str=True)
 
-    # --- 新旧データを結合＆整形 ---
-    df_raw = pd.concat([df_raw, df_all])
-    df_raw["伝票日付"] = (
-        df_raw["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True)
+    # --- モデルパスの設定 ---
+    model_path = get_path_from_yaml(
+        ["models", "predicted_import_volume"], section="directories"
     )
-    df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"], errors="coerce")
-    df_raw["正味重量"] = pd.to_numeric(df_raw["正味重量"], errors="coerce")
-    df_raw = df_raw.dropna(subset=["正味重量", "伝票日付"])
-
-    # --- 祝日取得 ---
-    start_date = df_raw["伝票日付"].min()
-    end_date = df_raw["伝票日付"].max()
-    holidays = get_japanese_holidays(start=start_date, end=end_date, as_str=True)
-
-    # --- モデル学習＆保存 ---
-    train_and_save_models(df_raw, holidays, save_dir="/work/app/data/models")
+    print(model_path)
+    # データ読込とモデル学習・保存
+    df_raw = load_data_from_sqlite(sql_url)
+    return train_and_save_models(df_raw=df_raw, holidays=holidays, save_dir=model_path)
 
 
-# 実行
-make_model()
+# ===============================
+# エントリーポイント
+# ===============================
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()  # 開始時間
+    print("モデル作成開始")
+    create_model()
+
+    end_time = time.time()  # 終了時間
+    elapsed_time = end_time - start_time
+    print(f"⏱️ 処理時間: {elapsed_time:.2f} 秒")
