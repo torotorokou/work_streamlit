@@ -13,6 +13,9 @@ from app_pages.factory_manage.pages.inbound_volume_forecast.calender import (
     generate_calendar_html,
 )
 from utils.config_loader import get_path_from_yaml
+from app_pages.factory_manage.pages.inbound_volume_forecast.controller import (
+    csv_controller,
+)
 
 
 # --- SQLiteから直近の日付を取得する関数 ---
@@ -183,14 +186,15 @@ def render_import_volume():
     # --- カレンダー表示 ---
     st.subheader("📅 読込済CSV日付")
     st.markdown(
-        """現在読込済みの日付です。
-    追加したい場合は、以下からCSVをアップロードして下さい。"""
+        """現在読込済みのCSV一覧表です。
+    さらに追加したい場合は、以下からCSVをアップロードして下さい。"""
     )
     render_calendar_section()
 
     # --- CSVのアップロード ---
     st.subheader("📅 CSVのアップロード")
     st.markdown("""追加したいCSVをアップロードして下さい。""")
+    csv_controller()
 
     # --- 日付選択UI（週の月曜〜土曜）を初期値に設定 ---
     st.subheader("📅 予測期間の選択")

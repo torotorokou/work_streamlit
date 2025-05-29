@@ -5,5 +5,5 @@ menu_options:
       label: 工場収支モニタリング表
 
 required_files:
+    inbound_volume: [receive]
     monitor: [shipping]
-    inbound_volume: [yard, shipping]
