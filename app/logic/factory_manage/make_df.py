@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 from utils.get_holydays import get_japanese_holidays
 from logic.factory_manage.sql import save_df_to_sqlite_unique
 from utils.config_loader import get_path_from_yaml
@@ -19,74 +20,66 @@ def make_sql_old():
     dtype_old = {"伝票日付": "str", "商品": "str", "正味重量_明細": "float64"}
     usecols_new = ["伝票日付", "正味重量", "品名"]
     usecols_old = ["伝票日付", "商品", "正味重量_明細"]
-
-    def load_csv(filename: str, dtype: dict, usecols: list) -> pd.DataFrame:
-        """
-        指定されたファイルを読み込む汎用CSV読み込み関数。
-
-        Args:
-            filename (str): 読み込むファイル名
-            dtype (dict): 各列の型指定
-            usecols (list): 読み込む列名のリスト
-
-        Returns:
-            pd.DataFrame: 読み込まれたデータフレーム
-        """
-        return pd.read_csv(
-            f"{base_dir}/{filename}", dtype=dtype, usecols=usecols, encoding="utf-8"
-        )
-
-    # --- 新データ ---
-    df_new = load_csv("20240501-20250422.csv", dtype=dtype_new, usecols=usecols_new)
-
-    # --- 旧データ結合 ---
     old_files = ["2020顧客.csv", "2021顧客.csv", "2022顧客.csv", "2023_all.csv"]
+
+    def load_and_clean_csv(
+        filename: str, dtype: dict, usecols: list, is_old: bool
+    ) -> pd.DataFrame:
+        path = os.path.join(base_dir, filename)
+        df = pd.read_csv(path, dtype=dtype, usecols=usecols, encoding="utf-8")
+
+        if is_old:
+            df.rename(
+                columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True
+            )
+
+        # 括弧付き日付の除去と型変換
+        df["伝票日付"] = (
+            df["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True)
+        )
+        df["伝票日付"] = pd.to_datetime(df["伝票日付"], errors="coerce")
+        df["正味重量"] = pd.to_numeric(df["正味重量"], errors="coerce")
+
+        # NaN除去
+        before = len(df)
+        df = df.dropna(subset=["正味重量", "伝票日付"])
+        after_nan = len(df)
+        print(f"🧹 {filename}: NaN除去 {before - after_nan}件 → {after_nan}件")
+
+        # 重量0除去
+        df = df[df["正味重量"] != 0]
+        print(f"🧹 {filename}: 正味重量=0 除去後 {len(df)}件")
+
+        return df
+
+    # --- 最新データ ---
+    print("📥 最新データ読み込み")
+    df_new = load_and_clean_csv(
+        "20240501-20250422.csv", dtype_new, usecols_new, is_old=False
+    )
+
+    # --- 過去データ ---
+    print("📥 過去データ読み込み")
     df_old_list = [
-        load_csv(fname, dtype=dtype_old, usecols=usecols_old) for fname in old_files
+        load_and_clean_csv(fname, dtype_old, usecols_old, is_old=True)
+        for fname in old_files
     ]
     df_old = pd.concat(df_old_list, ignore_index=True)
-    df_old.rename(columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True)
-
-    # --- df_old 整形 ---
-    print(f"📄 df_old 原始行数: {len(df_old)}")
-    df_old["伝票日付"] = (
-        df_old["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True)
-    )
-    df_old["伝票日付"] = pd.to_datetime(df_old["伝票日付"], errors="coerce")
-    df_old["正味重量"] = pd.to_numeric(df_old["正味重量"], errors="coerce")
-    old_nan_dropped = df_old[df_old[["正味重量", "伝票日付"]].isna().any(axis=1)]
-    print(f"🗑 df_old NaNで削除: {len(old_nan_dropped)} 行")
-    df_old = df_old.dropna(subset=["正味重量", "伝票日付"])
-    old_zero_dropped = df_old[df_old["正味重量"] == 0]
-    print(f"🗑 df_old 正味重量=0で削除: {len(old_zero_dropped)} 行")
-    df_old = df_old[df_old["正味重量"] != 0]
-
-    # --- df_new 整形 ---
-    print(f"📄 df_new 原始行数: {len(df_new)}")
-    df_new["伝票日付"] = (
-        df_new["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True)
-    )
-    df_new["伝票日付"] = pd.to_datetime(df_new["伝票日付"], errors="coerce")
-    df_new["正味重量"] = pd.to_numeric(df_new["正味重量"], errors="coerce")
-    new_nan_dropped = df_new[df_new[["正味重量", "伝票日付"]].isna().any(axis=1)]
-    print(f"🗑 df_new NaNで削除: {len(new_nan_dropped)} 行")
-    df_new = df_new.dropna(subset=["正味重量", "伝票日付"])
-    new_zero_dropped = df_new[df_new["正味重量"] == 0]
-    print(f"🗑 df_new 正味重量=0で削除: {len(new_zero_dropped)} 行")
-    df_new = df_new[df_new["正味重量"] != 0]
 
     # --- 結合 ---
     df_raw = pd.concat([df_new, df_old], ignore_index=True)
-    print(f"📦 結合後の総行数: {len(df_raw)}")
+    print(f"📦 総行数（df_new + df_old）: {len(df_raw)}")
 
     # --- 祝日フラグ付与 ---
     start_date = df_raw["伝票日付"].min().date()
     end_date = df_raw["伝票日付"].max().date()
     holidays = get_japanese_holidays(start=start_date, end=end_date, as_str=False)
     holiday_set = set(holidays)
+
     df_raw["祝日フラグ"] = df_raw["伝票日付"].dt.date.apply(
         lambda x: 1 if x in holiday_set else 0
     )
+    print("🎌 祝日フラグ付与完了")
 
     # --- SQLite保存 ---
     try:

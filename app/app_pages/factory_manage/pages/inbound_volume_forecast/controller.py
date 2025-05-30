@@ -77,10 +77,10 @@ def predict_hannyu_ryou_controller(start_date, end_date):
     """
     # --- データ取得 ---
     # csvから
-    df_raw = read_csv_controller()
+    # df_raw = read_csv_controller()
 
     # SQLから
-    # df_raw = load_data_from_sqlite()
+    df_raw = load_data_from_sqlite()
 
     # --- 祝日データ取得 ---
     holidays = get_japanese_holidays(start=start_date, end=end_date, as_str=True)
@@ -115,12 +115,15 @@ def read_csv_controller():
     df_2021 = pd.read_csv(f"{base_dir}/2021顧客.csv")[
         ["伝票日付", "商品", "正味重量_明細"]
     ]
+    df_2022 = pd.read_csv(f"{base_dir}/2022顧客.csv")[
+        ["伝票日付", "商品", "正味重量_明細"]
+    ]
     df_2023 = pd.read_csv(f"{base_dir}/2023_all.csv", low_memory=False)[
         ["伝票日付", "商品", "正味重量_明細"]
     ]
 
     # --- 統合・整形処理 ---
-    df_all = pd.concat([df_2020, df_2021, df_2023])
+    df_all = pd.concat([df_2020, df_2021, df_2022, df_2023])
     df_all["伝票日付"] = pd.to_datetime(df_all["伝票日付"])
     df_all.rename(columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True)
     df_raw = pd.concat([df_raw, df_all])
