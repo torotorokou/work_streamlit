@@ -43,10 +43,18 @@ def load_data_from_sqlite() -> pd.DataFrame:
         FROM ukeire
         WHERE 伝票日付 IS NOT NULL AND 品名 IS NOT NULL AND 正味重量 IS NOT NULL
     """
-    df = pd.read_sql(query, engine)
+    df = clean_for_compare(pd.read_sql(query, engine))
+    return df
+
+
+def clean_for_compare(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["伝票日付"] = (
+        df["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True).str.strip()
+    )
     df["伝票日付"] = pd.to_datetime(df["伝票日付"], errors="coerce")
     df["正味重量"] = pd.to_numeric(df["正味重量"], errors="coerce")
-    df["祝日フラグ"] = pd.to_numeric(df["祝日フラグ"], errors="coerce")
+    df = df.dropna(subset=["伝票日付", "正味重量"])
     return df
 
 

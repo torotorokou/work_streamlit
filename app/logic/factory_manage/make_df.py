@@ -6,7 +6,7 @@ from utils.cleaners import enforce_dtypes, strip_whitespace
 from utils.config_loader import get_expected_dtypes_by_template
 
 
-def make_df_old():
+def make_sql_old():
     """
     過去の複数年分のCSVファイルと最新データを読み込み、
     日付や数値整形、不要データの除外、祝日フラグ付与を行い、
@@ -96,6 +96,8 @@ def make_df_old():
     except Exception as e:
         print(f"❌ SQLite保存中にエラーが発生しました: {e}")
 
+    return df_raw
+
 
 def make_sql_db(df: pd.DataFrame):
     """
@@ -164,4 +166,4 @@ def make_csv(df: pd.DataFrame) -> pd.DataFrame:
 
 # --- 実行 ---
 if __name__ == "__main__":
-    make_df_old()
+    make_sql_old()
