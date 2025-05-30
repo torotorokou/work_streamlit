@@ -56,7 +56,6 @@ block_unit_price:
         - 品名
         - 単位名
 
-
 management_sheet:
     shipping: *shipping_cols
     yard:
@@ -78,3 +77,9 @@ balance_management_table:
         - 種類CD
         - 正味重量
         - 金額
+
+inbound_volume:
+    receive:
+        - 伝票日付
+        - 正味重量
+        - 品名

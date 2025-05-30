@@ -73,7 +73,7 @@ management_sheet:
     receive:
         - *receive_schema
 
-# 出荷管理テーブル用の設定
+# 工場管理系
 balance_management_table:
     shipping:
         伝票日付: datetime
@@ -97,3 +97,9 @@ balance_management_table:
         車種CD: int
         運搬業者CD: int
         種類CD: int
+
+inbound_volume:
+    receive:
+        伝票日付: datetime
+        正味重量: int
+        品名: str

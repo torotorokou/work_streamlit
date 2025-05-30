@@ -31,7 +31,7 @@ def factory_manage_controller():
     st.subheader(f"🗑 {file_name}")
     st.write("処理実績や分類別の集計を表示します。")
 
-    selected_template = "monitor"
+    selected_template = "balance_management_table"
     # --- 必要ファイルキーを取得 ---
     required_keys = load_factory_required_files()[selected_template]
 
