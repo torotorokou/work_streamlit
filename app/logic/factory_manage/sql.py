@@ -1,16 +1,24 @@
 from sqlalchemy import create_engine, text
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import pandas as pd
 import os
 import sqlite3
 from utils.config_loader import get_path_from_yaml
-from datetime import timedelta
+from sqlite3 import OperationalError
+from typing import List, Union
 
-# 工場の搬入量予測用のモデル
 
-
-# --- SQLiteから直近の日付を取得する関数 ---
 def load_recent_dates_from_sql(db_path: str, days: int = 90):
+    """
+    指定したSQLiteデータベースから、直近days日間の伝票日付を取得する。
+
+    Args:
+        db_path (str): SQLiteのファイルパス
+        days (int): 取得する日数の範囲（デフォルト90日）
+
+    Returns:
+        List[date]: 対象期間の伝票日付の一覧（日付型）
+    """
     conn = sqlite3.connect(db_path)
     df = pd.read_sql("SELECT 伝票日付 FROM ukeire", conn)
     conn.close()
@@ -21,10 +29,13 @@ def load_recent_dates_from_sql(db_path: str, days: int = 90):
     return recent_dates["伝票日付"].dt.date.unique()
 
 
-# ===============================
-# 📥 SQLiteから元データを読み込む
-# ===============================
 def load_data_from_sqlite() -> pd.DataFrame:
+    """
+    SQLiteから工場の搬入量データを読み込み、前処理を行う。
+
+    Returns:
+        pd.DataFrame: 加工済みのデータフレーム
+    """
     df_path = get_path_from_yaml("weight_data", section="sql_database")
     engine = create_engine(f"sqlite:///{df_path}")
     query = """
@@ -39,23 +50,36 @@ def load_data_from_sqlite() -> pd.DataFrame:
     return df
 
 
-# ===============================
-# 📅 伝票日付の最小・最大を取得する
-# ===============================
 def get_date_range_from_sqlite(db_path: str) -> tuple[str, str]:
+    """
+    SQLiteデータベースから伝票日付の最小・最大値を取得する。
+
+    Args:
+        db_path (str): SQLiteのパス
+
+    Returns:
+        tuple[str, str]: 最小・最大の日付（文字列）
+    """
     engine = create_engine(f"sqlite:///{db_path}")
     with engine.connect() as conn:
         result = conn.execute(
             text("SELECT MIN(伝票日付), MAX(伝票日付) FROM ukeire")
         ).fetchone()
-        return result[0], result[1]  # SQLiteはdatetime文字列で返す
+        return result[0], result[1]
 
 
 def get_training_date_range(
     db_path: str, table_name: str = "ukeire"
 ) -> tuple[date, date]:
     """
-    任意のテーブルから伝票日付の最小・最大を取得し、datetime.date型で返す
+    任意のテーブルから伝票日付の最小・最大を取得し、datetime.date型で返す。
+
+    Args:
+        db_path (str): SQLiteのパス
+        table_name (str): テーブル名（デフォルト "ukeire"）
+
+    Returns:
+        tuple[date, date]: 最小・最大の日付
     """
     engine = create_engine(f"sqlite:///{db_path}")
     with engine.connect() as conn:
@@ -68,24 +92,17 @@ def get_training_date_range(
 
     start = pd.to_datetime(start_str).date()
     end = pd.to_datetime(end_str).date()
-
     return start, end
-
-
-import os
-import sqlite3
-import pandas as pd
-from sqlite3 import OperationalError
 
 
 def save_df_to_sqlite_unique(df: pd.DataFrame, db_path: str, table_name: str) -> None:
     """
-    SQLiteにDataFrameを保存（全カラムで重複チェックを行い、新規行のみを追記）。
+    SQLiteにDataFrameを保存する（全カラムで重複チェックを行い、新規行のみを追記）。
 
-    ステップ：
-    1. DBにテーブルが存在するか確認し、既存データを読み込む
-    2. dfと既存データを全カラムで比較し、重複行を除外
-    3. 新規レコードのみをSQLiteにappend保存
+    Args:
+        df (pd.DataFrame): 保存対象データ
+        db_path (str): SQLiteファイルパス
+        table_name (str): 保存対象テーブル名
     """
 
     def convert_datetime_to_str(df: pd.DataFrame) -> pd.DataFrame:
@@ -98,42 +115,30 @@ def save_df_to_sqlite_unique(df: pd.DataFrame, db_path: str, table_name: str) ->
 
     def load_existing_data(conn, table_name: str, expected_columns) -> pd.DataFrame:
         try:
-            # テーブルが存在するか確認
             tables = pd.read_sql(
                 "SELECT name FROM sqlite_master WHERE type='table';", conn
             )["name"].tolist()
-
             if table_name not in tables:
                 print(
                     f"📂 テーブル '{table_name}' は存在しないため、新規作成対象として扱います。"
                 )
                 return pd.DataFrame(columns=expected_columns)
-
-            # テーブルから全件読み込み
             return pd.read_sql(f"SELECT * FROM {table_name}", conn)
-
         except Exception as e:
             print(f"❌ 既存データの読み込みに失敗しました: {e}")
             raise
 
     conn = None
     try:
-        # --- ディレクトリ作成（なければ作る） ---
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
-
-        # --- SQLite接続 ---
         conn = sqlite3.connect(db_path)
-
-        # --- 既存データの読み込み ---
         existing_df = load_existing_data(conn, table_name, df.columns)
 
-        # --- datetime → 文字列, NaN → None に変換 ---
         df = convert_datetime_to_str(df)
         existing_df = convert_datetime_to_str(existing_df)
         df = convert_nan_to_none(df)
         existing_df = convert_nan_to_none(existing_df)
 
-        # --- 重複排除：dfにしか存在しない行を抽出 ---
         if not existing_df.empty:
             merged = df.merge(existing_df.drop_duplicates(), how="left", indicator=True)
             new_records = merged[merged["_merge"] == "left_only"].drop(
@@ -142,12 +147,10 @@ def save_df_to_sqlite_unique(df: pd.DataFrame, db_path: str, table_name: str) ->
         else:
             new_records = df.copy()
 
-        # --- 保存対象の確認 ---
         if new_records.empty:
             print("⚠️ 保存対象の新規データがありません（すべて既存と重複）")
             return
 
-        # --- SQLiteへ追記保存 ---
         new_records.to_sql(name=table_name, con=conn, if_exists="append", index=False)
         print(f"✅ 新規 {len(new_records)} 件のデータを保存しました。")
 
@@ -159,30 +162,22 @@ def save_df_to_sqlite_unique(df: pd.DataFrame, db_path: str, table_name: str) ->
             conn.close()
 
 
-import pandas as pd
-from sqlalchemy import create_engine
-from typing import List, Union
-from datetime import date
-from utils.config_loader import get_path_from_yaml
-
-
 def get_holidays_from_sql(
     start: date, end: date, as_str: bool = True
 ) -> List[Union[date, str]]:
     """
     SQLiteから指定期間の祝日を取得する関数
 
-    Parameters:
+    Args:
         start (date): 開始日
         end (date): 終了日
-        as_str (bool): Trueなら'YYYY-MM-DD'形式、Falseならdate型のまま返す
+        as_str (bool): Trueなら'YYYY-MM-DD'形式、Falseならdate型で返す
 
     Returns:
-        List[str or date]: 指定期間内の祝日一覧
+        List[Union[date, str]]: 指定期間内の祝日一覧
     """
     db_path = get_path_from_yaml("weight_data", section="sql_database")
     engine = create_engine(f"sqlite:///{db_path}")
-
     query = f"""
         SELECT DISTINCT 伝票日付
         FROM ukeire
@@ -190,13 +185,11 @@ def get_holidays_from_sql(
         AND 伝票日付 BETWEEN '{start}' AND '{end}'
         ORDER BY 伝票日付
     """
-
     df = pd.read_sql(query, engine)
 
     if df.empty:
         return []
 
-    # ✅ 必ずdatetime型に変換してから .dt アクセサを使う
     df["伝票日付"] = pd.to_datetime(df["伝票日付"], errors="coerce")
 
     if as_str:
