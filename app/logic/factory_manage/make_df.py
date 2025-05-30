@@ -7,7 +7,11 @@ from utils.config_loader import get_expected_dtypes_by_template
 
 
 def make_df_old():
-    # --- 入力ディレクトリパスの取得 ---
+    """
+    過去の複数年分のCSVファイルと最新データを読み込み、
+    日付や数値整形、不要データの除外、祝日フラグ付与を行い、
+    SQLiteに統合保存するメイン関数。
+    """
     base_dir = get_path_from_yaml("input", section="directories")
 
     # --- 共通定義 ---
@@ -16,8 +20,18 @@ def make_df_old():
     usecols_new = ["伝票日付", "正味重量", "品名"]
     usecols_old = ["伝票日付", "商品", "正味重量_明細"]
 
-    # --- CSV読み込み用関数 ---
     def load_csv(filename: str, dtype: dict, usecols: list) -> pd.DataFrame:
+        """
+        指定されたファイルを読み込む汎用CSV読み込み関数。
+
+        Args:
+            filename (str): 読み込むファイル名
+            dtype (dict): 各列の型指定
+            usecols (list): 読み込む列名のリスト
+
+        Returns:
+            pd.DataFrame: 読み込まれたデータフレーム
+        """
         return pd.read_csv(
             f"{base_dir}/{filename}", dtype=dtype, usecols=usecols, encoding="utf-8"
         )
@@ -25,7 +39,7 @@ def make_df_old():
     # --- 新データ ---
     df_new = load_csv("20240501-20250422.csv", dtype=dtype_new, usecols=usecols_new)
 
-    # --- 旧データ（複数年） ---
+    # --- 旧データ結合 ---
     old_files = ["2020顧客.csv", "2021顧客.csv", "2022顧客.csv", "2023_all.csv"]
     df_old_list = [
         load_csv(fname, dtype=dtype_old, usecols=usecols_old) for fname in old_files
@@ -65,7 +79,7 @@ def make_df_old():
     df_raw = pd.concat([df_new, df_old], ignore_index=True)
     print(f"📦 結合後の総行数: {len(df_raw)}")
 
-    # --- 祝日フラグ追加 ---
+    # --- 祝日フラグ付与 ---
     start_date = df_raw["伝票日付"].min().date()
     end_date = df_raw["伝票日付"].max().date()
     holidays = get_japanese_holidays(start=start_date, end=end_date, as_str=False)
@@ -84,28 +98,28 @@ def make_df_old():
 
 
 def make_sql_db(df: pd.DataFrame):
+    """
+    与えられたデータフレームから無効データを削除し、
+    整形・祝日付与をしてSQLiteに保存する。
+
+    Args:
+        df (pd.DataFrame): 元データ
+    """
     print(f"🔍 元データの行数: {len(df)}")
 
-    # --- 日付列の整形（曜日などを除去） ---
     df["伝票日付"] = df["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True)
     df["伝票日付"] = pd.to_datetime(df["伝票日付"], errors="coerce")
-
-    # --- 数値変換（正味重量） ---
     df["正味重量"] = pd.to_numeric(df["正味重量"], errors="coerce")
 
-    # --- 欠損行の保存 ---
     dropped_rows = df[df[["伝票日付", "正味重量"]].isna().any(axis=1)]
     dropped_rows.to_csv("dropped_rows.csv", index=False)
 
-    # --- 欠損除去 ---
     df = df.dropna(subset=["正味重量", "伝票日付"])
     print(f"🔍 dropna後の行数: {len(df)}")
 
-    # --- 正味重量が0の行を削除 ---
     df = df[df["正味重量"] != 0]
     print(f"🔍 正味重量≠0 の行数: {len(df)}")
 
-    # --- 祝日フラグ追加 ---
     start_date = df["伝票日付"].min().date()
     end_date = df["伝票日付"].max().date()
     holidays = get_japanese_holidays(start=start_date, end=end_date, as_str=False)
@@ -113,13 +127,10 @@ def make_sql_db(df: pd.DataFrame):
     df["祝日フラグ"] = df["伝票日付"].dt.date.apply(
         lambda x: 1 if x in holiday_set else 0
     )
-    print(f"🔍 祝日フラグ追加後の行数: {len(df)}")
 
-    # --- 必要列に限定 ---
     df = df.loc[:, ["伝票日付", "正味重量", "品名", "祝日フラグ"]]
     print(f"🔍 整形後の行数: {len(df)}")
 
-    # --- SQLite保存 ---
     try:
         db_path = get_path_from_yaml("weight_data", section="sql_database")
         save_df_to_sqlite_unique(
@@ -131,21 +142,26 @@ def make_sql_db(df: pd.DataFrame):
         print(f"❌ SQLite保存中にエラーが発生しました: {e}")
 
 
-def make_csv(df):
-    # 空白除去
-    df = strip_whitespace(df)
+def make_csv(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    テンプレートに基づいて受入データの空白除去・型変換を行う。
 
-    # テンプレートに基づく型定義を取得
+    Args:
+        df (pd.DataFrame): 元データ
+
+    Returns:
+        pd.DataFrame: 整形済データ
+    """
+    df = strip_whitespace(df)
     expected_dtypes = get_expected_dtypes_by_template("inbound_volume")
     dtypes = expected_dtypes.get("receive", {})
 
-    # データ型を適用
     if dtypes:
         df = enforce_dtypes(df, dtypes)
 
     return df
 
 
-# 実行
+# --- 実行 ---
 if __name__ == "__main__":
     make_df_old()

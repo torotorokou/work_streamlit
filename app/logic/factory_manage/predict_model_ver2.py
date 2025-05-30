@@ -28,11 +28,11 @@ def debug_print(title, start_date, end_date, X):
 def train_and_predict_with_holiday(
     df_raw: pd.DataFrame, start_date: str, end_date: str, holidays: list[str]
 ) -> pd.DataFrame:
-    df_raw = df_raw.copy()
-    df_raw["伝票日付"] = df_raw["伝票日付"].str.replace(r"\(.*\)", "", regex=True)
-    df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"], errors="coerce")
-    df_raw["正味重量"] = pd.to_numeric(df_raw["正味重量"], errors="coerce")
-    df_raw = df_raw.dropna(subset=["正味重量"])
+    # df_raw = df_raw.copy()
+    # df_raw["伝票日付"] = df_raw["伝票日付"].str.replace(r"\(.*\)", "", regex=True)
+    # df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"], errors="coerce")
+    # df_raw["正味重量"] = pd.to_numeric(df_raw["正味重量"], errors="coerce")
+    # df_raw = df_raw.dropna(subset=["正味重量"])
 
     # ピボット（日付×品名）→ 正味重量（合計）
     df_pivot = (

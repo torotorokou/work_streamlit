@@ -13,6 +13,7 @@ from utils.check_uploaded_csv import (
     check_single_file_uploaded,
 )
 from logic.factory_manage.make_df import make_sql_db, make_csv
+from logic.factory_manage.sql import load_data_from_sqlite
 
 
 def csv_controller():
@@ -75,7 +76,11 @@ def predict_hannyu_ryou_controller(start_date, end_date):
         pd.DataFrame: 予測結果のデータフレーム
     """
     # --- データ取得 ---
+    # csvから
     df_raw = read_csv_controller()
+
+    # SQLから
+    # df_raw = load_data_from_sqlite()
 
     # --- 祝日データ取得 ---
     holidays = get_japanese_holidays(start=start_date, end=end_date, as_str=True)
@@ -119,5 +124,11 @@ def read_csv_controller():
     df_all["伝票日付"] = pd.to_datetime(df_all["伝票日付"])
     df_all.rename(columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True)
     df_raw = pd.concat([df_raw, df_all])
+
+    # --- 日付・重量クリーニング ---
+    df_raw["伝票日付"] = df_raw["伝票日付"].str.replace(r"\(.*\)", "", regex=True)
+    df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"], errors="coerce")
+    df_raw["正味重量"] = pd.to_numeric(df_raw["正味重量"], errors="coerce")
+    df_raw = df_raw.dropna(subset=["正味重量"])
 
     return df_raw
