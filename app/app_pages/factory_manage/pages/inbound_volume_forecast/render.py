@@ -4,54 +4,25 @@ import pandas as pd
 import altair as alt
 import sqlite3
 
-from logic.factory_manage.modelver2_1day.predict_with_saved_models import (
-    predict_with_saved_models,
-    get_holidays_from_sql,
-)
-from utils.get_holydays import get_japanese_holidays
-from app_pages.factory_manage.pages.inbound_volume_forecast.calender import (
+from logic.factory_manage.calender import (
     generate_calendar_html,
 )
 from utils.config_loader import get_path_from_yaml
 from app_pages.factory_manage.pages.inbound_volume_forecast.controller import (
     csv_controller,
+    predict_hannyu_ryou_controller,
 )
-
-
-# --- SQLiteから直近の日付を取得する関数 ---
-def load_recent_dates_from_sql(db_path: str, days: int = 90):
-    conn = sqlite3.connect(db_path)
-    df = pd.read_sql("SELECT 伝票日付 FROM ukeire", conn)
-    conn.close()
-
-    df["伝票日付"] = pd.to_datetime(df["伝票日付"], errors="coerce")
-    df = df.dropna(subset=["伝票日付"])
-    recent_dates = df[df["伝票日付"] >= datetime.today() - timedelta(days=days)]
-    return recent_dates["伝票日付"].dt.date.unique()
-
-
-# --- カレンダー表示（過去3ヶ月分） ---
-def render_calendar_section():
-    sql_url = get_path_from_yaml("weight_data", section="sql_database")
-    dates_with_data = load_recent_dates_from_sql(sql_url)
-
-    months = [datetime.today() - pd.DateOffset(months=i) for i in range(2, -1, -1)]
-    cols = st.columns(3)
-
-    for i, month in enumerate(months):
-        with cols[i]:
-            html = generate_calendar_html(month.year, month.month, dates_with_data)
-            st.markdown(html, unsafe_allow_html=True)
+from logic.factory_manage.style import style_label
+from logic.factory_manage.calender import render_calendar_section
+from logic.factory_manage.sql import load_recent_dates_from_sql
 
 
 # --- AIモデルを用いた予測実行処理 ---
 def render_prediction_section(start_date, end_date):
-    holidays = get_holidays_from_sql(start=start_date, end=end_date, as_str=True)
     with st.spinner("予測中..."):
-        df_pred = predict_with_saved_models(
-            start_date=str(start_date),
-            end_date=str(end_date),
-            holidays=holidays,
+        # 旧バージョンで、一括でモデル構築・予測
+        df_pred = predict_hannyu_ryou_controller(
+            start_date=str(start_date), end_date=str(end_date)
         )
     df_pred = df_pred.copy()
     df_pred["曜日"] = pd.to_datetime(df_pred.index).weekday.map(
@@ -60,15 +31,6 @@ def render_prediction_section(start_date, end_date):
     df_pred["日付"] = df_pred.index
     st.session_state["df_import_prediction"] = df_pred
     st.success("予測が完了しました。")
-
-
-# --- 表のスタイル指定用（ラベル別色） ---
-def style_label(val):
-    if val == "警告":
-        return "color: red; font-weight: bold"
-    elif val == "注意":
-        return "color: orange"
-    return ""
 
 
 # --- 表示テーブルとAltairチャート（棒グラフ）を描画 ---
@@ -186,15 +148,15 @@ def render_import_volume():
     # --- カレンダー表示 ---
     st.subheader("📅 読込済CSV日付")
     st.markdown(
-        """現在読込済みのCSV一覧表です。
-    さらに追加したい場合は、以下からCSVをアップロードして下さい。"""
+        """現在読込済みのCSV一覧表です。  
+    追加する場合は、以下からCSVをアップロードして下さい。"""
     )
     render_calendar_section()
 
-    # --- CSVのアップロード ---
-    st.subheader("📅 CSVのアップロード")
-    st.markdown("""追加したいCSVをアップロードして下さい。""")
-    csv_controller()
+    # --- CSVのアップロード（折りたたみ式） ---
+    with st.expander("📂 CSVのアップロードはこちらをクリック", expanded=False):
+        st.markdown("""追加したいCSVをアップロードして下さい。""")
+        csv_controller()
 
     # --- 日付選択UI（週の月曜〜土曜）を初期値に設定 ---
     st.subheader("📅 予測期間の選択")
@@ -215,7 +177,7 @@ def render_import_volume():
 
     # --- 入力された期間を変数に代入 ---
     start_date, end_date = selected_dates
-    st.caption(f"対象期間: {start_date} ～ {end_date}")
+    # st.caption(f"対象期間: {start_date} ～ {end_date}")
 
     # --- 予測実行ボタン（中央配置） ---
     col1, col2, col3 = st.columns([1, 2, 1])

@@ -31,5 +31,5 @@ class FactoryManageWorkController:
     def route(self):
         if self.selected_menu_key == "inbound_volume":
             render_import_volume()
-        elif self.selected_menu_key == "monitor":
+        elif self.selected_menu_key == "balance_management_table":
             factory_manage_controller()

@@ -19,52 +19,66 @@ def clean_numeric_column(df, column_name):
     return df
 
 
-def enforce_dtypes(df, dtype_map):
+def enforce_dtypes(df: pd.DataFrame, dtype_map: dict) -> pd.DataFrame:
     logger = app_logger()
+
     for col, dtype in dtype_map.items():
-        if col in df.columns:
-            try:
-                if dtype == "datetime64[ns]":
-                    # 括弧つき曜日などを除去して日付変換
-                    df[col] = (
-                        df[col]
-                        .astype(str)
-                        .str.replace(r"\(.+?\)", "", regex=True)
-                        .str.strip()
-                    )
-                    df[col] = pd.to_datetime(df[col], errors="coerce")
+        if col not in df.columns:
+            continue
 
-                elif dtype in [int, np.int64]:
-                    df[col] = (
-                        df[col]
-                        .astype(str)
-                        .str.replace(",", "", regex=False)  # カンマ削除を追加
-                        .str.strip()
-                        .replace("", pd.NA)
-                    )
-                    df[col] = (
-                        pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
-                    )
+        try:
+            if dtype == "datetime64[ns]":
+                df[col] = convert_to_datetime(df[col])
+            elif dtype in [int, np.int64]:
+                df[col] = convert_to_int(df[col])
+            elif dtype in [float, np.float64]:
+                df[col] = convert_to_float(df[col])
+            else:
+                df[col] = df[col].astype(dtype)
 
-                elif dtype in [float, np.float64]:
-                    df[col] = (
-                        df[col]
-                        .astype(str)
-                        .str.replace(",", "", regex=False)
-                        .str.strip()
-                        .replace("", pd.NA)
-                        .astype(float)
-                    )
-
-                else:
-                    df[col] = df[col].astype(dtype)
-
-            except Exception as e:
-                msg = f"⚠️ {col} の型変換に失敗: {e}"
-                logger.warning(msg)
-                show_warning(msg)
+        except Exception as e:
+            msg = f"⚠️ {col} の型変換に失敗: {e}"
+            logger.warning(msg)
+            show_warning(msg)
 
     return df
+
+
+# --- 各型ごとの変換関数 ---
+
+
+def convert_to_datetime(series: pd.Series) -> pd.Series:
+    """文字列から datetime64[ns] に変換"""
+    return (
+        series.astype(str)
+        .str.replace(r"\(.+?\)", "", regex=True)
+        .str.strip()
+        .pipe(pd.to_datetime, errors="coerce")
+    )
+
+
+def convert_to_int(series: pd.Series) -> pd.Series:
+    """カンマ除去・空白除去後に整数型へ変換（NaNは0）"""
+    return (
+        series.astype(str)
+        .str.replace(",", "", regex=False)
+        .str.strip()
+        .replace("", pd.NA)
+        .pipe(pd.to_numeric, errors="coerce")
+        .fillna(0)
+        .astype(int)
+    )
+
+
+def convert_to_float(series: pd.Series) -> pd.Series:
+    """カンマ除去・空白除去後に浮動小数点数へ変換"""
+    return (
+        series.astype(str)
+        .str.replace(",", "", regex=False)
+        .str.strip()
+        .replace("", pd.NA)
+        .astype(float)
+    )
 
 
 def strip_whitespace(df: pd.DataFrame) -> pd.DataFrame:
