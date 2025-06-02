@@ -5,6 +5,7 @@ from logic.factory_manage.sql import save_df_to_sqlite_unique
 from utils.config_loader import get_path_from_yaml
 from utils.cleaners import enforce_dtypes, strip_whitespace
 from utils.config_loader import get_expected_dtypes_by_template
+from logic.factory_manage.original import maesyori
 
 
 def make_sql_old():
@@ -16,7 +17,8 @@ def make_sql_old():
     base_dir = get_path_from_yaml("input", section="directories")
 
     # データ読込
-    df_raw = read_csv_hannnyuu_old()
+    # df_raw = read_csv_hannnyuu_old()
+    df_raw = maesyori()
 
     # --- 祝日フラグ付与 ---
     start_date = df_raw["伝票日付"].min().date()
