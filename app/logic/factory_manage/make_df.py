@@ -15,64 +15,13 @@ def make_sql_old():
     """
     base_dir = get_path_from_yaml("input", section="directories")
 
-    # --- 共通定義 ---
-    dtype_new = {"伝票日付": "str", "品名": "str", "正味重量": "float64"}
-    dtype_old = {"伝票日付": "str", "商品": "str", "正味重量_明細": "float64"}
-    usecols_new = ["伝票日付", "正味重量", "品名"]
-    usecols_old = ["伝票日付", "商品", "正味重量_明細"]
-    old_files = ["2020顧客.csv", "2021顧客.csv", "2022顧客.csv", "2023_all.csv"]
-
-    def load_and_clean_csv(
-        filename: str, dtype: dict, usecols: list, is_old: bool
-    ) -> pd.DataFrame:
-        path = os.path.join(base_dir, filename)
-        df = pd.read_csv(path, dtype=dtype, usecols=usecols, encoding="utf-8")
-
-        if is_old:
-            df.rename(
-                columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True
-            )
-
-        # 括弧付き日付の除去と型変換
-        df["伝票日付"] = (
-            df["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True)
-        )
-        df["伝票日付"] = pd.to_datetime(df["伝票日付"], errors="coerce")
-        df["正味重量"] = pd.to_numeric(df["正味重量"], errors="coerce")
-
-        # NaN除去
-        before = len(df)
-        df = df.dropna(subset=["正味重量", "伝票日付"])
-        after_nan = len(df)
-        print(f"🧹 {filename}: NaN除去 {before - after_nan}件 → {after_nan}件")
-
-        # 重量0除去
-        df = df[df["正味重量"] != 0]
-        print(f"🧹 {filename}: 正味重量=0 除去後 {len(df)}件")
-
-        return df
-
-    # --- 最新データ ---
-    print("📥 最新データ読み込み")
-    df_new = load_and_clean_csv(
-        "20240501-20250422.csv", dtype_new, usecols_new, is_old=False
-    )
-
-    # --- 過去データ ---
-    print("📥 過去データ読み込み")
-    df_old_list = [
-        load_and_clean_csv(fname, dtype_old, usecols_old, is_old=True)
-        for fname in old_files
-    ]
-    df_old = pd.concat(df_old_list, ignore_index=True)
-
-    # --- 結合 ---
-    df_raw = pd.concat([df_new, df_old], ignore_index=True)
-    print(f"📦 総行数（df_new + df_old）: {len(df_raw)}")
+    # データ読込
+    df_raw = read_csv_hannnyuu_old()
 
     # --- 祝日フラグ付与 ---
     start_date = df_raw["伝票日付"].min().date()
     end_date = df_raw["伝票日付"].max().date()
+    print(f"🔍 df2_min_max: {start_date} ～ {end_date}")
     holidays = get_japanese_holidays(start=start_date, end=end_date, as_str=False)
     holiday_set = set(holidays)
 
@@ -155,6 +104,83 @@ def make_csv(df: pd.DataFrame) -> pd.DataFrame:
         df = enforce_dtypes(df, dtypes)
 
     return df
+
+
+def read_csv_hannnyuu():
+    """
+    搬入量予測に必要なCSVデータを読み込んで統合・整形する関数。
+
+    Returns:
+        pd.DataFrame: 整形済みの搬入データ（列: 伝票日付・品名・正味重量）
+    """
+    # --- データ取得 ---
+    base_dir = get_path_from_yaml("input", section="directories")
+
+    # --- 新データ（2024～2025） ---
+    df_new = pd.read_csv(f"{base_dir}/20240501-20250422.csv", encoding="utf-8")[
+        ["伝票日付", "正味重量", "品名"]
+    ]
+    df_new["伝票日付"] = df_new["伝票日付"].str.replace(r"\(.*\)", "", regex=True)
+    df_new["伝票日付"] = pd.to_datetime(df_new["伝票日付"], errors="coerce")
+
+    # --- 旧データ（2020〜2023） ---
+    df_2020 = pd.read_csv(f"{base_dir}/2020顧客.csv")[
+        ["伝票日付", "商品", "正味重量_明細"]
+    ]
+    df_2021 = pd.read_csv(f"{base_dir}/2021顧客.csv")[
+        ["伝票日付", "商品", "正味重量_明細"]
+    ]
+    df_2022 = pd.read_csv(f"{base_dir}/2022顧客.csv")[
+        ["伝票日付", "商品", "正味重量_明細"]
+    ]
+    df_2023 = pd.read_csv(f"{base_dir}/2023_all.csv", low_memory=False)[
+        ["伝票日付", "商品", "正味重量_明細"]
+    ]
+    df_old = pd.concat([df_2020, df_2021, df_2022, df_2023], ignore_index=True)
+    df_old.rename(columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True)
+    df_old["伝票日付"] = pd.to_datetime(df_old["伝票日付"], errors="coerce")
+
+    # --- 結合とクリーニング ---
+    df_all = pd.concat([df_new, df_old], ignore_index=True)
+    df_all["正味重量"] = pd.to_numeric(df_all["正味重量"], errors="coerce")
+    df_all = df_all.dropna(subset=["正味重量", "伝票日付"])
+
+    # --- 確認出力 ---
+    start_date = df_all["伝票日付"].min().date()
+    end_date = df_all["伝票日付"].max().date()
+    print(f"🔍 df1_min_max: {start_date} ～ {end_date}")
+
+    return df_all
+
+
+def read_csv_hannnyuu_old():
+    base_dir = get_path_from_yaml("input", section="directories")
+    df_raw = pd.read_csv(f"{base_dir}/20240501-20250422.csv", encoding="utf-8")
+    df_raw = df_raw[["伝票日付", "正味重量", "品名"]]
+    df_raw["伝票日付"] = df_raw["伝票日付"].str.replace(r"\(.*\)", "", regex=True)
+    df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"], errors="coerce")
+
+    df_2020 = pd.read_csv(f"{base_dir}/2020顧客.csv")
+
+    df_2021 = pd.read_csv(f"{base_dir}/2021顧客.csv")
+
+    df_2023 = pd.read_csv(f"{base_dir}/2023_all.csv")
+
+    df_2020 = df_2020[["伝票日付", "商品", "正味重量_明細"]]
+
+    df_2021 = df_2021[["伝票日付", "商品", "正味重量_明細"]]
+
+    df_2023 = df_2023[["伝票日付", "商品", "正味重量_明細"]]
+
+    df_all = pd.concat([df_2020, df_2021, df_2023])
+
+    df_all["伝票日付"] = pd.to_datetime(df_all["伝票日付"])
+
+    df_all.rename(columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True)
+
+    df_raw = pd.concat([df_raw, df_all])
+
+    return df_all
 
 
 # --- 実行 ---
