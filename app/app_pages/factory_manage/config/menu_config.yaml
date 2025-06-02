@@ -1,9 +1,13 @@
 menu_options:
     - key: inbound_volume
       label: 搬入量予測
+      
     - key: balance_management_table
       label: 工場収支モニタリング表
+    - key: inbound_outbound_records
+      label: 搬出入収支表の集計
 
 required_files:
     inbound_volume: [receive]
     balance_management_table: [shipping]
+    inbound_outbound_records: [receive, shipping]
