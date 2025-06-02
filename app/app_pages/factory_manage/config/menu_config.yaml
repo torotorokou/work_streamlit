@@ -1,11 +1,15 @@
 menu_options:
     - key: inbound_volume
-      label: 搬入量予測
-      
+      label: 搬入量予測AI
+      handler: render_import_volume
+
     - key: balance_management_table
-      label: 工場収支モニタリング表
+      label: 現在数量モニタリング
+      handler: factory_manage_controller
+
     - key: inbound_outbound_records
-      label: 搬出入収支表の集計
+      label: 搬出入収支表
+      handler: render_inbound_outbound_records
 
 required_files:
     inbound_volume: [receive]

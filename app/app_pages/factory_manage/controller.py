@@ -11,6 +11,7 @@ from app_pages.factory_manage.view.css import inject_sidebar_css
 from app_pages.factory_manage.pages.inbound_outbound_records.render import (
     render_inbound_outbound_records,
 )
+from utils.config_loader import load_yaml
 
 
 def factory_manage_work_controller():
@@ -33,14 +34,23 @@ class FactoryManageWorkController:
         self.route()
 
     def route(self):
-        menu_actions = {
-            "inbound_volume": render_import_volume,
-            "balance_management_table": factory_manage_controller,
-            "inbound_outbound_records": render_inbound_outbound_records,
-        }
+        option = next(
+            (
+                menu_key
+                for menu_key in self.menu_options
+                if menu_key["key"] == self.selected_menu_key
+            ),
+            None,
+        )
 
-        action = menu_actions.get(self.selected_menu_key)
-        if action:
-            action()
+        if option is None:
+            st.error("メニューが正しく選択されていません。")
+            return
+
+        handler_name = option.get("handler")
+        handler_func = globals().get(handler_name)
+
+        if callable(handler_func):
+            handler_func()
         else:
-            st.warning("未定義のメニューが選択されました。")
+            st.error(f"ハンドラ '{handler_name}' が定義されていません。")
