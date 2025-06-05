@@ -53,18 +53,36 @@ def load_recent_dates_from_sql(db_path: str, days: int = 90):
 def load_data_from_sqlite() -> pd.DataFrame:
     """
     SQLiteから工場の搬入量データを読み込み、前処理を行う。
+    祝日フラグ列が存在しない場合は自動的に読み飛ばす。
 
     Returns:
         pd.DataFrame: 加工済みのデータフレーム
     """
     df_path = get_path_from_yaml("weight_data", section="sql_database")
     engine = create_engine(f"sqlite:///{df_path}")
-    query = """
-        SELECT 伝票日付, 品名, 正味重量, 祝日フラグ
-        FROM ukeire
-        WHERE 伝票日付 IS NOT NULL AND 品名 IS NOT NULL AND 正味重量 IS NOT NULL
-    """
-    df = clean_for_compare(pd.read_sql(query, engine))
+
+    # まずはカラム一覧を取得
+    with engine.connect() as conn:
+        col_query = "PRAGMA table_info(ukeire)"
+        columns = pd.read_sql(col_query, conn)["name"].tolist()
+
+    # 祝日フラグがあるかどうかでクエリを分岐
+    if "祝日フラグ" in columns:
+        query = """
+            SELECT 伝票日付, 品名, 正味重量, 祝日フラグ
+            FROM ukeire
+            WHERE 伝票日付 IS NOT NULL AND 品名 IS NOT NULL AND 正味重量 IS NOT NULL
+        """
+    else:
+        query = """
+            SELECT 伝票日付, 品名, 正味重量
+            FROM ukeire
+            WHERE 伝票日付 IS NOT NULL AND 品名 IS NOT NULL AND 正味重量 IS NOT NULL
+        """
+
+    # データ読み込みとクレンジング
+    df = pd.read_sql(query, engine)
+    df = clean_for_compare(df)
     return df
 
 
