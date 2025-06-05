@@ -1,40 +1,24 @@
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import Ridge, LogisticRegression, ElasticNet
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.ensemble import (
+    RandomForestRegressor,
+    GradientBoostingRegressor,
+    GradientBoostingClassifier,
+)
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.base import clone
-from sklearn.metrics import accuracy_score, roc_auc_score
-import joblib
 from utils.config_loader import get_path_from_yaml
+from sklearn.linear_model import ElasticNet
+from utils.get_holydays import get_japanese_holidays
 
 # 祝日フラグを含むモデルの学習・検証・予測を一括実行する関数
-# 使用前に pandas, numpy, scikit-learn をインポートしておいてください
 
 
 def train_and_predict_with_holiday(
     df_raw: pd.DataFrame, start_date: str, end_date: str, holidays: list[str]
 ) -> pd.DataFrame:
-    import pandas as pd
-    import numpy as np
-    from sklearn.linear_model import ElasticNet
-    from sklearn.ensemble import (
-        RandomForestRegressor,
-        GradientBoostingRegressor,
-        GradientBoostingClassifier,
-    )
-    from sklearn.model_selection import train_test_split, KFold
-    from sklearn.base import clone
-    from sklearn.metrics import r2_score, mean_absolute_error
-
-    # --- 前処理 ---
-    df_raw = df_raw.copy()
-    df_raw["伝票日付"] = df_raw["伝票日付"].str.replace(r"\(.*\)", "", regex=True)
-    df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"], errors="coerce")
-    df_raw["正味重量"] = pd.to_numeric(df_raw["正味重量"], errors="coerce")
-    df_raw = df_raw.dropna(subset=["正味重量"])
-
+    print(len(df_raw))
     print(f"model_中身 = {df_raw['伝票日付'].min()} / {df_raw['伝票日付'].max()}")
 
     df_pivot = (
@@ -52,8 +36,10 @@ def train_and_predict_with_holiday(
     df_feat["週番号"] = df_feat.index.isocalendar().week
 
     daily_avg = df_raw.groupby("伝票日付")["正味重量"].median()
+
     # daily_count = df_raw.groupby("伝票日付")["受入番号"].nunique()
     # daily_avg = daily_sum / daily_count
+
     df_feat["1台あたり正味重量_前日中央値"] = daily_avg.shift(1).expanding().median()
 
     holiday_dates = pd.to_datetime(holidays)
@@ -226,48 +212,109 @@ def train_and_predict_with_holiday(
     return df_result
 
 
-holidays = [
-    "2025-01-01",
-    "2025-01-13",
-    "2025-02-11",
-    "2025-02-23",
-    "2025-03-20",
-    "2025-04-29",
-    "2025-05-03",
-    "2025-05-04",
-    "2025-05-05",
-    "2025-05-06",
-    "2025-07-21",
-    "2025-08-11",
-    "2025-09-15",
-    "2025-09-23",
-    "2025-10-13",
-    "2025-11-03",
-    "2025-11-23",
-    "2025-12-23",
-]
+holidays = get_japanese_holidays(start="2020-01-01", end="2025-12-31")
+
+# holidays = [
+#     "2025-01-01",
+#     "2025-01-13",
+#     "2025-02-11",
+#     "2025-02-23",
+#     "2025-03-20",
+#     "2025-04-29",
+#     "2025-05-03",
+#     "2025-05-04",
+#     "2025-05-05",
+#     "2025-05-06",
+#     "2025-07-21",
+#     "2025-08-11",
+#     "2025-09-15",
+#     "2025-09-23",
+#     "2025-10-13",
+#     "2025-11-03",
+#     "2025-11-23",
+#     "2025-12-23",
+# ]
+
+
+import pandas as pd
+from utils.config_loader import get_path_from_yaml
+
+
+def log_info(title: str, df: pd.DataFrame, col: str):
+    print(f"📊 {title}")
+    print(f"・shape: {df.shape}")
+    print(f"・{col} dtype: {df[col].dtype}")
+    print(f"・NaN件数: {df[col].isna().sum()}")
+    if pd.api.types.is_datetime64_any_dtype(df[col]):
+        print(f"・範囲: {df[col].min()} ～ {df[col].max()}")
+    print("-" * 40)
 
 
 def make_df_mae():
+    print("🔄 処理開始: make_df_mae()")
     base_dir = get_path_from_yaml("input", section="directories")
-    df_raw = pd.read_csv(f"{base_dir}/20240501-20250422.csv", encoding="utf-8")
-    df_raw = df_raw[["伝票日付", "正味重量", "品名"]]
-    df2 = pd.read_csv(f"{base_dir}/2020顧客.csv")
-    df3 = pd.read_csv(f"{base_dir}/2021顧客.csv")
-    df4 = pd.read_csv(f"{base_dir}/2023_all.csv")
 
-    df2 = df2[["伝票日付", "商品", "正味重量_明細"]]
-    df3 = df3[["伝票日付", "商品", "正味重量_明細"]]
-    df4 = df4[["伝票日付", "商品", "正味重量_明細"]]
+    # --- 最新データ（df_new） ---
+    df_new = pd.read_csv(f"{base_dir}/20240501-20250422.csv", encoding="utf-8")
+    df_new = df_new[["伝票日付", "正味重量", "品名"]]
 
-    df_all = pd.concat([df2, df3, df4])
-    df_all["伝票日付"] = pd.to_datetime(df_all["伝票日付"])
+    # 📌 括弧削除 & 日付型へ変換
+    df_new["伝票日付"] = (
+        df_new["伝票日付"]
+        .astype(str)
+        .str.replace(r"\(.*\)", "", regex=True)
+        .str.strip()
+    )
+    df_new["伝票日付"] = pd.to_datetime(df_new["伝票日付"], errors="coerce")
+    # log_info("📥 最新データ df_new", df_new, "伝票日付")
 
+    # --- 過去データ（df_all） ---
+    df_2020 = pd.read_csv(f"{base_dir}/2020顧客.csv")[
+        ["伝票日付", "商品", "正味重量_明細"]
+    ]
+    df_2021 = pd.read_csv(f"{base_dir}/2021顧客.csv")[
+        ["伝票日付", "商品", "正味重量_明細"]
+    ]
+    df_2023 = pd.read_csv(f"{base_dir}/2023_all.csv")[
+        ["伝票日付", "商品", "正味重量_明細"]
+    ]
+
+    df_all = pd.concat([df_2020, df_2021, df_2023], ignore_index=True)
+
+    # 📌 括弧削除 & 日付変換
+    df_all["伝票日付"] = (
+        df_all["伝票日付"]
+        .astype(str)
+        .str.replace(r"\(.*\)", "", regex=True)
+        .str.strip()
+    )
+    df_all["伝票日付"] = pd.to_datetime(df_all["伝票日付"], errors="coerce")
+
+    # 📌 カラム名統一
     df_all.rename(columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True)
-    print(f"前処理 = {df_all['伝票日付'].min()} / {df_all['伝票日付'].max()}")
+    # log_info("📘 過去データ df_all", df_all, "伝票日付")
 
-    df_raw = pd.concat([df_raw, df_all])
+    # --- 結合 ---
+    df_raw = pd.concat([df_new, df_all], ignore_index=True)
+    # log_info("🔗 結合データ df_raw", df_raw, "伝票日付")
+
+    # --- 正味重量数値化 & 欠損除去 ---
+    df_raw["正味重量"] = pd.to_numeric(df_raw["正味重量"], errors="coerce")
+    df_raw = df_raw.dropna(subset=["正味重量"])
+    df_raw = df_raw.sort_values("伝票日付").reset_index(drop=True)
+    print(f"✅ 最終レコード数: {len(df_raw)}")
+    print(
+        f"🧾 最終伝票日付範囲: {df_raw['伝票日付'].min()} ～ {df_raw['伝票日付'].max()}"
+    )
+    print("=" * 60)
+
+    # df_raw = data_seikei(df_raw)
+
     return df_raw
+
+
+# def data_seikei(df_raw: pd.DataFrame):
+#     df_raw["正味重量"] >
 
 
 if __name__ == "__main__":
@@ -275,3 +322,4 @@ if __name__ == "__main__":
     df_pred = train_and_predict_with_holiday(
         df_raw, "2025-06-01", "2025-06-30", holidays
     )
+    print(df_pred)
