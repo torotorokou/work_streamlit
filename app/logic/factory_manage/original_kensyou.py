@@ -11,6 +11,8 @@ from sklearn.base import clone
 from utils.config_loader import get_path_from_yaml
 from sklearn.linear_model import ElasticNet
 from utils.get_holydays import get_japanese_holidays
+from logic.factory_manage.sql import save_ukeire_data
+
 
 # 祝日フラグを含むモデルの学習・検証・予測を一括実行する関数
 
@@ -314,11 +316,12 @@ def make_df_mae():
 
 
 # def data_seikei(df_raw: pd.DataFrame):
-#     df_raw["正味重量"] >
+#     df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"], errors="coerce")
 
 
 if __name__ == "__main__":
     df_raw = make_df_mae()
+    save_ukeire_data(df_raw)
     df_pred = train_and_predict_with_holiday(
         df_raw, "2025-06-01", "2025-06-30", holidays
     )

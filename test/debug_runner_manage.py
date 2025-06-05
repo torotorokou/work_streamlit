@@ -21,15 +21,16 @@ from logic.manage.block_unit_price import process as process_block_unit_price
 import streamlit as st
 
 # Streamlitのセッション状態を初期化
-if 'process_mini_step' not in st.session_state:
+if "process_mini_step" not in st.session_state:
     st.session_state.process_mini_step = 0
-if 'block_unit_price_confirmed' not in st.session_state:
+if "block_unit_price_confirmed" not in st.session_state:
     st.session_state.block_unit_price_confirmed = False
-if 'block_unit_price_transport_map' not in st.session_state:
+if "block_unit_price_transport_map" not in st.session_state:
     st.session_state.block_unit_price_transport_map = {}
 
+
 # 処理の統合
-def run_debug_process() -> pd.DataFrame:
+def run_debug_process(template_key) -> pd.DataFrame:
     logger = app_logger()
 
     # 表示ラベルマップ（処理対象名として使う）
@@ -50,10 +51,6 @@ def run_debug_process() -> pd.DataFrame:
     df_yard = dfs["yard"]
     df_receive = dfs["receive"]
 
-
-    # --- テンプレート設定の取得 ---
-    template_key = "block_unit_price"
-
     template_config = get_template_config()[template_key]
     template_name = template_config["key"]
     csv_keys = template_config["required_files"]
@@ -67,32 +64,49 @@ def run_debug_process() -> pd.DataFrame:
     df_yard = df_dict.get("yard")
 
     dfs_after = {
-        "receive":df_receive,
+        "receive": df_receive,
         "shipping": df_shipping,
-        "yard":df_yard,
+        "yard": df_yard,
     }
     return dfs_after
 
 
-logger = app_logger()
-dfs_after = run_debug_process()
+def debug():
+    # --- テンプレート設定の取得 ---
+    template_key = "balance_sheet"
+    logger = app_logger()
+    dfs_after = run_debug_process(template_key)
+
+    logger.info("デバッグ作業開始")
+
+    # 各ステップを手動で進める
+
+    process = {
+        "factory_report": process_factory,
+        "balance_sheet": process_balance_sheet,
+        "manage_sheet": process_manage_sheet,
+        "block_unit_price": process_block_unit_price,
+    }
+
+    func = process.get(template_key)
+    if func:
+        result = func(dfs_after)
+    else:
+        raise ValueError(f"無効なテンプレートキー: {template_key}")
+
+    if result is None and st.session_state.process_mini_step == 1:
+        # Step 1の場合、運搬業者の選択を自動化
+        st.session_state.block_unit_price_confirmed = True
+        result = process.get(template_key)
+
+    if result is None and st.session_state.process_mini_step == 2:
+        # Step 1の場合、運搬業者の選択を自動化
+        st.session_state.block_unit_price_confirmed = True
+        result = process.get(template_key)
+
+    print(f"Current mini_step: {st.session_state.process_mini_step}")
+    print(f"Result: {result is not None}")
+    return
 
 
-logger.info("デバッグ作業開始")
-
-# 各ステップを手動で進める
-result = process_block_unit_price(dfs_after)
-
-if result is None and st.session_state.process_mini_step == 1:
-    # Step 1の場合、運搬業者の選択を自動化
-    st.session_state.block_unit_price_confirmed = True
-    result = process_block_unit_price(dfs_after)
-
-if result is None and st.session_state.process_mini_step == 2:
-    # Step 1の場合、運搬業者の選択を自動化
-    st.session_state.block_unit_price_confirmed = True
-    result = process_block_unit_price(dfs_after)
-
-
-print(f"Current mini_step: {st.session_state.process_mini_step}")
-print(f"Result: {result is not None}")
+debug()
