@@ -31,6 +31,10 @@ from utils.config_loader import (
 )
 
 
+# デバッグ用
+from utils.debug_tools import save_debug_parquets
+
+
 def manage_work_controller():
     logger = app_logger()
 
@@ -107,6 +111,7 @@ def manage_work_controller():
                 uploaded_files, date_columns, selected_template
             )
             st.session_state.dfs = dfs
+            save_debug_parquets(dfs)
             st.session_state.extracted_date = extracted_date[0].strftime("%Y%m%d")
             st.session_state.process_step = 1
             st.rerun()

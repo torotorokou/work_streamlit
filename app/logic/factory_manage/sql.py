@@ -8,6 +8,27 @@ from sqlite3 import OperationalError
 from typing import List, Union
 
 
+def save_ukeire_data(df: pd.DataFrame) -> None:
+    """
+    受け入れデータ（df）を SQLite に保存する関数。
+    SQLite の保存パスは YAML から取得。
+    テーブル名は "ukeire" に固定。
+
+    Parameters:
+        df (pd.DataFrame): 保存対象のデータフレーム
+    """
+    try:
+        db_path = get_path_from_yaml("weight_data", section="sql_database")
+        save_df_to_sqlite_unique(
+            df=df,
+            db_path=db_path,
+            table_name="ukeire",
+        )
+        print("✅ データの保存が完了しました")
+    except Exception as e:
+        print(f"❌ SQLite保存中にエラーが発生しました: {e}")
+
+
 def load_recent_dates_from_sql(db_path: str, days: int = 90):
     """
     指定したSQLiteデータベースから、直近days日間の伝票日付を取得する。
