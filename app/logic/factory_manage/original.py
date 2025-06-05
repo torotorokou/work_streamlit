@@ -37,7 +37,7 @@ def maesyori():
     df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"], errors="coerce")
     df_raw["正味重量"] = pd.to_numeric(df_raw["正味重量"], errors="coerce")
 
-    df_raw = df_raw.dropna(subset=["正味重量", "伝票日付"])  # 🔒 日付もNaT除去
+    # df_raw = df_raw.dropna(subset=["正味重量", "伝票日付"])  # 🔒 日付もNaT除去
 
     return df_raw
 

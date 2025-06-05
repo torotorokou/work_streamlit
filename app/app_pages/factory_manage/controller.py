@@ -1,17 +1,19 @@
 import streamlit as st
 from utils.config_loader import load_factory_menu_options
+from utils.config_loader import load_yaml
+from app_pages.factory_manage.view.menu import render_sidebar
+from app_pages.factory_manage.view.css import inject_sidebar_css
+
+# レンダーに必要な関数
+from app_pages.factory_manage.pages.inbound_outbound_records.render import (
+    render_inbound_outbound_records,
+)
 from app_pages.factory_manage.pages.balance_management_table.controller import (
     factory_manage_controller,
 )
 from app_pages.factory_manage.pages.inbound_volume_forecast.render import (
     render_import_volume,
 )
-from app_pages.factory_manage.view.menu import render_sidebar
-from app_pages.factory_manage.view.css import inject_sidebar_css
-from app_pages.factory_manage.pages.inbound_outbound_records.render import (
-    render_inbound_outbound_records,
-)
-from utils.config_loader import load_yaml
 
 
 def factory_manage_work_controller():
