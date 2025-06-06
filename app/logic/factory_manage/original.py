@@ -292,8 +292,8 @@ if __name__ == "__main__":
 
     #
     df_raw = load_data_from_sqlite()
-    df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"])
-    df_raw = df_raw[df_raw["伝票日付"] >= "2024-04-01"]
+    # df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"])
+    # df_raw = df_raw[df_raw["伝票日付"] >= "2024-04-01"]
 
     # 祝日データの取得
     start_date = df_raw["伝票日付"].min().date()
