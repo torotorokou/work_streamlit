@@ -1,82 +1,64 @@
 import pandas as pd
 import numpy as np
+import joblib
+
+# === モデル ===
+from sklearn.linear_model import Ridge, ElasticNet, LogisticRegression
 from sklearn.ensemble import (
     RandomForestRegressor,
     GradientBoostingRegressor,
     GradientBoostingClassifier,
 )
+
+# === 学習系 ===
 from sklearn.model_selection import train_test_split, KFold
-from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.base import clone
-from sklearn.linear_model import ElasticNet
+
+# === 評価指標 ===
+from sklearn.metrics import (
+    r2_score,
+    mean_absolute_error,
+    accuracy_score,
+    roc_auc_score,
+)
+
+# === ユーティリティ ===
 from utils.config_loader import get_path_from_yaml
 from utils.get_holydays import get_japanese_holidays
+from logic.factory_manage.sql import load_data_from_sqlite
 
 # 祝日フラグを含むモデルの学習・検証・予測を一括実行する関数
 
 
-# def maesyori():
-#     base_dir = get_path_from_yaml("input", section="directories")
-#     df_raw = pd.read_csv(f"{base_dir}/20240501-20250422.csv", encoding="utf-8")
-#     df_raw = df_raw[["伝票日付", "正味重量", "品名"]]
+def maesyori():
+    base_dir = get_path_from_yaml("input", section="directories")
+    df_raw = pd.read_csv(f"{base_dir}/20240501-20250422.csv", encoding="utf-8")
+    df_raw = df_raw[["伝票日付", "正味重量", "品名"]]
 
-#     df2 = pd.read_csv(f"{base_dir}/2020顧客.csv")[["伝票日付", "商品", "正味重量_明細"]]
-#     df3 = pd.read_csv(f"{base_dir}/2021顧客.csv")[["伝票日付", "商品", "正味重量_明細"]]
-#     df4 = pd.read_csv(f"{base_dir}/2023_all.csv")[["伝票日付", "商品", "正味重量_明細"]]
+    df2 = pd.read_csv(f"{base_dir}/2020顧客.csv")[["伝票日付", "商品", "正味重量_明細"]]
+    df3 = pd.read_csv(f"{base_dir}/2021顧客.csv")[["伝票日付", "商品", "正味重量_明細"]]
+    df4 = pd.read_csv(f"{base_dir}/2023_all.csv")[["伝票日付", "商品", "正味重量_明細"]]
 
-#     df_all = pd.concat([df2, df3, df4])
-#     df_all.rename(columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True)
-#     df_all["伝票日付"] = pd.to_datetime(df_all["伝票日付"], errors="coerce")
+    df_all = pd.concat([df2, df3, df4])
+    df_all.rename(columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True)
+    df_all["伝票日付"] = pd.to_datetime(df_all["伝票日付"], errors="coerce")
 
-#     df_raw = pd.concat([df_raw, df_all])
+    df_raw = pd.concat([df_raw, df_all])
 
-#     # 🔧 修正：str.replaceの前にstr型へ明示的に変換
-#     df_raw["伝票日付"] = (
-#         df_raw["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True)
-#     )
-#     df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"], errors="coerce")
-#     df_raw["正味重量"] = pd.to_numeric(df_raw["正味重量"], errors="coerce")
-
-#     # df_raw = df_raw.dropna(subset=["正味重量", "伝票日付"])  # 🔒 日付もNaT除去
-
-# return df_raw
-
-import pandas as pd
-import numpy as np
-from sklearn.linear_model import Ridge, LogisticRegression, ElasticNet
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.model_selection import train_test_split, KFold
-from sklearn.metrics import mean_absolute_error, r2_score
-from sklearn.base import clone
-from sklearn.metrics import accuracy_score, roc_auc_score
-import joblib
-
-# 祝日フラグを含むモデルの学習・検証・予測を一括実行する関数
-# 使用前に pandas, numpy, scikit-learn をインポートしておいてください
-
-
-def train_and_predict_with_holiday(
-    df_raw: pd.DataFrame, start_date: str, end_date: str, holidays: list[str]
-) -> pd.DataFrame:
-    import pandas as pd
-    import numpy as np
-    from sklearn.linear_model import ElasticNet
-    from sklearn.ensemble import (
-        RandomForestRegressor,
-        GradientBoostingRegressor,
-        GradientBoostingClassifier,
+    # 🔧 修正：str.replaceの前にstr型へ明示的に変換
+    df_raw["伝票日付"] = (
+        df_raw["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True)
     )
-    from sklearn.model_selection import train_test_split, KFold
-    from sklearn.base import clone
-    from sklearn.metrics import r2_score, mean_absolute_error
-
-    # --- 前処理 ---
-    df_raw = df_raw.copy()
-    df_raw["伝票日付"] = df_raw["伝票日付"].str.replace(r"\(.*\)", "", regex=True)
     df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"], errors="coerce")
     df_raw["正味重量"] = pd.to_numeric(df_raw["正味重量"], errors="coerce")
-    df_raw = df_raw.dropna(subset=["正味重量"])
 
+    # df_raw = df_raw.dropna(subset=["正味重量", "伝票日付"])  # 🔒 日付もNaT除去
+
+    return df_raw
+
+
+def train_model_with_holiday(df_raw: pd.DataFrame, holidays: list[str]) -> dict:
+    # --- 特徴量生成 ---
     df_pivot = (
         df_raw.groupby(["伝票日付", "品名"])["正味重量"].sum().unstack(fill_value=0)
     )
@@ -100,6 +82,7 @@ def train_and_predict_with_holiday(
     df_feat = df_feat.dropna()
     df_pivot = df_pivot.loc[df_feat.index]
 
+    # --- 学習用設定 ---
     ab_features = [
         "混合廃棄物A_前日",
         "混合廃棄物B_前日",
@@ -112,6 +95,7 @@ def train_and_predict_with_holiday(
         "祝日フラグ",
     ]
     target_items = ["混合廃棄物A", "混合廃棄物B", "混合廃棄物(ｿﾌｧｰ･家具類)"]
+
     base_models = [
         ("elastic", ElasticNet(alpha=0.1, l1_ratio=0.5)),
         ("rf", RandomForestRegressor(n_estimators=100, random_state=42)),
@@ -120,13 +104,13 @@ def train_and_predict_with_holiday(
     gbdt_model = GradientBoostingRegressor(
         n_estimators=150, learning_rate=0.05, max_depth=4, random_state=42
     )
+    clf_model = GradientBoostingClassifier(
+        n_estimators=100, learning_rate=0.05, max_depth=3, random_state=42
+    )
     kf = KFold(n_splits=5)
 
-    # --- ステージ1学習 ---
     X_features_all = {}
     stacked_preds = {}
-    r2_stage1_train_list = []
-    r2_stage1_test_list = []
 
     for item in target_items:
         X = (
@@ -139,18 +123,15 @@ def train_and_predict_with_holiday(
             X, y, test_size=0.2, shuffle=False
         )
         X_features_all[item] = X
-
         train_meta = np.zeros((X_train.shape[0], len(base_models)))
+
         for i, (_, model) in enumerate(base_models):
-            for j, (train_idx, val_idx) in enumerate(kf.split(X_train)):
+            for train_idx, val_idx in kf.split(X_train):
                 model_ = clone(model)
                 model_.fit(X_train.iloc[train_idx], y_train.iloc[train_idx])
                 train_meta[val_idx, i] = model_.predict(X_train.iloc[val_idx])
 
         meta_model_stage1.fit(train_meta, y_train)
-        r2_stage1_train_list.append(
-            r2_score(y_train, meta_model_stage1.predict(train_meta))
-        )
 
         test_meta = np.column_stack(
             [
@@ -159,7 +140,16 @@ def train_and_predict_with_holiday(
             ]
         )
         stacked_preds[item] = meta_model_stage1.predict(test_meta)
-        r2_stage1_test_list.append(r2_score(y_test, stacked_preds[item]))
+
+        # --- 汎化性能の表示 ---
+        y_train_pred = meta_model_stage1.predict(train_meta)
+        y_test_pred = stacked_preds[item]
+
+        print(f"\n📘 {item}")
+        print(f"　　R² (train) = {r2_score(y_train, y_train_pred):.3f}")
+        print(f"　　R² (test)  = {r2_score(y_test, y_test_pred):.3f}")
+        print(f"　　MAE (train) = {mean_absolute_error(y_train, y_train_pred):,.0f} kg")
+        print(f"　　MAE (test)  = {mean_absolute_error(y_test, y_test_pred):,.0f} kg")
 
     index_final = X_test.index
     df_stage1 = pd.DataFrame(
@@ -174,64 +164,93 @@ def train_and_predict_with_holiday(
     ]:
         df_stage1[col] = df_feat.loc[index_final, col]
 
+    # --- 合計モデル学習と評価 ---
     y_total_final = df_pivot.loc[df_stage1.index, "合計"]
-    train_stage1 = df_stage1.copy()
-    train_stage1["合計"] = y_total_final
     gbdt_model.fit(df_stage1, y_total_final)
+    y_pred_total = gbdt_model.predict(df_stage1)
 
-    r2_stage2_train = r2_score(y_total_final, gbdt_model.predict(df_stage1))
-    mae = mean_absolute_error(y_total_final, gbdt_model.predict(df_stage1))
+    print("\n📘 合計予測モデル（GBDT）")
+    print(f"　　R² = {r2_score(y_total_final, y_pred_total):.3f}")
+    print(f"　　MAE = {mean_absolute_error(y_total_final, y_pred_total):,.0f} kg")
 
-    # --- 評価出力 ---
-    print(f"\n🧪 Metaモデル R2（学習）: {np.mean(r2_stage1_train_list):.3f}")
-    print(f"🧪 Metaモデル R2（テスト）: {np.mean(r2_stage1_test_list):.3f}")
-    print(f"📈 GBDT R2（テスト）: {r2_stage2_train:.3f}")
-    print(f"📉 MAE: {mae:,.0f} kg")
+    # --- 分類モデル学習 ---
+    y_total_binary = (y_total_final < 90000).astype(int)
+    clf_model.fit(df_stage1.drop(columns=["祝日フラグ"]), y_total_binary)
 
-    # --- 将来予測 ---
-    last_date = df_feat.index[-1]
-    predict_dates = pd.date_range(start=start_date, end=end_date)
-    residuals = y_total_final - gbdt_model.predict(df_stage1)
-    bias = residuals.mean()
-    std = residuals.std()
+    residuals = y_total_final - y_pred_total
 
+    return {
+        "meta_model": meta_model_stage1,
+        "base_models": base_models,
+        "gbdt_model": gbdt_model,
+        "clf_model": clf_model,
+        "X_features_all": X_features_all,
+        "df_feat": df_feat,
+        "df_pivot": df_pivot,
+        "ab_features": ab_features,
+        "target_items": target_items,
+        "holiday_dates": holiday_dates,
+        "bias": residuals.mean(),
+        "std": residuals.std(),
+    }
+
+
+def predict_with_model(
+    model_dict: dict, start_date: str, end_date: str
+) -> pd.DataFrame:
     results = []
+    predict_dates = pd.date_range(start=start_date, end=end_date)
+    last_date = model_dict["df_feat"].index[-1]
+
     for predict_date in predict_dates:
         new_row = {
-            "混合廃棄物A_前日": df_pivot.loc[last_date, "混合廃棄物A"],
-            "混合廃棄物B_前日": df_pivot.loc[last_date, "混合廃棄物B"],
-            "合計_前日": df_pivot.loc[last_date, "合計"],
-            "合計_3日平均": df_pivot["合計"].shift(1).rolling(3).mean().loc[last_date],
-            "合計_3日合計": df_pivot["合計"].shift(1).rolling(3).sum().loc[last_date],
+            "混合廃棄物A_前日": model_dict["df_pivot"].loc[last_date, "混合廃棄物A"],
+            "混合廃棄物B_前日": model_dict["df_pivot"].loc[last_date, "混合廃棄物B"],
+            "合計_前日": model_dict["df_pivot"].loc[last_date, "合計"],
+            "合計_3日平均": model_dict["df_pivot"]["合計"]
+            .shift(1)
+            .rolling(3)
+            .mean()
+            .loc[last_date],
+            "合計_3日合計": model_dict["df_pivot"]["合計"]
+            .shift(1)
+            .rolling(3)
+            .sum()
+            .loc[last_date],
             "曜日": predict_date.dayofweek,
             "週番号": predict_date.isocalendar().week,
-            "1台あたり正味重量_前日中央値": df_feat[
+            "1台あたり正味重量_前日中央値": model_dict["df_feat"][
                 "1台あたり正味重量_前日中央値"
             ].iloc[-1],
-            "祝日フラグ": int(predict_date in holiday_dates),
+            "祝日フラグ": int(predict_date in model_dict["holiday_dates"]),
         }
         df_input = pd.DataFrame(new_row, index=[predict_date])
-        for item in target_items:
+        for item in model_dict["target_items"]:
             x_item = (
-                df_input[ab_features]
+                df_input[model_dict["ab_features"]]
                 if item == "混合廃棄物A"
-                else df_input[[c for c in ab_features if "1台あたり" not in c]]
+                else df_input[
+                    [c for c in model_dict["ab_features"] if "1台あたり" not in c]
+                ]
             )
             meta_input = np.column_stack(
                 [
                     clone(model)
-                    .fit(X_features_all[item], df_pivot.loc[df_feat.index, item])
+                    .fit(
+                        model_dict["X_features_all"][item],
+                        model_dict["df_pivot"].loc[model_dict["df_feat"].index, item],
+                    )
                     .predict(x_item)
-                    for _, model in base_models
+                    for _, model in model_dict["base_models"]
                 ]
             )
-            df_input[f"{item}_予測"] = meta_model_stage1.predict(meta_input)[0]
+            df_input[f"{item}_予測"] = model_dict["meta_model"].predict(meta_input)[0]
 
         stage2_input = df_input[
             [
-                f"{target_items[0]}_予測",
-                f"{target_items[1]}_予測",
-                f"{target_items[2]}_予測",
+                f"{model_dict['target_items'][0]}_予測",
+                f"{model_dict['target_items'][1]}_予測",
+                f"{model_dict['target_items'][2]}_予測",
                 "曜日",
                 "週番号",
                 "合計_前日",
@@ -239,17 +258,17 @@ def train_and_predict_with_holiday(
                 "祝日フラグ",
             ]
         ]
-        y_pred = gbdt_model.predict(stage2_input)[0]
-        y_adjusted = y_pred + bias
-        lower = y_adjusted - 1.96 * std
-        upper = y_adjusted + 1.96 * std
+        y_pred = model_dict["gbdt_model"].predict(stage2_input)[0]
+        y_adjusted = y_pred + model_dict["bias"]
+        lower = y_adjusted - 1.96 * model_dict["std"]
+        upper = y_adjusted + 1.96 * model_dict["std"]
 
         label = "通常"
         prob = None
         if 85000 <= y_adjusted <= 95000:
             X_clf = stage2_input.drop(columns=["祝日フラグ"])
-            prob = clf_model.predict_proba(X_clf)[0][1]
-            classification = clf_model.predict(X_clf)[0]
+            prob = model_dict["clf_model"].predict_proba(X_clf)[0][1]
+            classification = model_dict["clf_model"].predict(X_clf)[0]
             label = "警告" if classification == 1 else "注意"
 
         results.append(
@@ -267,44 +286,24 @@ def train_and_predict_with_holiday(
     return pd.DataFrame(results).set_index("日付")
 
 
-holidays = [
-    "2025-01-01",
-    "2025-01-13",
-    "2025-02-11",
-    "2025-02-23",
-    "2025-03-20",
-    "2025-04-29",
-    "2025-05-03",
-    "2025-05-04",
-    "2025-05-05",
-    "2025-05-06",
-    "2025-07-21",
-    "2025-08-11",
-    "2025-09-15",
-    "2025-09-23",
-    "2025-10-13",
-    "2025-11-03",
-    "2025-11-23",
-    "2025-12-23",
-]
+if __name__ == "__main__":
+    # データの読み込みと前処理
+    df_raw = load_data_from_sqlite()
 
-base_dir = get_path_from_yaml("input", section="directories")
-df_raw = pd.read_csv(f"{base_dir}/20240501-20250422.csv", encoding="utf-8")
-df_raw = df_raw[["伝票日付", "正味重量", "品名"]]
-df2 = pd.read_csv(f"{base_dir}/2020顧客.csv")
-df3 = pd.read_csv(f"{base_dir}/2021顧客.csv")
-df4 = pd.read_csv(f"{base_dir}/2023_all.csv")
+    #
+    df_raw = load_data_from_sqlite()
+    df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"])
+    df_raw = df_raw[df_raw["伝票日付"] >= "2024-04-01"]
 
-df2 = df2[["伝票日付", "商品", "正味重量_明細"]]
-df3 = df3[["伝票日付", "商品", "正味重量_明細"]]
-df4 = df4[["伝票日付", "商品", "正味重量_明細"]]
+    # 祝日データの取得
+    start_date = df_raw["伝票日付"].min().date()
+    end_date = df_raw["伝票日付"].max().date()
+    holidays = get_japanese_holidays(start=start_date, end=end_date, as_str=True)
 
+    # モデルの学習
+    make_model = train_model_with_holiday(df_raw, holidays)
 
-df_all = pd.concat([df2, df3, df4])
-df_all["伝票日付"] = pd.to_datetime(df_all["伝票日付"])
+    # 予測の実行
+    df_pred = predict_with_model(make_model, "2025-06-01", "2025-06-07")
 
-df_all.rename(columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True)
-
-df_raw = pd.concat([df_raw, df_all])
-
-df_pred = train_and_predict_with_holiday(df_raw, "2025-06-01", "2025-06-30", holidays)
+    print(df_pred)
