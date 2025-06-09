@@ -1,24 +1,15 @@
 import streamlit as st
 import pandas as pd
-from utils.config_loader import get_path_from_yaml
-from utils.get_holydays import get_japanese_holidays
-from logic.factory_manage.predict_model_ver2 import (
-    train_and_predict_with_holiday,
-)
-from components.custom_button import centered_button
-from logic.manage.utils.upload_handler import handle_uploaded_files
 from utils.config_loader import load_factory_required_files
 from utils.check_uploaded_csv import (
     render_csv_upload_section,
     check_single_file_uploaded,
 )
-from logic.factory_manage.make_df import (
-    make_sql_db,
-    make_csv,
-    read_csv_hannnyuu,
-    read_csv_hannnyuu_old,
-)
-from logic.factory_manage.sql import load_data_from_sqlite
+from components.custom_button import centered_button
+from logic.manage.utils.upload_handler import handle_uploaded_files
+from logic.factory_manage.make_df import make_sql_db, make_csv
+
+# from logic.factory_manage.predict_model_ver2 import predict_controller
 
 
 def csv_controller():
@@ -63,38 +54,3 @@ def csv_controller():
                 del st.session_state[key_to_clear]
 
             st.rerun()
-
-
-def predict_hannyu_ryou_controller(start_date, end_date):
-    """
-    搬入量予測のための処理コントローラー。
-
-    - 過去の複数年分のデータを読み込み、統合・整形
-    - 指定期間に対する祝日情報の取得
-    - 学習・予測ロジックの呼び出し（train_and_predict_with_holiday）
-
-    Parameters:
-        start_date (date): 予測対象の開始日
-        end_date (date): 予測対象の終了日
-
-    Returns:
-        pd.DataFrame: 予測結果のデータフレーム
-    """
-    # --- データ取得 ---
-    # csvから
-    data = {
-        "csv": read_csv_hannnyuu(),
-        "csv_old": read_csv_hannnyuu_old(),
-        "sql": load_data_from_sqlite(),
-    }
-    df_raw = data["csv_old"]
-
-    # --- 祝日データ取得 ---
-    holidays = get_japanese_holidays(start=start_date, end=end_date, as_str=True)
-
-    # --- 予測実行 ---
-    df_result = train_and_predict_with_holiday(
-        df_raw, str(start_date), str(end_date), holidays
-    )
-
-    return df_result

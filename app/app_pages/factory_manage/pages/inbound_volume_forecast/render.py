@@ -1,14 +1,16 @@
-import streamlit as st
-from datetime import date, timedelta
 import pandas as pd
+from datetime import date, timedelta
+
 import altair as alt
+import streamlit as st
+
 from app_pages.factory_manage.pages.inbound_volume_forecast.controller import (
     csv_controller,
-    predict_hannyu_ryou_controller,
 )
-from logic.factory_manage.style import style_label
 from logic.factory_manage.calender import render_calendar_section
 from logic.factory_manage.download_bottun import render_download_button
+from logic.factory_manage.predict_model_ver2 import predict_controller
+from logic.factory_manage.style import style_label
 
 
 def render_prediction_section(start_date, end_date):
@@ -20,9 +22,7 @@ def render_prediction_section(start_date, end_date):
         end_date (date): 予測対象の終了日
     """
     with st.spinner("予測中..."):
-        df_pred = predict_hannyu_ryou_controller(
-            start_date=str(start_date), end_date=str(end_date)
-        )
+        df_pred = predict_controller(start_date=str(start_date), end_date=str(end_date))
 
     df_pred = df_pred.copy()
     df_pred["曜日"] = pd.to_datetime(df_pred.index).weekday.map(
@@ -109,7 +109,7 @@ def render_import_volume():
     """
     st.title("📊 搬入量予測AI")
 
-    st.subheader("📅 読込済CSV日付")
+    st.subheader("📅 読込済CSVカレンダー")
     st.markdown(
         """現在読込済みのCSV一覧表です。  
     追加する場合は、以下からCSVをアップロードして下さい。"""
@@ -123,12 +123,14 @@ def render_import_volume():
     st.subheader("📅 予測期間の選択")
     st.markdown(
         """予測したい期間を選択して下さい。  
-    デフォルトは今週の月曜日から土曜日までです。"""
+    デフォルトは今日から土曜日までです。"""
     )
 
     today = date.today()
-    default_start = today - timedelta(days=today.weekday())
-    default_end = default_start + timedelta(days=5)
+    # 今日から今週の土曜日まで
+    days_until_saturday = (5 - today.weekday()) % 7
+    default_start = today
+    default_end = today + timedelta(days=days_until_saturday)
     selected_dates = st.date_input("期間を選択", value=(default_start, default_end))
 
     if not (isinstance(selected_dates, tuple) and len(selected_dates) == 2):

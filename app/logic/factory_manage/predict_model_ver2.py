@@ -10,7 +10,6 @@ from sklearn.model_selection import TimeSeriesSplit
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.base import clone
 
-from utils.config_loader import get_path_from_yaml
 from logic.factory_manage.holidays_fromdf import get_date_holidays
 from logic.factory_manage.sql import load_data_from_sqlite
 
