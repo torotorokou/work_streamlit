@@ -271,9 +271,15 @@ if __name__ == "__main__":
     df_raw = get_df()
 
     # 祝日データの取得
-    start_date = df_raw["伝票日付"].min().date()
+    # start_date = df_raw["伝票日付"].min().date()
     end_date = df_raw["伝票日付"].max().date()
-    holidays = get_japanese_holidays(start=start_date, end=end_date, as_str=True)
+    start_date = "2025-01-01"
+    # end_date = "2025-12-31"
+    # holidays = get_japanese_holidays(start=start_date, end=end_date, as_str=True)
+    for i, h in enumerate(holidays):
+        print(holidays[i])
+
+    print(start_date, end_date)
 
     df_pred = train_and_predict_with_holiday(
         df_raw, "2025-06-01", "2025-06-07", holidays
