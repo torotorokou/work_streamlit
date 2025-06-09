@@ -50,10 +50,15 @@ def load_recent_dates_from_sql(db_path: str, days: int = 90):
     return recent_dates["伝票日付"].dt.date.unique()
 
 
-def load_data_from_sqlite() -> pd.DataFrame:
+def load_data_from_sqlite(start_date: str = None, end_date: str = None) -> pd.DataFrame:
     """
     SQLiteから工場の搬入量データを読み込み、前処理を行う。
     祝日フラグ列が存在しない場合は自動的に読み飛ばす。
+    必要に応じて日付範囲でフィルタ可能。
+
+    Args:
+        start_date (str): 開始日（YYYY-MM-DD）
+        end_date (str): 終了日（YYYY-MM-DD、Noneの場合は最新まで）
 
     Returns:
         pd.DataFrame: 加工済みのデータフレーム
@@ -66,27 +71,39 @@ def load_data_from_sqlite() -> pd.DataFrame:
         col_query = "PRAGMA table_info(ukeire)"
         columns = pd.read_sql(col_query, conn)["name"].tolist()
 
+    # ベースのWHERE句
+    where_clauses = ["伝票日付 IS NOT NULL", "品名 IS NOT NULL", "正味重量 IS NOT NULL"]
+
+    # 日付範囲フィルターを追加
+    if start_date:
+        where_clauses.append(f"伝票日付 >= '{start_date}'")
+    if end_date:
+        where_clauses.append(f"伝票日付 <= '{end_date}'")
+
+    # WHERE句を組み立て
+    where_sql = " AND ".join(where_clauses)
+
     # 祝日フラグがあるかどうかでクエリを分岐
     if "祝日フラグ" in columns:
-        query = """
+        query = f"""
             SELECT 伝票日付, 品名, 正味重量, 祝日フラグ
             FROM ukeire
-            WHERE 伝票日付 IS NOT NULL AND 品名 IS NOT NULL AND 正味重量 IS NOT NULL
+            WHERE {where_sql}
         """
     else:
-        query = """
+        query = f"""
             SELECT 伝票日付, 品名, 正味重量
             FROM ukeire
-            WHERE 伝票日付 IS NOT NULL AND 品名 IS NOT NULL AND 正味重量 IS NOT NULL
+            WHERE {where_sql}
         """
 
     # データ読み込みとクレンジング
     df = pd.read_sql(query, engine)
-    df = clean_for_compare(df)
+    df = clean_df_for_weight(df)
     return df
 
 
-def clean_for_compare(df: pd.DataFrame) -> pd.DataFrame:
+def clean_df_for_weight(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["伝票日付"] = (
         df["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True).str.strip()
@@ -142,19 +159,23 @@ def get_training_date_range(
     return start, end
 
 
+import pandas as pd
+import sqlite3
+import os
+
+
 def save_df_to_sqlite_unique(df: pd.DataFrame, db_path: str, table_name: str) -> None:
     """
     SQLiteにDataFrameを保存する（全カラムで重複チェックを行い、新規行のみを追記）。
-
-    Args:
-        df (pd.DataFrame): 保存対象データ
-        db_path (str): SQLiteファイルパス
-        table_name (str): 保存対象テーブル名
+    改善版: 日付型・品名の正規化入り。
     """
 
-    def convert_datetime_to_str(df: pd.DataFrame) -> pd.DataFrame:
-        for col in df.select_dtypes(include=["datetime64[ns]"]).columns:
-            df[col] = df[col].dt.strftime("%Y-%m-%d")
+    def normalize_df(df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        # 伝票日付 → datetime.date 型に揃える
+        df["伝票日付"] = pd.to_datetime(df["伝票日付"], errors="coerce").dt.date
+        # 品名 → str化 + strip（空白除去）
+        df["品名"] = df["品名"].astype(str).str.strip()
         return df
 
     def convert_nan_to_none(df: pd.DataFrame) -> pd.DataFrame:
@@ -181,11 +202,15 @@ def save_df_to_sqlite_unique(df: pd.DataFrame, db_path: str, table_name: str) ->
         conn = sqlite3.connect(db_path)
         existing_df = load_existing_data(conn, table_name, df.columns)
 
-        df = convert_datetime_to_str(df)
-        existing_df = convert_datetime_to_str(existing_df)
+        # 正規化
+        df = normalize_df(df)
+        existing_df = normalize_df(existing_df)
+
+        # NULL対応
         df = convert_nan_to_none(df)
         existing_df = convert_nan_to_none(existing_df)
 
+        # 重複チェック
         if not existing_df.empty:
             merged = df.merge(existing_df.drop_duplicates(), how="left", indicator=True)
             new_records = merged[merged["_merge"] == "left_only"].drop(
@@ -194,6 +219,7 @@ def save_df_to_sqlite_unique(df: pd.DataFrame, db_path: str, table_name: str) ->
         else:
             new_records = df.copy()
 
+        # 保存
         if new_records.empty:
             print("⚠️ 保存対象の新規データがありません（すべて既存と重複）")
             return
