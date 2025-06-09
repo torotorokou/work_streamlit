@@ -6,10 +6,10 @@ from utils.cleaners import enforce_dtypes, strip_whitespace
 from utils.config_loader import get_expected_dtypes_by_template
 from logic.factory_manage.original import maesyori
 import sqlite3
-from logic.factory_manage.original_kensyou3 import get_df
+from logic.factory_manage.predict_model_ver2 import get_df
 
 
-def make_sql_old():
+def make_sql_old(df_raw: pd.DataFrame = None) -> pd.DataFrame:
     """
     過去の複数年分のCSVファイルと最新データを読み込み、
     日付や数値整形、不要データの除外、祝日フラグ付与を行い、
@@ -19,7 +19,7 @@ def make_sql_old():
 
     # データ読込
     # df_raw = read_csv_hannnyuu_old()
-    df_raw = maesyori()
+    # df_raw = maesyori()
 
     # --- 祝日フラグ付与 ---
     start_date = df_raw["伝票日付"].min().date()
@@ -186,54 +186,7 @@ def read_csv_hannnyuu_old():
     return df_all
 
 
-def make_sql_filtered(df):
-    print("✅ make_sql_filtered が呼ばれました")
-
-    # --- データ取得 ---
-
-    # --- 日付を date型に変換 ---
-    df["伝票日付"] = (
-        df["伝票日付"]
-        .astype(str)  # 文字列型に変換
-        .str.replace(r"\(.*\)", "", regex=True)
-        .pipe(pd.to_datetime, errors="coerce")
-        .dt.date
-    )
-
-    # --- 欠損値を削除 ---
-    df = df.dropna(subset=["伝票日付"])
-
-    # --- 祝日フラグ（bool型） ---
-    start_date = min(df["伝票日付"])
-    end_date = max(df["伝票日付"])
-    holidays = set(get_japanese_holidays(start=start_date, end=end_date, as_str=False))
-    df["祝日フラグ"] = df["伝票日付"].apply(
-        lambda x: x in holidays
-    )  # ✅ bool型（True/False）
-
-    # --- SQLite 保存 ---
-    try:
-        db_path = get_path_from_yaml("weight_data", section="sql_database")
-        conn = db_path if hasattr(db_path, "cursor") else sqlite3.connect(db_path)
-        df.to_sql(
-            name="ukeire",
-            con=conn,
-            if_exists="append",
-            index=False,
-            dtype={
-                "伝票日付": "DATE",
-                "正味重量": "REAL",
-                "品名": "TEXT",
-                "祝日フラグ": "BOOLEAN",  # ✅ boolとして扱い → SQLite上は0/1で保存される
-            },
-        )
-        print(f"✅ 保存完了: {len(df)}件 → {db_path}")
-    except Exception as e:
-        print(f"❌ SQLite保存中にエラーが発生しました: {e}")
-
-
 # --- 実行 ---
 if __name__ == "__main__":
-    # make_sql_old()
     df = get_df()
-    make_sql_filtered(df)
+    make_sql_old(df)
