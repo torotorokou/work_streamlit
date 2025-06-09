@@ -96,4 +96,5 @@ def predict_hannyu_ryou_controller(start_date, end_date):
     df_result = train_and_predict_with_holiday(
         df_raw, str(start_date), str(end_date), holidays
     )
+
     return df_result

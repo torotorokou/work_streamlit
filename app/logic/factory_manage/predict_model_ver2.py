@@ -1,31 +1,5 @@
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import Ridge, LogisticRegression, ElasticNet
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.model_selection import train_test_split, KFold
-from sklearn.metrics import mean_absolute_error, r2_score
-from sklearn.base import clone
-from sklearn.metrics import accuracy_score, roc_auc_score
-import joblib
-from utils.config_loader import get_path_from_yaml
-import pandas as pd
-import numpy as np
-from sklearn.linear_model import ElasticNet
-from sklearn.ensemble import (
-    RandomForestRegressor,
-    GradientBoostingRegressor,
-    GradientBoostingClassifier,
-)
-from sklearn.model_selection import train_test_split, KFold
-from sklearn.base import clone
-from sklearn.metrics import r2_score, mean_absolute_error
-from utils.get_holydays import get_japanese_holidays
-from utils.config_loader import get_path_from_yaml
-from logic.factory_manage.sql import load_data_from_sqlite
-
-# data_prep.py
-import pandas as pd
-import pandas as pd
 from sklearn.linear_model import ElasticNet
 from sklearn.ensemble import (
     RandomForestRegressor,
@@ -33,6 +7,12 @@ from sklearn.ensemble import (
     GradientBoostingClassifier,
 )
 from sklearn.model_selection import TimeSeriesSplit
+from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.base import clone
+
+from utils.config_loader import get_path_from_yaml
+from logic.factory_manage.holidays_fromdf import get_date_holidays
+from logic.factory_manage.sql import load_data_from_sqlite
 
 
 def prepare_features(
@@ -79,11 +59,6 @@ def prepare_features(
     df_pivot = df_pivot.loc[df_feat.index]
 
     return df_feat, df_pivot
-
-
-# model_stage1.py
-from sklearn.base import clone
-import numpy as np
 
 
 def train_stage1_models(
@@ -150,10 +125,6 @@ def train_stage1_models(
     return X_features_all, stacked_preds
 
 
-# model_stage2.py
-from sklearn.metrics import r2_score, mean_absolute_error
-
-
 def train_stage2_models(df_stage1, df_pivot, gbdt_model, clf_model):
     """
     ステージ2モデル（GBDT回帰 + 分類器）学習
@@ -184,12 +155,6 @@ def train_stage2_models(df_stage1, df_pivot, gbdt_model, clf_model):
     mae = mean_absolute_error(y_total_final, gbdt_model.predict(df_stage1))
 
     return gbdt_model, clf_model, r2, mae
-
-
-# predict.py
-import numpy as np
-import pandas as pd
-from sklearn.base import clone
 
 
 def predict_future(
@@ -317,63 +282,31 @@ def predict_future(
     return df_result
 
 
-def get_df():
-    base_dir = get_path_from_yaml("input", section="directories")
+# def get_df():
+#     base_dir = get_path_from_yaml("input", section="directories")
 
-    df_raw = pd.read_csv(f"{base_dir}/20240501-20250422.csv", encoding="utf-8")
-    df_raw = df_raw[["伝票日付", "正味重量", "品名"]]
-    df2 = pd.read_csv(f"{base_dir}/2020顧客.csv")
-    df3 = pd.read_csv(f"{base_dir}/2021顧客.csv")
-    df4 = pd.read_csv(f"{base_dir}/2023_all.csv")
+#     df_raw = pd.read_csv(f"{base_dir}/20240501-20250422.csv", encoding="utf-8")
+#     df_raw = df_raw[["伝票日付", "正味重量", "品名"]]
+#     df2 = pd.read_csv(f"{base_dir}/2020顧客.csv")
+#     df3 = pd.read_csv(f"{base_dir}/2021顧客.csv")
+#     df4 = pd.read_csv(f"{base_dir}/2023_all.csv")
 
-    df2 = df2[["伝票日付", "商品", "正味重量_明細"]]
-    df3 = df3[["伝票日付", "商品", "正味重量_明細"]]
-    df4 = df4[["伝票日付", "商品", "正味重量_明細"]]
+#     df2 = df2[["伝票日付", "商品", "正味重量_明細"]]
+#     df3 = df3[["伝票日付", "商品", "正味重量_明細"]]
+#     df4 = df4[["伝票日付", "商品", "正味重量_明細"]]
 
-    df_all = pd.concat([df2, df3, df4])
-    df_all["伝票日付"] = pd.to_datetime(df_all["伝票日付"])
+#     df_all = pd.concat([df2, df3, df4])
+#     df_all["伝票日付"] = pd.to_datetime(df_all["伝票日付"])
 
-    df_all.rename(columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True)
+#     df_all.rename(columns={"商品": "品名", "正味重量_明細": "正味重量"}, inplace=True)
 
-    df_raw = pd.concat([df_raw, df_all])
-    df_raw = df_raw.copy()
-    df_raw["伝票日付"] = df_raw["伝票日付"].str.replace(r"\(.*\)", "", regex=True)
-    df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"], errors="coerce")
-    df_raw["正味重量"] = pd.to_numeric(df_raw["正味重量"], errors="coerce")
-    df_raw = df_raw.dropna(subset=["正味重量", "伝票日付"])
-    return df_raw
-
-
-def get_date_holidays(df):
-    """
-    df内の祝日フラグ=1の日付を一意に取得し、start_date～end_dateの範囲内で返す
-
-    Args:
-        df (pd.DataFrame): データ（'伝票日付'、'祝日フラグ'カラムが含まれていること）
-
-    Returns:
-        list[str]: 祝日の日付（YYYY-MM-DD 形式）のリスト
-    """
-
-    start_date = df["伝票日付"].min().date()
-    end_date = df["伝票日付"].max().date()
-
-    # print(f"🔍 祝日抽出範囲: {start_date} ～ {end_date}")
-
-    # --- 祝日フラグが1の行のみ抽出 ---
-    mask = df["祝日フラグ"] == 1
-    holidays_series = df.loc[mask, "伝票日付"]
-
-    # --- 重複除去 & 日付範囲内で絞り込み ---
-    holidays = holidays_series.drop_duplicates()
-    holidays = holidays[
-        (holidays.dt.date >= start_date) & (holidays.dt.date <= end_date)
-    ]
-
-    # --- 日付型を文字列（YYYY-MM-DD）に変換してリスト化 ---
-    holidays_list = holidays.dt.strftime("%Y-%m-%d").tolist()
-
-    return holidays_list
+#     df_raw = pd.concat([df_raw, df_all])
+#     df_raw = df_raw.copy()
+#     df_raw["伝票日付"] = df_raw["伝票日付"].str.replace(r"\(.*\)", "", regex=True)
+#     df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"], errors="coerce")
+#     df_raw["正味重量"] = pd.to_numeric(df_raw["正味重量"], errors="coerce")
+#     df_raw = df_raw.dropna(subset=["正味重量", "伝票日付"])
+#     return df_raw
 
 
 def debug(df):
