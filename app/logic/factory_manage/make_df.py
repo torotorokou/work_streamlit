@@ -6,6 +6,7 @@ from utils.cleaners import enforce_dtypes, strip_whitespace
 from utils.config_loader import get_expected_dtypes_by_template
 from logic.factory_manage.original import maesyori
 import sqlite3
+from logic.factory_manage.original_kensyou3 import get_df
 
 
 def make_sql_old():
@@ -52,7 +53,7 @@ def make_sql_db(df: pd.DataFrame):
         df (pd.DataFrame): 元データ
     """
     print(f"🔍 元データの行数: {len(df)}")
-
+    df = df.copy()
     df["伝票日付"] = df["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True)
     df["伝票日付"] = pd.to_datetime(df["伝票日付"], errors="coerce")
     df["正味重量"] = pd.to_numeric(df["正味重量"], errors="coerce")
@@ -185,22 +186,22 @@ def read_csv_hannnyuu_old():
     return df_all
 
 
-def make_sql_filtered():
+def make_sql_filtered(df):
     print("✅ make_sql_filtered が呼ばれました")
 
     # --- データ取得 ---
-    base_dir = get_path_from_yaml("input", section="directories")
-    df = pd.read_csv(f"{base_dir}/filtered_result.csv", encoding="utf-8")[
-        ["伝票日付", "正味重量", "品名"]
-    ]
 
     # --- 日付を date型に変換 ---
     df["伝票日付"] = (
         df["伝票日付"]
+        .astype(str)  # 文字列型に変換
         .str.replace(r"\(.*\)", "", regex=True)
         .pipe(pd.to_datetime, errors="coerce")
         .dt.date
     )
+
+    # --- 欠損値を削除 ---
+    df = df.dropna(subset=["伝票日付"])
 
     # --- 祝日フラグ（bool型） ---
     start_date = min(df["伝票日付"])
@@ -234,4 +235,5 @@ def make_sql_filtered():
 # --- 実行 ---
 if __name__ == "__main__":
     # make_sql_old()
-    make_sql_filtered()
+    df = get_df()
+    make_sql_filtered(df)
