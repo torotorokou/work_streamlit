@@ -4,9 +4,8 @@ from logic.factory_manage.sql import save_df_to_sqlite_unique
 from utils.config_loader import get_path_from_yaml
 from utils.cleaners import enforce_dtypes, strip_whitespace
 from utils.config_loader import get_expected_dtypes_by_template
-from logic.factory_manage.original import maesyori
-import sqlite3
-from logic.factory_manage.predict_model_ver2 import get_df
+
+# from logic.factory_manage.predict_model_ver2 import get_df
 
 
 def make_sql_old(df_raw: pd.DataFrame = None) -> pd.DataFrame:
@@ -19,7 +18,6 @@ def make_sql_old(df_raw: pd.DataFrame = None) -> pd.DataFrame:
 
     # データ読込
     # df_raw = read_csv_hannnyuu_old()
-    # df_raw = maesyori()
 
     # --- 祝日フラグ付与 ---
     start_date = df_raw["伝票日付"].min().date()
@@ -188,5 +186,5 @@ def read_csv_hannnyuu_old():
 
 # --- 実行 ---
 if __name__ == "__main__":
-    df = get_df()
+    # df = get_df()
     make_sql_old(df)
