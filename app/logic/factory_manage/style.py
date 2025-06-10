@@ -12,7 +12,11 @@ def style_label(val):
 
 
 def calendar_body_html(
-    weeks, year: int, month: int, highlight_dates: list[datetime.date]
+    weeks,
+    year: int,
+    month: int,
+    highlight_dates: list[datetime.date],
+    today: datetime.date = None,
 ) -> str:
     """
     カレンダーの日付部分のHTMLを生成。
@@ -22,6 +26,7 @@ def calendar_body_html(
         year (int): 年
         month (int): 月
         highlight_dates (list[date]): ハイライト対象日
+        today (date, optional): 今日の日付
 
     Returns:
         str: カレンダー本体のHTML
@@ -37,6 +42,11 @@ def calendar_body_html(
                 has_data = date_obj in highlight_dates
                 bg_color = "#90ee90" if has_data else "#f5f5f5"
                 text_color = "#222" if has_data else "#999"
+                border = (
+                    "2px solid red"
+                    if today is not None and date_obj == today
+                    else "1px solid #ddd"
+                )
 
                 html += f"""
                 <td style='
@@ -45,7 +55,7 @@ def calendar_body_html(
                     background-color: {bg_color};
                     color: {text_color};
                     border-radius: 8px;
-                    border: 1px solid #ddd;
+                    border: {border};
                     width: 36px;
                     height: 36px;
                     font-weight: 500;

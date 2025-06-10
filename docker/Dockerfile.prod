@@ -3,9 +3,9 @@ FROM python:3.10-slim
 # 作業ディレクトリ
 WORKDIR /work
 
-# --- 必要パッケージのインストール（git・フォント・ロケール） ---
+# --- 必要パッケージのインストール（git・フォント・ロケール・tzdata） ---
 RUN apt-get update && \
-    apt-get install -y git fonts-noto-cjk fonts-noto locales && \
+    apt-get install -y git fonts-noto-cjk fonts-noto locales tzdata && \
     sed -i '/ja_JP.UTF-8/s/^# //g' /etc/locale.gen && \
     locale-gen && \
     rm -rf /var/lib/apt/lists/*
@@ -14,6 +14,10 @@ RUN apt-get update && \
 ENV LANG=ja_JP.UTF-8
 ENV LANGUAGE=ja_JP:ja
 ENV LC_ALL=ja_JP.UTF-8
+
+# --- タイムゾーンを日本時間（Asia/Tokyo）に固定 ---
+RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && \
+    echo "Asia/Tokyo" > /etc/timezone
 
 # --- ビルド時引数（.envから渡される） ---
 ARG GITHUB_TOKEN

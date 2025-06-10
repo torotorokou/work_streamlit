@@ -1,14 +1,14 @@
 import pandas as pd
-import os
 from utils.get_holydays import get_japanese_holidays
 from logic.factory_manage.sql import save_df_to_sqlite_unique
 from utils.config_loader import get_path_from_yaml
 from utils.cleaners import enforce_dtypes, strip_whitespace
 from utils.config_loader import get_expected_dtypes_by_template
-from logic.factory_manage.original import maesyori
+
+# from logic.factory_manage.predict_model_ver2 import get_df
 
 
-def make_sql_old():
+def make_sql_old(df_raw: pd.DataFrame = None) -> pd.DataFrame:
     """
     過去の複数年分のCSVファイルと最新データを読み込み、
     日付や数値整形、不要データの除外、祝日フラグ付与を行い、
@@ -18,7 +18,6 @@ def make_sql_old():
 
     # データ読込
     # df_raw = read_csv_hannnyuu_old()
-    df_raw = maesyori()
 
     # --- 祝日フラグ付与 ---
     start_date = df_raw["伝票日付"].min().date()
@@ -52,7 +51,7 @@ def make_sql_db(df: pd.DataFrame):
         df (pd.DataFrame): 元データ
     """
     print(f"🔍 元データの行数: {len(df)}")
-
+    df = df.copy()
     df["伝票日付"] = df["伝票日付"].astype(str).str.replace(r"\(.*\)", "", regex=True)
     df["伝票日付"] = pd.to_datetime(df["伝票日付"], errors="coerce")
     df["正味重量"] = pd.to_numeric(df["正味重量"], errors="coerce")
@@ -187,4 +186,5 @@ def read_csv_hannnyuu_old():
 
 # --- 実行 ---
 if __name__ == "__main__":
-    make_sql_old()
+    # df = get_df()
+    make_sql_old(df)
