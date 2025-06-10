@@ -3,7 +3,7 @@ FROM python:3.10-slim
 
 WORKDIR /work
 
-# 必要パッケージ（フォント・Git・ビルドツールなど）
+# 必要パッケージ（フォント・Git・ビルドツールなど） + tzdata を追加
 RUN apt-get update && apt-get install -y \
     fonts-noto-cjk \
     fonts-noto \
@@ -12,9 +12,12 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     make \
     procps \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-
+# タイムゾーンを Asia/Tokyo に設定 ★ ここを追加
+RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
+    && echo "Asia/Tokyo" > /etc/timezone
 
 # Python依存ライブラリ（本番 + 開発）
 COPY requirements.txt .
