@@ -1,21 +1,21 @@
 services:
-  app:
-    container_name: ${CONTAINER_NAME}
-    build:
-      context: ../
-      dockerfile: ${DOCKERFILE_PATH}
-      args:
-        GITHUB_TOKEN: ${GITHUB_TOKEN}
-        REPO_TAG: ${REPO_TAG}
-        REPO_URL: ${REPO_URL}
-    working_dir: /work
-    ports:
-      - "${APP_PORT}:8501"
-    environment:
-      - APP_ENV=${APP_ENV}
-      - PYTHONUNBUFFERED=1
-    env_file:
-      - ${ENV_FILE_PATH}
-    restart: unless-stopped
-    volumes:
-      - ../app/data:/work/app/data
+    app:
+        container_name: ${CONTAINER_NAME}
+        build:
+            context: ../
+            dockerfile: ${DOCKERFILE_PATH}
+            args:
+                GITHUB_TOKEN: ${GITHUB_TOKEN}
+                REPO_TAG: ${REPO_TAG}
+                REPO_URL: ${REPO_URL}
+        working_dir: /work
+        ports:
+            - '${APP_PORT}:8501'
+        environment:
+            - APP_ENV=${APP_ENV}
+            - PYTHONUNBUFFERED=1
+        env_file:
+            - ${ENV_FILE_PATH}
+        restart: unless-stopped
+        volumes:
+            - ../app/data:/work/app/data
