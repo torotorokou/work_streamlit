@@ -17,3 +17,5 @@ services:
     env_file:
       - ${ENV_FILE_PATH}
     restart: unless-stopped
+    volumes:
+      - ../app/data:/work/app/data
