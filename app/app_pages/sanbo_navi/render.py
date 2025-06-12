@@ -1,3 +1,4 @@
+# --- ライブラリ読み込み ---
 import streamlit as st
 import os
 import json
@@ -6,13 +7,21 @@ from openai import OpenAI
 from pdf2image import convert_from_path
 from PIL import Image
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import OpenAIEmbeddings
-
+from langchain_openai import OpenAIEmbeddings  # 修正: langchain_openaiからインポート
 
 # --- 初期設定 ---
 st.set_page_config(page_title="📘 教育GPT", layout="centered")
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    st.warning(
+        "OPENAI_API_KEY が環境変数に設定されていません。APIキーを設定してください。"
+    )
+    client = None
+else:
+    client = OpenAI(api_key=openai_api_key)
+
+# --- パス設定 ---
 PDF_PATH = "data/SOLVEST.pdf"
 JSON_PATH = "structured_SOLVEST_output_final.json"
 FAISS_PATH = "vectorstore/solvest_faiss_corrected"
@@ -21,11 +30,13 @@ FAISS_PATH = "vectorstore/solvest_faiss_corrected"
 # --- PDF画像の読み込み ---
 @st.cache_resource
 def load_pdf_first_page(path, dpi=100):
+    # PDFの1ページ目を画像として読み込む
     return convert_from_path(path, dpi=dpi, first_page=1, last_page=1)
 
 
 @st.cache_resource
 def load_pdf_page(path, page_number, dpi=100):
+    # 指定ページのPDFを画像として読み込む
     return convert_from_path(
         path, dpi=dpi, first_page=page_number, last_page=page_number
     )[0]
@@ -34,7 +45,11 @@ def load_pdf_page(path, page_number, dpi=100):
 # --- ベクトルストア読み込み ---
 @st.cache_resource
 def load_vectorstore():
-    embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
+    # FAISSベクトルストアのロード
+    if not openai_api_key:
+        st.warning("OPENAI_API_KEY が未設定のためベクトルストアをロードできません。")
+        return None
+    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
     return FAISS.load_local(
         FAISS_PATH, embeddings=embeddings, allow_dangerous_deserialization=True
     )
@@ -46,6 +61,7 @@ vectorstore = load_vectorstore()
 # --- JSONからカテゴリ・サブカテゴリを取得 ---
 @st.cache_data
 def load_json_data(json_path):
+    # JSONファイルを読み込んでデータとして返す
     with open(json_path, encoding="utf-8") as f:
         data = json.load(f)
     return data
@@ -56,6 +72,7 @@ json_data = load_json_data(JSON_PATH)
 
 @st.cache_data
 def extract_categories_and_titles(data):
+    # JSONからカテゴリとサブカテゴリを抽出
     categories = set()
     subcategories = {}
     for section in data:
@@ -75,6 +92,7 @@ categories, subcategory_map = extract_categories_and_titles(json_data)
 
 # --- カテゴリ別 質問テンプレート ---
 category_question_templates = {
+    # 各カテゴリに対して質問テンプレートを用意
     "処理工程": [
         "この工程の流れを教えて",
         "処理対象の廃棄物は？",
@@ -122,6 +140,7 @@ category_question_templates = {
 
 # --- カテゴリsuggestion用関数 ---
 def suggest_category(query_input: str) -> str:
+    # GPTを使ってユーザーの質問から最適なカテゴリを提案する
     prompt = f"""
 以下は、日本の産業廃棄物処理に関する教育用AIシステムで使われるカテゴリの一覧です：
  
@@ -152,11 +171,13 @@ def suggest_category(query_input: str) -> str:
 
 
 # --- UI構築 ---
+# --- タイトル・説明 ---
 st.title("📘 教育GPTアシスタント")
 st.markdown(
     "SOLVESTについて質問できます。まず最初に知りたいことを一言で入力してください。"
 )
 
+# --- PDF 1ページ目 プレビュー ---
 with st.expander("📄 PDFプレビュー（1ページ目のみ先に表示）"):
     pdf_first_page = load_pdf_first_page(PDF_PATH)
     st.image(pdf_first_page[0], caption="Page 1", use_column_width=True)
@@ -207,17 +228,23 @@ else:
 
 # --- 回答生成 ---
 def generate_answer(query: str, selected_category: str):
+    # ベクトルストア検索で関連文書取得
     docs = vectorstore.max_marginal_relevance_search(query, k=5, fetch_k=30)
+
+    # 選択カテゴリがある場合はフィルタリング
     if selected_category:
         docs = [
             doc for doc in docs if selected_category in doc.metadata.get("category", [])
         ]
+
+    # コンテキスト作成
     context = "\n".join([doc.page_content for doc in docs])
     sources = [
         (doc.metadata.get("source", "不明"), doc.metadata.get("page", "不明"))
         for doc in docs
     ]
 
+    # 回答生成用プロンプト
     prompt = f"""
 以下は、産業廃棄物の処理・設備・工程に関する構造化技術文書の抜粋です。
 この抜粋に基づき、以下の質問に対して **できる限り文書内容を優先しながら、工程順・論理順に沿って正確かつ実務的に**答えてください。
@@ -257,23 +284,29 @@ if st.button("➡️ 送信") and query.strip():
 if "last_response" in st.session_state:
     st.success("✅ 回答")
     st.markdown(st.session_state.last_response)
+
     if "sources" in st.session_state:
+        # PDFページキャッシュの初期化
         if "cache_pdf_pages" not in st.session_state:
             st.session_state.cache_pdf_pages = {}
 
+        # 出典ページ番号の抽出
         pages = set(int(p) for _, p in st.session_state.sources if str(p).isdigit())
         st.markdown("📄 **出典ページ:** " + ", ".join([f"Page {p}" for p in pages]))
 
+        # 出典ページのプレビュー表示
         with st.expander("📘 出典ページのプレビュー"):
             for p in sorted(pages):
                 if isinstance(p, int) and p >= 1:
                     if p in st.session_state.cache_pdf_pages:
+                        # キャッシュから読み込み
                         st.image(
                             st.session_state.cache_pdf_pages[p],
                             caption=f"Page {p} (cached)",
                             use_column_width=True,
                         )
                     else:
+                        # PDFから読み込み
                         with st.spinner(f"📄 Page {p} 読み込み中..."):
                             page_image = load_pdf_page(PDF_PATH, p)
                             st.session_state.cache_pdf_pages[p] = page_image

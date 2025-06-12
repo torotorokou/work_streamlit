@@ -51,7 +51,7 @@ def _render_sidebar(page_labels):
     st.sidebar.selectbox("📂 機能を選択", page_labels, key="selected_page")
 
 
-from app_pages.page_registry import PAGE_INSTANCES
+from app_pages.page_registry import TOPPAGE_INSTANCES
 
 
 def _render_selected_page():
@@ -68,7 +68,7 @@ def _render_selected_page():
 
             elif "function" in page:
                 func_name = page["function"]
-                page_instance = PAGE_INSTANCES.get(func_name)
+                page_instance = TOPPAGE_INSTANCES.get(func_name)
                 if page_instance:
                     page_instance.render()  # ← クラスの render を呼ぶ
                 else:
