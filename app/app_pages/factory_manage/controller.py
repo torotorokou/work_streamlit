@@ -15,6 +15,8 @@ from app_pages.factory_manage.pages.inbound_volume_forecast.render import (
     render_import_volume,
 )
 
+from app_pages.factory_manage.pages.sanbo_navi.render import render_sanbo_navi
+
 
 def factory_manage_work_controller():
     controller = FactoryManageWorkController()
