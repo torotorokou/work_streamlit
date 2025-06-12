@@ -15,6 +15,11 @@ pages:
       id: factory_manage
       function: factory_manage_work_controller
 
+    - label: 参謀くんNAVI
+      title: 参謀くんNAVI
+      id: sanbo_navi
+      function: sanbo_navi
+
     - label: 便利ツール
       title: 便利ツール
       id: util
