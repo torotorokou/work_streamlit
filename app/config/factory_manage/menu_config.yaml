@@ -11,10 +11,6 @@ menu_options:
       label: 搬出入収支表
       handler: render_inbound_outbound_records
 
-    - key: sanbo_navi
-      label: 参謀ナビ
-      handler: render_sanbo_navi
-
 required_files:
     inbound_volume: [receive]
     balance_management_table: [shipping]

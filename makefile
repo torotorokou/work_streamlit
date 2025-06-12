@@ -65,21 +65,23 @@ another_staging_rebuild:
 	docker-compose -p sanbou_another_staging -f docker/docker-compose.prod.yml up -d"
 
 
-
 # 本番ビルド＆起動（キャッシュあり）
 prod:
 	@echo "Starting production environment rebuild..."
 	@echo "Loading .env.prod and starting services..."
+
 
 	powershell -Command "$$envs = Get-Content .env.prod | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml build --build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN --build-arg REPO_TAG=$$env:REPO_TAG --build-arg REPO_URL=$$env:REPO_URL; \
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml down -v || true; \
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up -d"
 
+
 # 本番再ビルド（キャッシュ無効化）
 prod_rebuild:
 	@echo "Starting full production rebuild with --no-cache..."
 	@echo "Reloading .env_file/.env.prod and rebuilding Docker image..."
+
 
 	powershell -Command "$$envs = Get-Content .env_file/.env.prod | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml build --no-cache \
@@ -89,6 +91,7 @@ prod_rebuild:
 		--build-arg ENV_FILE=.env_file/.env.prod; \
 	try { docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml down -v } catch { Write-Host 'down failed (ignored)' }; \
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up -d"
+
 
 st_debug:
 	streamlit run app/app_debug/upload_test.py --server.port=8505
