@@ -60,6 +60,9 @@ app/data/*
 !app/data/template/*.csv
 # app/data/models/   # モデルデータ（必要に応じて除外）
 
+
+app/logic/sanbo_navi/local_data/
+app/logic/sanbo_navi/config/
 # ===========================
 # マスターデータは明示的に除外解除（x重要）
 # ===========================
