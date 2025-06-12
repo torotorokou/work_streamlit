@@ -7,107 +7,98 @@ from openai import OpenAI
 from pdf2image import convert_from_path
 from PIL import Image
 from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings  # 修正: langchain_openaiからインポート
+from langchain_openai import OpenAIEmbeddings
+
+# AI設定
+from logic.sanbo_navi.scr.load_ai import OpenAIConfig
+
+# 外部読込
+from logic.sanbo_navi.scr.load_config import get_resource_paths
 
 
+# --- 設定ファイルの読み込み ---
 def load_config():
-    """環境変数から設定を読み込みます。
+    FAISS_PATH = get_resource_paths().get("FAISS_PATH")
+    PDF_PATH = get_resource_paths().get("PDF_PATH")
+    JSON_PATH = get_resource_paths().get("JSON_PATH")
+    return FAISS_PATH, PDF_PATH, JSON_PATH
 
-    OPENAI_API_KEY が環境変数に設定されていない場合、OpenAIクライアントは None を返します。
 
-    戻り値:
-        tuple: OpenAIクライアント（または None）、PDFパス、JSONパス、FAISSパス、OpenAI APIキーを含むタプル。
-    """
+# --- OpenAIクライアントの読み込み ---
+def load_ai(config_class=OpenAIConfig):
+    config = config_class()
+    client = config.get_client()
+    return client if config.is_valid() else None
 
-    load_dotenv()
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    # OpenAI APIキーの取得
-    if not openai_api_key or len(openai_api_key) < 32 or not openai_api_key.isalnum():
-        st.warning(
-            "OPENAI_API_KEY が環境変数に設定されていないか、無効です。APIキーを正しく設定してください。"
-        )
-        st.warning(
-            "OPENAI_API_KEY が環境変数に設定されていません。APIキーを設定してください。"
-        )
-        client = None
-    else:
-        client = OpenAI(api_key=openai_api_key)
 
-    # パスの取得
-    PDF_PATH = "data/SOLVEST.pdf"
-    JSON_PATH = "structured_SOLVEST_output_final.json"
-    FAISS_PATH = "vectorstore/solvest_faiss_corrected"
+# --- ベクトルストアの読み込み ---
+@st.cache_resource
+def load_vectorstore(api_key: str = None, FAISS_PATH: str = None):
+    # FAISSベクトルストアのロード
+    if not api_key:
+        st.warning("OPENAI_API_KEY が未設定のためベクトルストアをロードできません。")
+        return None
+    embeddings = OpenAIEmbeddings(openai_api_key=api_key)
+    return FAISS.load_local(
+        FAISS_PATH, embeddings=embeddings, allow_dangerous_deserialization=True
+    )
 
-    return client, PDF_PATH, JSON_PATH, FAISS_PATH, openai_api_key
+
+# --- PDF画像の読み込み ---
+@st.cache_resource
+def load_pdf_first_page(path, dpi=100):
+    # PDFの1ページ目を画像として読み込む
+    return convert_from_path(path, dpi=dpi, first_page=1, last_page=1)
+
+
+@st.cache_resource
+def load_pdf_page(path, page_number, dpi=100):
+    # 指定ページのPDFを画像として読み込む
+    return convert_from_path(
+        path, dpi=dpi, first_page=page_number, last_page=page_number
+    )[0]
+
+
+# --- JSONからカテゴリ・サブカテゴリを取得 ---
+@st.cache_data
+def load_json_data(json_path):
+    # JSONファイルを読み込んでデータとして返す
+    with open(json_path, encoding="utf-8") as f:
+        data = json.load(f)
+    return data
+
+
+@st.cache_data
+def extract_categories_and_titles(data):
+    # JSONからカテゴリとサブカテゴリを抽出
+    categories = set()
+    subcategories = {}
+    for section in data:
+        cats = section.get("category", [])
+        if isinstance(cats, str):
+            cats = [cats]
+        for cat in cats:
+            categories.add(cat)
+            subcategories.setdefault(cat, set()).add(section.get("title"))
+    categories = sorted(categories)
+    for k in subcategories:
+        subcategories[k] = sorted(subcategories[k])
+    return categories, subcategories
 
 
 def render_education_gpt_page():
-    # ここに今の Streamlit UI 部分をすべて入れる
     # st.title("📘 教育GPTアシスタント")
-    st.markdown(
-        "SOLVESTについて質問できます。まず最初に知りたいことを一言で入力してください。"
-    )
     # --- 設定の読み込み ---
-    client, PDF_PATH, JSON_PATH, FAISS_PATH, openai_api_key = load_config()
+    FAISS_PATH, PDF_PATH, JSON_PATH = load_config()
 
-    # --- 初期設定 ---
+    #  AIの設定を読込
+    client = load_ai()  # OpenAIConfigをデフォルトクラスとして使用
 
-    # --- PDF画像の読み込み ---
-    @st.cache_resource
-    def load_pdf_first_page(path, dpi=100):
-        # PDFの1ページ目を画像として読み込む
-        return convert_from_path(path, dpi=dpi, first_page=1, last_page=1)
+    # ベクトルストアの読込
+    vectorstore = load_vectorstore(api_key=client.api_key, FAISS_PATH=FAISS_PATH)
 
-    @st.cache_resource
-    def load_pdf_page(path, page_number, dpi=100):
-        # 指定ページのPDFを画像として読み込む
-        return convert_from_path(
-            path, dpi=dpi, first_page=page_number, last_page=page_number
-        )[0]
-
-    # --- ベクトルストア読み込み ---
-    @st.cache_resource
-    def load_vectorstore():
-        # FAISSベクトルストアのロード
-        if not openai_api_key:
-            st.warning(
-                "OPENAI_API_KEY が未設定のためベクトルストアをロードできません。"
-            )
-            return None
-        embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
-        return FAISS.load_local(
-            FAISS_PATH, embeddings=embeddings, allow_dangerous_deserialization=True
-        )
-
-    vectorstore = load_vectorstore()
-
-    # --- JSONからカテゴリ・サブカテゴリを取得 ---
-    @st.cache_data
-    def load_json_data(json_path):
-        # JSONファイルを読み込んでデータとして返す
-        with open(json_path, encoding="utf-8") as f:
-            data = json.load(f)
-        return data
-
+    # --- JSONデータの読込 ---
     json_data = load_json_data(JSON_PATH)
-
-    @st.cache_data
-    def extract_categories_and_titles(data):
-        # JSONからカテゴリとサブカテゴリを抽出
-        categories = set()
-        subcategories = {}
-        for section in data:
-            cats = section.get("category", [])
-            if isinstance(cats, str):
-                cats = [cats]
-            for cat in cats:
-                categories.add(cat)
-                subcategories.setdefault(cat, set()).add(section.get("title"))
-        categories = sorted(categories)
-        for k in subcategories:
-            subcategories[k] = sorted(subcategories[k])
-        return categories, subcategories
-
     categories, subcategory_map = extract_categories_and_titles(json_data)
 
     # --- カテゴリ別 質問テンプレート ---
