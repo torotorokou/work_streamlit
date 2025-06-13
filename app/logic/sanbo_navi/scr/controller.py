@@ -1,6 +1,5 @@
 # --- ライブラリ読み込み ---
 import streamlit as st
-import os
 import json
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -8,27 +7,23 @@ from pdf2image import convert_from_path
 from PIL import Image
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings
+from logic.sanbo_navi.scr.view import load_pdf_first_page, load_pdf_page
+
+
+from logic.sanbo_navi.scr.loader import (
+    load_config,
+    load_json_data,
+    extract_categories_and_titles,
+)
+from logic.sanbo_navi.scr.loader import load_question_templates
+from logic.sanbo_navi.scr.loader import get_resource_paths
 
 # AI設定
-from logic.sanbo_navi.scr.load_ai import OpenAIConfig
+from logic.sanbo_navi.scr.ai_loader import OpenAIConfig
+from logic.sanbo_navi.scr.ai_loader import load_ai
 
 # 外部読込
-from logic.sanbo_navi.scr.load_config import get_resource_paths
-
-
-# --- 設定ファイルの読み込み ---
-def load_config():
-    FAISS_PATH = get_resource_paths().get("FAISS_PATH")
-    PDF_PATH = get_resource_paths().get("PDF_PATH")
-    JSON_PATH = get_resource_paths().get("JSON_PATH")
-    return FAISS_PATH, PDF_PATH, JSON_PATH
-
-
-# --- OpenAIクライアントの読み込み ---
-def load_ai(config_class=OpenAIConfig):
-    config = config_class()
-    client = config.get_client()
-    return client if config.is_valid() else None
+from logic.sanbo_navi.scr.loader import get_resource_paths
 
 
 # --- ベクトルストアの読み込み ---
@@ -44,55 +39,13 @@ def load_vectorstore(api_key: str = None, FAISS_PATH: str = None):
     )
 
 
-# --- PDF画像の読み込み ---
-@st.cache_resource
-def load_pdf_first_page(path, dpi=100):
-    # PDFの1ページ目を画像として読み込む
-    return convert_from_path(path, dpi=dpi, first_page=1, last_page=1)
-
-
-@st.cache_resource
-def load_pdf_page(path, page_number, dpi=100):
-    # 指定ページのPDFを画像として読み込む
-    return convert_from_path(
-        path, dpi=dpi, first_page=page_number, last_page=page_number
-    )[0]
-
-
-# --- JSONからカテゴリ・サブカテゴリを取得 ---
-@st.cache_data
-def load_json_data(json_path):
-    # JSONファイルを読み込んでデータとして返す
-    with open(json_path, encoding="utf-8") as f:
-        data = json.load(f)
-    return data
-
-
-@st.cache_data
-def extract_categories_and_titles(data):
-    # JSONからカテゴリとサブカテゴリを抽出
-    categories = set()
-    subcategories = {}
-    for section in data:
-        cats = section.get("category", [])
-        if isinstance(cats, str):
-            cats = [cats]
-        for cat in cats:
-            categories.add(cat)
-            subcategories.setdefault(cat, set()).add(section.get("title"))
-    categories = sorted(categories)
-    for k in subcategories:
-        subcategories[k] = sorted(subcategories[k])
-    return categories, subcategories
-
-
-def render_education_gpt_page():
+def contoroller_education_gpt_page():
     # st.title("📘 教育GPTアシスタント")
     # --- 設定の読み込み ---
     FAISS_PATH, PDF_PATH, JSON_PATH = load_config()
 
     #  AIの設定を読込
-    client = load_ai()  # OpenAIConfigをデフォルトクラスとして使用
+    client = load_ai(OpenAIConfig)  # OpenAIConfigをデフォルトクラスとして使用
 
     # ベクトルストアの読込
     vectorstore = load_vectorstore(api_key=client.api_key, FAISS_PATH=FAISS_PATH)
@@ -100,53 +53,6 @@ def render_education_gpt_page():
     # --- JSONデータの読込 ---
     json_data = load_json_data(JSON_PATH)
     categories, subcategory_map = extract_categories_and_titles(json_data)
-
-    # --- カテゴリ別 質問テンプレート ---
-    category_question_templates = {
-        # 各カテゴリに対して質問テンプレートを用意
-        "処理工程": [
-            "この工程の流れを教えて",
-            "処理対象の廃棄物は？",
-            "使われている設備は？",
-            "安全対策や注意点は？",
-            "処理能力は？",
-        ],
-        "設備": [
-            "この設備の用途は？",
-            "この設備の処理能力は？",
-            "設備の仕様と特徴は？",
-            "安全対策や注意点は？",
-            "メンテナンス頻度は？",
-        ],
-        "行政・許認可": [
-            "この施設に必要な許可は？",
-            "許認可の申請手続きは？",
-            "行政提出書類に何が必要？",
-            "許認可取得の流れは？",
-            "許可の更新や管理は？",
-        ],
-        "産廃分類・品目": [
-            "この品目はどんな廃棄物？",
-            "この品目の処理方法は？",
-            "搬入時の注意点は？",
-            "処理後の搬出先は？",
-            "関連する設備は？",
-        ],
-        "施設": [
-            "施設の維持管理項目は？",
-            "点検頻度や管理方法は？",
-            "設備ごとの管理内容は？",
-            "管理記録はどのようにする？",
-            "異常時の対応は？",
-        ],
-        "default": [
-            "この工程の流れを教えて",
-            "処理対象の廃棄物は？",
-            "使われている設備は？",
-            "処理能力は？",
-            "安全対策や注意点は？",
-        ],
-    }
 
     # --- カテゴリsuggestion用関数 ---
     def suggest_category(query_input: str) -> str:
@@ -217,11 +123,13 @@ def render_education_gpt_page():
     )
 
     # --- ステップ④ 対象選択 ---
-    category_template = category_question_templates.get(
-        main_category, category_question_templates["default"]
-    )
-    subcategory_options = (
-        ["自由入力"] + subcategory_map.get(main_category, []) + category_template
+    # 質問テンプレートのロード
+    templates = load_question_templates()
+    category_template = templates.get(main_category, templates["default"])
+
+    # サブカテゴリ選択肢の生成
+    subcategory_options = ["自由入力"] + templates.get(
+        main_category, templates["default"]
     )
     sub_category = st.selectbox("対象を選択", options=subcategory_options)
 
@@ -329,4 +237,4 @@ def render_education_gpt_page():
 
 
 if __name__ == "__main__":
-    render_education_gpt_page()
+    contoroller_education_gpt_page()

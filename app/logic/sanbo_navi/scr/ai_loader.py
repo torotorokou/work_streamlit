@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from logic.sanbo_navi.scr.load_config import get_resource_paths
+from logic.sanbo_navi.scr.loader import get_resource_paths
 from dotenv import load_dotenv
 import os
 from openai import OpenAI
@@ -49,3 +49,10 @@ class OpenAIConfig(AIConfigBase):
 
         self.error_message = None
         return True
+
+
+# --- OpenAIクライアントの読み込み ---
+def load_ai(config_class=OpenAIConfig):
+    config = config_class()
+    client = config.get_client()
+    return client if config.is_valid() else None
