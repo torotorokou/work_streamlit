@@ -2,7 +2,7 @@
 import streamlit as st
 from app_pages.base_page import BasePage
 from utils.page_config import PageConfig
-from logic.sanbo_navi.scr.render import render_education_gpt_page
+from logic.sanbo_navi.scr.controller import contoroller_education_gpt_page
 
 
 class SanboNaviPage(BasePage):
@@ -22,4 +22,4 @@ class SanboNaviPage(BasePage):
         self.render_title()
         # ここにページの内容を描画するためのコードを追加
         st.write("参謀くんNAVIのコンテンツをここに表示します。")
-        render_education_gpt_page()
+        contoroller_education_gpt_page()
