@@ -51,7 +51,7 @@ class OpenAIConfig(AIConfigBase):
         return True
 
 
-# --- OpenAIクライアントの読み込み ---
+# --- AI クライアントの読み込み ---
 def load_ai(config_class=OpenAIConfig):
     config = config_class()
     client = config.get_client()
