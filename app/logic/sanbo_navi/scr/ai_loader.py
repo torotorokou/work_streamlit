@@ -18,7 +18,6 @@ class AIConfigBase(ABC):
 class OpenAIConfig(AIConfigBase):
     def __init__(self):
         env_url = get_resource_paths().get("ENV_PATH")
-        print(f"env_url = {env_url}")
         load_dotenv(dotenv_path=env_url)
 
         self.api_key = os.getenv("OPENAI_API_KEY")
@@ -51,7 +50,7 @@ class OpenAIConfig(AIConfigBase):
         return True
 
 
-# --- OpenAIクライアントの読み込み ---
+# --- AI クライアントの読み込み ---
 def load_ai(config_class=OpenAIConfig):
     config = config_class()
     client = config.get_client()
