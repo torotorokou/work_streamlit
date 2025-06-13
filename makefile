@@ -7,8 +7,6 @@ IMAGE_NAME=sanboukun:prod
 
 # --- 環境起動 ---
 
-# dev:
-# 	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml up
 
 dev_rebuild:
 	@echo "Starting dev rebuild with --no-cache..."
@@ -16,6 +14,22 @@ dev_rebuild:
 	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml build --no-cache
 	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml up -d
 
+# --- Streamlit操作 ---
+
+st-up:
+	@echo "🔌 Killing any process using port 8504..."
+	@fuser -k 8504/tcp || true
+	@echo "🚀 Starting Streamlit app on port 8504..."
+	streamlit run app/app.py \
+		--server.port=8504 \
+		--server.address=0.0.0.0 \
+		--server.headless=false \
+		--server.enableCORS=false \
+		--server.enableXsrfProtection=false
+
+
+# dev:
+# 	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml up
 
 
 # ステージングビルド＆起動（キャッシュあり）
@@ -105,18 +119,6 @@ clean:
 	docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) down --volumes --rmi local
 	docker system prune -a -f
 
-# --- Streamlit操作 ---
-
-st-up:
-	@echo "🔌 Killing any process using port 8504..."
-	@fuser -k 8504/tcp || true
-	@echo "🚀 Starting Streamlit app on port 8504..."
-	streamlit run app/app.py \
-		--server.port=8504 \
-		--server.address=0.0.0.0 \
-		--server.headless=false \
-		--server.enableCORS=false \
-		--server.enableXsrfProtection=false
 
 
 # --- モニタリング・ログ用ユーティリティ ---

@@ -1,20 +1,14 @@
 # --- ライブラリ読み込み ---
 import streamlit as st
-import json
-from dotenv import load_dotenv
-from openai import OpenAI
-from pdf2image import convert_from_path
-from PIL import Image
 from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings
-from logic.sanbo_navi.scr.view import load_pdf_first_page, load_pdf_page
+
+from logic.sanbo_navi.scr.view import load_pdf_first_page
 
 from logic.sanbo_navi.scr.loader import (
     load_config,
     load_json_data,
     extract_categories_and_titles,
     load_question_templates,
-    get_resource_paths,
 )
 
 # AI関連
