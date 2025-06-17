@@ -21,7 +21,17 @@ from logic.manage.processors.factory_report.etc import (
 
 def process(dfs: dict) -> pd.DataFrame:
     """
-    Streamlitの選択に基づき、工場日報（処分パート）を処理するエントリーポイント関数。
+    工場日報テンプレート用のメイン処理関数。
+    各種CSVデータを読み込み、処分・有価・ヤード等の処理を適用し、
+    最終的な工場日報データフレームを返します。
+    Parameters
+    ----------
+    dfs : dict
+        各CSVのデータフレーム辞書
+    Returns
+    -------
+    pd.DataFrame
+        統合・加工済みの工場日報データ
     """
 
     logger = app_logger()
