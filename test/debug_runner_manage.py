@@ -8,12 +8,6 @@ from utils.config_loader import get_template_config
 from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.controllers.csv_controller import apply_expected_dtypes
 from logic.manage.utils.load_template import load_master_and_template
-from IPython.display import display
-import re
-from logic.manage.factory_report import process
-from logic.manage.utils.excel_tools import create_label_rows_generic, sort_by_cell_row
-from utils.value_setter import set_value_fast, set_value_fast_safe
-from logic.manage.utils.summary_tools import summary_apply
 from logic.manage.factory_report import process as process_factory
 from logic.manage.balance_sheet import process as process_balance_sheet
 from logic.manage.management_sheet import process as process_manage_sheet
@@ -106,6 +100,11 @@ def debug():
 
     print(f"Current mini_step: {st.session_state.process_mini_step}")
     print(f"Result: {result is not None}")
+    return
+
+
+debug()
+    print(f"Current mini_step: {st.session_state.process_mini_step}")
     return
 
 
