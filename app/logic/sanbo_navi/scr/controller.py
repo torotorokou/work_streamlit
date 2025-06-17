@@ -122,11 +122,20 @@ def contoroller_education_gpt_page():
             if "cache_pdf_pages" not in st.session_state:
                 st.session_state.cache_pdf_pages = {}
 
-            pages = set(int(p) for _, p in st.session_state.sources if str(p).isdigit())
-            st.markdown("📄 **出典ページ:** " + ", ".join([f"Page {p}" for p in pages]))
+            # --- ページの抽出（整数 or "3-5" などの文字列を許容） ---
+            pages = set()
+            for _, p in st.session_state.sources:
+                if p is None:
+                    continue
+                p_str = str(p).strip()
+                if p_str.isdigit() or "-" in p_str:
+                    pages.add(p_str)
 
+            # 表示用の文字列
+            st.markdown("📄 **出典ページ:** " + ", ".join([f"Page {p}" for p in sorted(pages)]))
+
+            # 複数ページ対応関数に渡す
             render_pdf_pages(PDF_PATH, pages)
-
 
 if __name__ == "__main__":
     contoroller_education_gpt_page()
