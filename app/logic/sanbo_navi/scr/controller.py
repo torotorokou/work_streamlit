@@ -132,10 +132,13 @@ def contoroller_education_gpt_page():
                     pages.add(p_str)
 
             # 表示用の文字列
-            st.markdown("📄 **出典ページ:** " + ", ".join([f"Page {p}" for p in sorted(pages)]))
+            st.markdown(
+                "📄 **出典ページ:** " + ", ".join([f"Page {p}" for p in sorted(pages)])
+            )
 
             # 複数ページ対応関数に渡す
             render_pdf_pages(PDF_PATH, pages)
+
 
 if __name__ == "__main__":
     contoroller_education_gpt_page()

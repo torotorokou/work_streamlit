@@ -4,6 +4,19 @@ import calendar
 
 # --- 表のスタイル指定用（ラベル別色） ---
 def style_label(val):
+    """
+    ラベル値に応じてセルのスタイル（色・太字）を返す。
+
+    Parameters
+    ----------
+    val : str
+        判定ラベル（例: "警告", "注意" など）
+
+    Returns
+    -------
+    str
+        CSSスタイル文字列
+    """
     if val == "警告":
         return "color: red; font-weight: bold"
     elif val == "注意":

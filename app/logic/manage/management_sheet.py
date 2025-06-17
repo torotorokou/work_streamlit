@@ -19,6 +19,19 @@ from logic.manage.processors.management_sheet.manage_etc import manage_etc
 
 
 def process(dfs: dict) -> pd.DataFrame:
+    """
+    管理表テンプレート用のメイン処理関数。
+    各種CSVデータを読み込み、工場日報・搬出入・ABC・スクラップ等の処理を適用し、
+    最終的な管理表データフレームを返します。
+    Parameters
+    ----------
+    dfs : dict
+        各CSVのデータフレーム辞書
+    Returns
+    -------
+    pd.DataFrame
+        統合・加工済みの管理表データ
+    """
     logger = app_logger()
 
     # --- ① マスターCSVの読み込み ---

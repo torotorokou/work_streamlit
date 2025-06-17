@@ -6,6 +6,12 @@ from datetime import datetime
 
 
 def check_sql():
+    """
+    SQLiteデータベースから祝日フラグ付き伝票日付を抽出し、表示するデバッグ用関数。
+    Returns
+    -------
+    なし
+    """
     # --- SQLiteデータベース接続 ---
     db_path = get_path_from_yaml("weight_data", section="sql_database")
     engine = create_engine(f"sqlite:///{db_path}")
@@ -22,6 +28,12 @@ def check_sql():
 
 
 def check_holidays():
+    """
+    2020-2025年の祝日リストを取得し、表示するデバッグ用関数。
+    Returns
+    -------
+    なし
+    """
     # --- 祝日フラグ追加 ---
     start_date = datetime.strptime("2020-01-01", "%Y-%m-%d").date()
     end_date = datetime.strptime("2025-12-31", "%Y-%m-%d").date()
