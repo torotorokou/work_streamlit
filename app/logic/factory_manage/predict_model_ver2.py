@@ -316,6 +316,23 @@ if __name__ == "__main__":
 def train_and_predict_with_holiday(
     df_raw: pd.DataFrame, start_date: str, end_date: str, holidays: list[str]
 ) -> pd.DataFrame:
+    """
+    受入データ・期間・祝日リストをもとに、特徴量生成・学習・将来予測まで一括で実行する関数。
+    Parameters
+    ----------
+    df_raw : pd.DataFrame
+        元データ
+    start_date : str
+        予測開始日
+    end_date : str
+        予測終了日
+    holidays : list[str]
+        祝日リスト
+    Returns
+    -------
+    pd.DataFrame
+        予測結果データフレーム
+    """
     # 特徴量生成
     df_pivot = (
         df_raw.groupby(["伝票日付", "品名"])["正味重量"].sum().unstack(fill_value=0)

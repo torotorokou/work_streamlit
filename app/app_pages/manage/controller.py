@@ -217,9 +217,8 @@ def render_file_upload_section(
                 label, "アップロードなしでも次に進めます！"
             )
             uploaded_files[key] = _render_file_input(key, label, required=True)
-
-        # --- 不要ファイル（他テンプレート用） ---
         else:
+            # --- 不要ファイル（他テンプレート用） ---
             with st.expander(
                 f"🗂 {label}（このテンプレートでは不要です）", expanded=False
             ):
@@ -233,4 +232,6 @@ def render_file_upload_section(
                 )
                 uploaded_files[key] = st.session_state.get(f"uploaded_{key}", None)
 
-    return uploaded_files
+        # ✅ 必要なファイル（必須＋任意）のみ返す
+    used_keys = required_keys + optional_keys
+    return {k: v for k, v in uploaded_files.items() if k in used_keys}

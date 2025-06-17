@@ -33,42 +33,42 @@ if "block_unit_price_transport_map" not in st.session_state:
 def run_debug_process(template_key) -> pd.DataFrame:
     logger = app_logger()
 
-    # 表示ラベルマップ（処理対象名として使う）
-    # csv_label_map = {"yard": "ヤード一覧", "shipping": "出荷一覧", "receive": "受入一覧"}
-
-    debug_receive = "/work/app/data/input/debug_receive.parquet"
-    debug_shipping = "/work/app/data/input/debug_shipping.parquet"
-    debug_yard = "/work/app/data/input/debug_yard.parquet"
-
-    dfs = {
-        "receive": pd.read_parquet(debug_receive),
-        "shipping": pd.read_parquet(debug_shipping),
-        "yard": pd.read_parquet(debug_yard),
+    # デバッグ用のファイルパス（存在するもののみ定義）
+    debug_file_paths = {
+        "receive": "/work/app/data/input/debug_receive.parquet",
+        "shipping": "/work/app/data/input/debug_shipping.parquet",
+        "yard": "/work/app/data/input/debug_yard.parquet",
     }
 
-    # dfs
-    df_shipping = dfs["shipping"]
-    df_yard = dfs["yard"]
-    df_receive = dfs["receive"]
-
+    # --- テンプレート定義読み込み ---
     template_config = get_template_config()[template_key]
     template_name = template_config["key"]
-    csv_keys = template_config["required_files"]
+    required_keys = template_config.get("required_files", [])
+    optional_keys = template_config.get("optional_files", [])
+    csv_keys = required_keys + optional_keys
+
     logger.info(f"[テンプレート設定読込] key={template_key}, files={csv_keys}")
 
-    # --- CSVの調整・読み込み ---
+    # --- dfs を柔軟に構築（optionalは存在チェック）---
+    dfs = {}
+    for key in csv_keys:
+        path = debug_file_paths.get(key)
+        if path:
+            try:
+                dfs[key] = pd.read_parquet(path)
+            except FileNotFoundError:
+                logger.warning(
+                    f"[DEBUG] optionalファイル {key} が見つかりません: {path}"
+                )
+                dfs[key] = None
+        else:
+            dfs[key] = None
+
+    # --- 型変換・フィルタリング処理 ---
     dfs = apply_expected_dtypes(dfs, template_key)
     df_dict = load_all_filtered_dataframes(dfs, csv_keys, template_name)
-    df_receive = df_dict.get("receive")
-    df_shipping = df_dict.get("shipping")
-    df_yard = df_dict.get("yard")
 
-    dfs_after = {
-        "receive": df_receive,
-        "shipping": df_shipping,
-        "yard": df_yard,
-    }
-    return dfs_after
+    return df_dict
 
 
 def debug():

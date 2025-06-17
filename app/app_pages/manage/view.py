@@ -65,7 +65,7 @@ def render_semi_required_upload_header(title: str, description: str = ""):
     st.markdown(
         f"""
     <div style="
-        background-color: rgba(255, 153, 0, 0.10);  /* 落ち着いたオレンジ系 */
+        background-color: rgba(255, 102, 0, 0.08);  /* 薄いオレンジレッド */
         color: #222;
         padding: 10px 16px;
         margin-top: 24px;
@@ -78,11 +78,11 @@ def render_semi_required_upload_header(title: str, description: str = ""):
         flex-direction: column;
         gap: 4px;
     ">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 17px;">🟡</span>
+        <div style="display: flex; align-items: center; gap: 8px; color: #cc5200;">
+            <span style="font-size: 17px;">🟠</span>
             <span>{title}</span>
         </div>
-        <div style="font-size: 13px; color: #666;">
+        <div style="font-size: 13px; color: #cc5200;">
             {description}
         </div>
     </div>

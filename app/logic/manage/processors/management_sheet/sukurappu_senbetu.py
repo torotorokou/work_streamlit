@@ -11,6 +11,21 @@ from logic.manage.utils.dataframe_tools import (
 
 
 def scrap_senbetsu(df_receive, master_csv):
+    """
+    スクラップ・選別の受入データを集計し、マスターCSVに値を反映する。
+
+    Parameters
+    ----------
+    df_receive : pd.DataFrame
+        受入データフレーム
+    master_csv : pd.DataFrame
+        マスターCSV
+
+    Returns
+    -------
+    pd.DataFrame
+        値が反映されたマスターCSV
+    """
     # --- 必要CSVの読み込み ---
     config = get_template_config()["management_sheet"]
     master_path = config["master_csv_path"]["scrap_senbetsu_map"]

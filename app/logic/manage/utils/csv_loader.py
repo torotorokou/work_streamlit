@@ -69,6 +69,7 @@ def load_all_filtered_dataframes(
 
     df_dict = {}
     column_defs = get_required_columns_definition(template_name)
+    print(f"🔍 対象テンプレート: {template_name}, カラム定義: {column_defs}")
 
     for key in keys:
         if key in dfs:
