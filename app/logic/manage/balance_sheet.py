@@ -54,15 +54,27 @@ def process(dfs: dict) -> pd.DataFrame:
     template_key = "balance_sheet"
     template_config = get_template_config()[template_key]
     template_name = template_config["key"]
-    csv_keys = template_config["required_files"]
+
+    # ✅ 必須ファイル＋任意ファイルの両方を取得
+    required_keys = template_config.get("required_files", [])
+    optional_keys = template_config.get("optional_files", [])
+    csv_keys = required_keys + optional_keys
+
     logger.info(f"[テンプレート設定読込] key={template_key}, files={csv_keys}")
 
+    # --- データ読み込み（dfsは事前に構築済とする） ---
     df_dict = load_all_filtered_dataframes(dfs, csv_keys, template_name)
+
+    # --- 各ファイルを取得（Noneの可能性もある） ---
     df_receive = df_dict.get("receive")
     df_shipping = df_dict.get("shipping")
     df_yard = df_dict.get("yard")
 
+    target_day = pd.to_datetime(df_shipping["伝票日付"].values[0]).date()
+
     # --- ③ 各処理の適用 ---
+
+    # 仕入処理
     logger.info("▶️ 搬出量データ処理開始")
     master_csv = process_factory_report(dfs, master_csv)
 
@@ -76,25 +88,30 @@ def process(dfs: dict) -> pd.DataFrame:
         calculate_total_valuable_material_cost(df_yard, df_shipping)
     )
 
-    logger.info("▶️ 搬入台数データ処理開始")
-    master_csv.loc[master_csv["大項目"] == "搬入台数", "値"] = inbound_truck_count(
-        df_receive
-    )
+    # 売上ページ:receiveが空なら処理を飛ばす
+    if df_receive is not None:
+        logger.info("▶️ 搬入台数データ処理開始")
+        master_csv.loc[master_csv["大項目"] == "搬入台数", "値"] = inbound_truck_count(
+            df_receive
+        )
 
-    logger.info("▶️ 搬入量データ処理開始")
-    master_csv.loc[master_csv["大項目"] == "搬入量", "値"] = inbound_weight(df_receive)
+        logger.info("▶️ 搬入量データ処理開始")
+        master_csv.loc[master_csv["大項目"] == "搬入量", "値"] = inbound_weight(
+            df_receive
+        )
 
-    logger.info("▶️ オネストkg / m3 データ処理開始")
-    honest_kg, honest_m3 = calculate_honest_sales_by_unit(df_receive)
-    master_csv.loc[master_csv["大項目"] == "オネストkg", "値"] = honest_kg
-    master_csv.loc[master_csv["大項目"] == "オネストm3", "値"] = honest_m3
+        logger.info("▶️ オネストkg / m3 データ処理開始")
+        honest_kg, honest_m3 = calculate_honest_sales_by_unit(df_receive)
+        master_csv.loc[master_csv["大項目"] == "オネストkg", "値"] = honest_kg
+        master_csv.loc[master_csv["大項目"] == "オネストm3", "値"] = honest_m3
 
-    logger.info("▶️ 有価買取データ処理開始")
-    master_csv.loc[master_csv["大項目"] == "有価買取", "値"] = (
-        calculate_purchase_value_of_valuable_items(df_receive)
-    )
+        logger.info("▶️ 有価買取データ処理開始")
+        master_csv.loc[master_csv["大項目"] == "有価買取", "値"] = (
+            calculate_purchase_value_of_valuable_items(df_receive)
+        )
 
+    # 最終処理
     logger.info("▶️ 売上・仕入・損益まとめ処理開始")
-    master_csv = calculate_misc_summary_rows(master_csv, df_receive)
+    master_csv = calculate_misc_summary_rows(master_csv, target_day)
 
     return master_csv
