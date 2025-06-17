@@ -19,3 +19,5 @@ services:
         restart: unless-stopped
         volumes:
             - ../app/data:/work/app/data
+            - ../app/logic/sanbo_navi/local_data:/work/app/logic/sanbo_navi/local_data
+            - ../app/logic/sanbo_navi/config:/work/app/logic/sanbo_navi/config

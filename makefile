@@ -9,8 +9,7 @@ IMAGE_NAME=sanboukun:prod
 
 
 dev_rebuild:
-	@echo "🔧 このコマンドはローカル開発環境でのみ実行してください。"
-	@echo "🛠️  sanbou_dev 用の Docker コンテナを --no-cache で再構築します..."
+	@echo "Starting dev rebuild with --no-cache..."
 	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml down -v
 	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml build --no-cache
 	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml up -d
@@ -18,12 +17,9 @@ dev_rebuild:
 # --- Streamlit操作 ---
 
 st-up:
-	@echo "🐳 このコマンドは Docker コンテナ内で実行してください。"
-	@echo "📌 Streamlit アプリ（app/app.py）をポート 8504 で起動します。"
-	@echo "⚠️  起動時にエラーになる場合がありますが、その場合は数回再実行してください。"
-	@echo "🔌 ポート 8504 を使用中のプロセスを強制終了します..."
+	@echo "🔌 Killing any process using port 8504..."
 	@fuser -k 8504/tcp || true
-	@echo "🚀 Streamlit アプリを起動中..."
+	@echo "🚀 Starting Streamlit app on port 8504..."
 	streamlit run app/app.py \
 		--server.port=8504 \
 		--server.address=0.0.0.0 \
