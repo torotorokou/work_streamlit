@@ -6,6 +6,7 @@ WORKDIR /work
 # 必要パッケージ（フォント・Git・ビルドツールなど） + tzdata を追加
 RUN apt-get update && apt-get install -y \
     fonts-noto-cjk \
+    poppler-utils \
     fonts-noto \
     git \
     curl \
