@@ -104,8 +104,3 @@ def debug():
 
 
 debug()
-    print(f"Current mini_step: {st.session_state.process_mini_step}")
-    return
-
-
-debug()
