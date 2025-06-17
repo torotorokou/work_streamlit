@@ -25,11 +25,17 @@ __pycache__/
 Thumbs.db
 
 # ===========================
+# 仮想環境（必要に応じて有効化）
+# ===========================
+.venv/
+venv/
+
+# ===========================
 # 環境変数・秘密情報
 # ===========================
 .env
 .env.*
-.env_file/*
+.env_file/
 
 # ===========================
 # Streamlitキャッシュ
@@ -43,7 +49,7 @@ Thumbs.db
 *.zip
 *.tar
 *.whl
-*.xls      # Excelの古い形式。必要なら限定して除外
+*.xls
 *~
 *.swp
 *.csv
@@ -53,20 +59,16 @@ Thumbs.db
 # ===========================
 app/data/*
 !app/data/master/
-!app/data/master/**
-!app/data/master/*.csv
+!app/data/master/**/*.csv
 !app/data/template/
-!app/data/template/**
-!app/data/template/*.csv
-# app/data/models/   # モデルデータ（必要に応じて除外）
+!app/data/template/**/*.csv
 
-
+# ===========================
+# 参謀NAVI関連
+# ===========================
 app/logic/sanbo_navi/local_data/
+app/logic/sanbo_navi/local_data/master/SOLVEST.pdf
 app/logic/sanbo_navi/config/
-# ===========================
-# マスターデータは明示的に除外解除（x重要）
-# ===========================
-# （必要な場合はここに!で除外解除ルールを記載）
 
 # ===========================
 # DB・パーケットファイル（必要に応じてコメント解除）
