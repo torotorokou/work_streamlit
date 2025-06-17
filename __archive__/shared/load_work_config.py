@@ -7,9 +7,12 @@ import streamlit as st
 
 # ✅ プロジェクト内 - view（UIビュー）
 from app_pages.manage.view import (
-    render_file_upload_section,
     render_manage_page,
 )
+from app_pages.manage.controller import (
+    render_file_upload_section,
+)
+
 
 # ✅ プロジェクト内 - logic（処理・データ変換など）
 from logic.manage.utils.upload_handler import handle_uploaded_files
