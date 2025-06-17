@@ -111,8 +111,10 @@ def read_csv_hannnyuu():
     """
     搬入量予測に必要なCSVデータを読み込んで統合・整形する関数。
 
-    Returns:
-        pd.DataFrame: 整形済みの搬入データ（列: 伝票日付・品名・正味重量）
+    Returns
+    -------
+    pd.DataFrame
+        整形済みの搬入データ（列: 伝票日付・品名・正味重量）
     """
     # --- データ取得 ---
     base_dir = get_path_from_yaml("input", section="directories")
@@ -155,6 +157,14 @@ def read_csv_hannnyuu():
 
 
 def read_csv_hannnyuu_old():
+    """
+    旧形式の搬入量CSVデータを読み込んで整形・統合する関数。
+
+    Returns
+    -------
+    pd.DataFrame
+        整形済みの搬入データ
+    """
     base_dir = get_path_from_yaml("input", section="directories")
     df_raw = pd.read_csv(f"{base_dir}/20240501-20250422.csv", encoding="utf-8")
     df_raw = df_raw[["伝票日付", "正味重量", "品名"]]

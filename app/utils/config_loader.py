@@ -150,6 +150,23 @@ def get_required_files_map() -> dict:
     return {key: value.get("required_files", []) for key, value in config.items()}
 
 
+def get_file_keys_map() -> dict:
+    """
+    各テンプレートに必要・任意ファイルを辞書形式で取得。
+
+    Returns:
+        dict: テンプレートキー → {'required': [...], 'optional': [...]}
+    """
+    config = get_template_config()
+    return {
+        key: {
+            "required": value.get("required_files", []),
+            "optional": value.get("optional_files", []),
+        }
+        for key, value in config.items()
+    }
+
+
 def get_template_descriptions() -> dict:
     config = get_template_config()
     return {key: value.get("description", []) for key, value in config.items()}

@@ -1,9 +1,5 @@
-import pandas as pd
-from utils.logger import app_logger
-from logic.manage.utils.csv_loader import load_all_filtered_dataframes
 from logic.manage.utils.load_template import load_master_and_template
 from utils.config_loader import get_template_config
-from utils.value_setter import set_value_fast_safe
 from logic.manage.utils.summary_tools import summary_apply
 from logic.manage.utils.dataframe_tools import (
     apply_summary_all_items,
@@ -11,6 +7,21 @@ from logic.manage.utils.dataframe_tools import (
 
 
 def scrap_senbetsu(df_receive, master_csv):
+    """
+    スクラップ・選別の受入データを集計し、マスターCSVに値を反映する。
+
+    Parameters
+    ----------
+    df_receive : pd.DataFrame
+        受入データフレーム
+    master_csv : pd.DataFrame
+        マスターCSV
+
+    Returns
+    -------
+    pd.DataFrame
+        値が反映されたマスターCSV
+    """
     # --- 必要CSVの読み込み ---
     config = get_template_config()["management_sheet"]
     master_path = config["master_csv_path"]["scrap_senbetsu_map"]
