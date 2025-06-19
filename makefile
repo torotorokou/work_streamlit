@@ -1,18 +1,26 @@
 # --- 共通設定 ---
-ENV_FILE=.env
+ENV_FILE=.env_file/.env.prod
 PROJECT_NAME=sanbou_prod
 COMPOSE_FILE=docker/docker-compose.prod.yml
 DOCKERFILE=docker/prod.Dockerfile
 IMAGE_NAME=sanboukun:prod
+
+# --- 実行環境判定（WSL2判定強化版） ---
+IS_WSL := $(shell grep -i microsoft /proc/version > /dev/null && echo 1 || echo 0)
+
+# --- Linuxシェルを使わせる ---
+SHELL := /bin/bash
+.ONESHELL:
 
 # --- 環境起動 ---
 
 
 dev_rebuild:
 	@echo "Starting dev rebuild with --no-cache..."
-	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml down -v
-	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml build --no-cache
-	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml up -d
+	docker compose -p sanbou_dev -f docker/docker-compose.dev.yml down -v
+	docker compose -p sanbou_dev -f docker/docker-compose.dev.yml build --no-cache
+	docker compose -p sanbou_dev -f docker/docker-compose.dev.yml up -d
+
 
 # --- Streamlit操作 ---
 
@@ -31,27 +39,44 @@ st-up:
 # dev:
 # 	docker-compose -p sanbou_dev -f docker/docker-compose.dev.yml up
 
+# ステージング再ビルド（キャッシュ無効化）
+# staging_rebuild:
+# 	@echo "Starting full staging rebuild with --no-cache..."
+# 	@echo "Reloading .env_file/.env.staging and rebuilding Docker image..."
 
-# ステージングビルド＆起動（キャッシュあり）
-# staging:
-# 	@echo "Starting staging environment rebuild..."
-# 	@echo "Loading .env.staging and starting services..."
-
-# 	powershell -Command "$$envs = Get-Content .env.staging | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
-# 	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml build \
+# 	powershell -Command "$$envs = Get-Content .env_file/.env.staging | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
+# 	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml build --no-cache \
 # 		--build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN \
 # 		--build-arg REPO_TAG=$$env:REPO_TAG \
 # 		--build-arg REPO_URL=$$env:REPO_URL \
 # 		--build-arg STAGE_ENV=staging \
-# 		--build-arg ENV_FILE=.env.staging; \
-# 	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml down -v || true; \
+# 		--build-arg ENV_FILE=.env_file/.env.staging; \
+# 	try { docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml down -v } catch { Write-Host 'down failed (ignored)' }; \
 # 	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml up -d"
+
 
 # ステージング再ビルド（キャッシュ無効化）
 staging_rebuild:
-	@echo "Starting full staging rebuild with --no-cache..."
-	@echo "Reloading .env_file/.env.staging and rebuilding Docker image..."
+ifeq ($(IS_WSL),1)
+	@echo "WSL2 Linux環境で実行中"
+	@echo "Loading environment variables from .env_file/.env.staging..."
 
+	@if [ -f .env_file/.env.staging ]; then \
+		set -a && source .env_file/.env.staging && set +a && \
+		docker compose -p sanbou_staging -f docker/docker-compose.prod.yml build --no-cache \
+			--build-arg GITHUB_TOKEN=$${GITHUB_TOKEN} \
+			--build-arg REPO_TAG=$${REPO_TAG} \
+			--build-arg REPO_URL=$${REPO_URL} \
+			--build-arg STAGE_ENV=staging \
+			--build-arg ENV_FILE=.env_file/.env.staging && \
+		docker compose -p sanbou_staging -f docker/docker-compose.prod.yml down -v || true && \
+		docker compose -p sanbou_staging -f docker/docker-compose.prod.yml up -d; \
+	else \
+		echo "Error: Environment file .env_file/.env.staging not found."; \
+		exit 1; \
+	fi
+else
+	@echo "Windows (Docker Desktop) 環境で実行中"
 	powershell -Command "$$envs = Get-Content .env_file/.env.staging | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
 	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml build --no-cache \
 		--build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN \
@@ -61,6 +86,8 @@ staging_rebuild:
 		--build-arg ENV_FILE=.env_file/.env.staging; \
 	try { docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml down -v } catch { Write-Host 'down failed (ignored)' }; \
 	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml up -d"
+endif
+
 
 
 # ステージング再ビルド（キャッシュ無効化）
@@ -91,21 +118,35 @@ prod:
 	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up -d"
 
 
-# 本番再ビルド（キャッシュ無効化）
 prod_rebuild:
-	@echo "Starting full production rebuild with --no-cache..."
-	@echo "Reloading .env_file/.env.prod and rebuilding Docker image..."
+ifeq ($(IS_WSL),1)
+	@echo "WSL2 Linux環境で実行中"
+	@echo "Loading environment variables from $(ENV_FILE)..."
 
-
-	powershell -Command "$$envs = Get-Content .env_file/.env.prod | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
-	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml build --no-cache \
+	@if [ -f $(ENV_FILE) ]; then \
+		set -a && source $(ENV_FILE) && set +a && \
+		docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) build --no-cache \
+			--build-arg GITHUB_TOKEN=$${GITHUB_TOKEN} \
+			--build-arg REPO_TAG=$${REPO_TAG} \
+			--build-arg REPO_URL=$${REPO_URL} \
+			--build-arg ENV_FILE=$(ENV_FILE) && \
+		docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) down -v || true && \
+		docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) up -d; \
+	else \
+		echo "Error: Environment file $(ENV_FILE) not found."; \
+		exit 1; \
+	fi
+else
+	@echo "Windows (Docker Desktop) 環境で実行中"
+	powershell -Command "$$envs = Get-Content $(ENV_FILE) | Where-Object { $$_ -match '^[^#].*=.*' } | ForEach-Object { $$kv = $$_ -split '=', 2; Set-Item -Path Env:$$($$kv[0].Trim()) -Value $$($$kv[1].Trim()) }; \
+	docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) build --no-cache \
 		--build-arg GITHUB_TOKEN=$$env:GITHUB_TOKEN \
 		--build-arg REPO_TAG=$$env:REPO_TAG \
 		--build-arg REPO_URL=$$env:REPO_URL \
-		--build-arg ENV_FILE=.env_file/.env.prod; \
-	try { docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml down -v } catch { Write-Host 'down failed (ignored)' }; \
-	docker-compose -p sanbou_prod -f docker/docker-compose.prod.yml up -d"
-
+		--build-arg ENV_FILE=$(ENV_FILE); \
+	try { docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) down -v } catch { Write-Host 'down failed (ignored)' }; \
+	docker-compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) up -d"
+endif
 
 st_debug:
 	streamlit run app/app_debug/upload_test.py --server.port=8505
