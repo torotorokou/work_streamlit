@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 from pathlib import Path
 import os
-from check_csvdata import make_df_old
+from test.搬入量予測AI.check_csvdata import make_df_old
 
 
 @pytest.fixture

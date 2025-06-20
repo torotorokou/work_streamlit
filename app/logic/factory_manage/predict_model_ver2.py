@@ -521,3 +521,131 @@ def train_and_predict_with_holiday(
     df_result = pd.DataFrame(results).set_index("日付")
     print(f"✅ R² = {r2:.3f}, MAE = {mae:,.0f} kg")
     return df_result
+
+
+def train_and_predict_fix(
+    df_raw: pd.DataFrame, start_date: str, end_date: str, holidays: list[str]
+) -> pd.DataFrame:
+    # 特徴量生成
+    df_pivot = (
+        df_raw.groupby(["伝票日付", "品名"])["正味重量"].sum().unstack(fill_value=0)
+    )
+    df_pivot["合計"] = df_pivot.sum(axis=1)
+
+    df_feat = pd.DataFrame(index=df_pivot.index)
+    df_feat["混合廃棄物A_前日"] = df_pivot["混合廃棄物A"].shift(1)
+    df_feat["混合廃棄物B_前日"] = df_pivot["混合廃棄物B"].shift(1)
+    df_feat["合計_前日"] = df_pivot["合計"].shift(1)
+    df_feat["合計_3日平均"] = df_pivot["合計"].shift(1).rolling(3).mean()
+    df_feat["合計_3日合計"] = df_pivot["合計"].shift(1).rolling(3).sum()
+    df_feat["曜日"] = df_feat.index.dayofweek
+    df_feat["週番号"] = df_feat.index.isocalendar().week
+
+    daily_avg = df_raw.groupby("伝票日付")["正味重量"].median()
+    df_feat["1台あたり正味重量_前日中央値"] = daily_avg.shift(1).expanding().median()
+
+    holiday_dates = pd.to_datetime(holidays)
+    df_feat["祝日フラグ"] = df_feat.index.isin(holiday_dates).astype(int)
+
+    df_feat = df_feat.dropna()
+    df_pivot = df_pivot.loc[df_feat.index]
+
+    # ここで時系列順にソート (超重要)
+    df_feat = df_feat.sort_index()
+    df_pivot = df_pivot.loc[df_feat.index]
+
+    ab_features = [
+        "混合廃棄物A_前日",
+        "混合廃棄物B_前日",
+        "合計_前日",
+        "合計_3日平均",
+        "合計_3日合計",
+        "曜日",
+        "週番号",
+        "1台あたり正味重量_前日中央値",
+        "祝日フラグ",
+    ]
+    target_items = ["混合廃棄物A", "混合廃棄物B", "混合廃棄物(ｿﾌｧｰ･家具類)"]
+
+    # ==== 時系列分割 ====
+    split_point = int(len(df_feat) * 0.8)
+    X_train_feat = df_feat.iloc[:split_point]
+    X_test_feat = df_feat.iloc[split_point:]
+    Y_train_pivot = df_pivot.iloc[:split_point]
+    Y_test_pivot = df_pivot.iloc[split_point:]
+
+    # --- ステージ1学習 ---
+    stage1_train_preds = {}
+    stage1_test_preds = {}
+
+    for item in target_items:
+        if item == "混合廃棄物A":
+            X_train = X_train_feat[ab_features]
+            X_test = X_test_feat[ab_features]
+        else:
+            ab_features_b = [c for c in ab_features if "1台あたり" not in c]
+            X_train = X_train_feat[ab_features_b]
+            X_test = X_test_feat[ab_features_b]
+
+        y_train = Y_train_pivot[item]
+
+        base_models = [
+            ("elastic", ElasticNet(alpha=0.1, l1_ratio=0.5)),
+            ("rf", RandomForestRegressor(n_estimators=100, random_state=42)),
+        ]
+        train_meta = np.zeros((X_train.shape[0], len(base_models)))
+        kf = KFold(n_splits=5)
+        for i, (_, model) in enumerate(base_models):
+            for train_idx, val_idx in kf.split(X_train):
+                model_ = clone(model)
+                model_.fit(X_train.iloc[train_idx], y_train.iloc[train_idx])
+                train_meta[val_idx, i] = model_.predict(X_train.iloc[val_idx])
+
+        meta_model_stage1 = ElasticNet(alpha=0.1, l1_ratio=0.5)
+        meta_model_stage1.fit(train_meta, y_train)
+
+        # テストデータに対してもスタッキング作成
+        test_meta = np.column_stack(
+            [
+                clone(model).fit(X_train, y_train).predict(X_test)
+                for _, model in base_models
+            ]
+        )
+        stage1_train_preds[item] = meta_model_stage1.predict(train_meta)
+        stage1_test_preds[item] = meta_model_stage1.predict(test_meta)
+
+    # ステージ2用特徴量作成
+    def make_stage2_df(stage1_preds, feat_source):
+        df = pd.DataFrame(
+            {f"{k}_予測": v for k, v in stage1_preds.items()}, index=feat_source.index
+        )
+        for col in [
+            "曜日",
+            "週番号",
+            "合計_前日",
+            "1台あたり正味重量_前日中央値",
+            "祝日フラグ",
+        ]:
+            df[col] = feat_source[col]
+        return df
+
+    df_stage1_train = make_stage2_df(stage1_train_preds, X_train_feat)
+    df_stage1_test = make_stage2_df(stage1_test_preds, X_test_feat)
+
+    # ステージ2学習 (GBDT)
+    y_total_train = Y_train_pivot["合計"]
+    y_total_test = Y_test_pivot["合計"]
+    gbdt_model = GradientBoostingRegressor(
+        n_estimators=150, learning_rate=0.05, max_depth=4, random_state=42
+    )
+    gbdt_model.fit(df_stage1_train, y_total_train)
+
+    # === 本当の評価 ===
+    y_pred_test = gbdt_model.predict(df_stage1_test)
+    r2 = r2_score(y_total_test, y_pred_test)
+    mae = mean_absolute_error(y_total_test, y_pred_test)
+    print(f"✅ (時系列分離評価) R² = {r2:.3f}, MAE = {mae:,.0f} kg")
+
+    # ここまでは完全安全に評価できた！
+
+    return df_stage1_test
