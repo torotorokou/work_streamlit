@@ -20,29 +20,19 @@ def generate_weight_features(past_raw, target_items):
     df_pivot = (
         past_raw.groupby(["伝票日付", "品名"])["正味重量"].sum().unstack(fill_value=0)
     )
-
-    # ★ ここが安全対策の追加部分
     for item in target_items:
         if item not in df_pivot.columns:
             df_pivot[item] = 0
-
     df_pivot["全品目合計"] = df_pivot.sum(axis=1)
     df_feat = pd.DataFrame(index=df_pivot.index)
-
     for item in target_items:
         df_feat[f"{item}_前日値"] = df_pivot[item].shift(1)
-
-    # target_itemsが揃っている前提で安全に合計できる
     target_sum = df_pivot[target_items].sum(axis=1)
     df_feat["合計_前日値"] = target_sum.shift(1)
     df_feat["合計_3日平均"] = target_sum.shift(1).rolling(3).mean()
     df_feat["合計_3日合計"] = target_sum.shift(1).rolling(3).sum()
-
     df_feat = df_feat.dropna()
-
-    # ★ ここがインデックス同期の最重要ポイント
     df_pivot = df_pivot.loc[df_feat.index]
-
     return df_feat, df_pivot
 
 
@@ -83,7 +73,7 @@ def train_stage2_model(stage1_history, target_items):
         n_estimators=150, learning_rate=0.05, max_depth=4, random_state=42
     )
     model.fit(X_filtered, y)
-    return model, scaler, selector, X.columns.tolist()
+    return model, scaler, selector
 
 
 def predict_stage2(model, scaler, selector, input_row):
@@ -99,7 +89,7 @@ def print_metrics(all_actual, all_pred):
     r2 = r2_score(y_true, y_pred)
     mae = mean_absolute_error(y_true, y_pred)
     rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-    mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+    mape = np.mean(np.abs((y_true - y_pred) / np.where(y_true == 0, 1, y_true))) * 100
     max_err = np.max(np.abs(y_true - y_pred))
     print("\n===== 最終評価結果 =====")
     print(f"R² = {r2:.3f}")
@@ -168,16 +158,24 @@ def full_walkforward_pipeline(df_raw, start_index=30):
         )
 
         if len(stage1_history) >= 30:
-            df_input = pd.DataFrame(
-                [
-                    {
-                        f"{item}_予測": stage1_row.get(f"{item}_予測", 0)
-                        for item in target_items
-                    }
-                ]
+            # ★ 未来リーク完全排除：当日分の実績は学習に入れない
+            train_history = stage1_history[:-1]
+            if len(train_history) < 10:
+                continue  # 学習データ不足はスキップ
+
+            df_train = pd.DataFrame(train_history)
+            X_stage2 = df_train[[f"{item}_予測" for item in target_items]]
+            y_stage2 = df_train["合計_実績"]
+            scaler2 = StandardScaler()
+            selector2 = VarianceThreshold(1e-4)
+            X_stage2_filtered = selector2.fit_transform(scaler2.fit_transform(X_stage2))
+            model2 = GradientBoostingRegressor(
+                n_estimators=150, learning_rate=0.05, max_depth=4, random_state=42
             )
-            model2, scaler2, selector2, feature_cols = train_stage2_model(
-                stage1_history, target_items
+            model2.fit(X_stage2_filtered, y_stage2)
+
+            df_input = pd.DataFrame(
+                [{f"{item}_予測": stage1_row[f"{item}_予測"] for item in target_items}]
             )
             total_pred = predict_stage2(model2, scaler2, selector2, df_input)
             all_pred.append(total_pred)
@@ -191,7 +189,6 @@ def cross_validation_pipeline(df_raw, n_splits=3):
     df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"])
     df_raw = df_raw.sort_values("伝票日付")
     all_dates = pd.to_datetime(np.sort(df_raw["伝票日付"].unique()))
-
     total_r2, total_mae, total_rmse, total_mape = [], [], [], []
 
     split_points = np.linspace(30, len(all_dates) - 30, n_splits, dtype=int)
@@ -211,7 +208,9 @@ def cross_validation_pipeline(df_raw, n_splits=3):
         r2 = r2_score(y_true, y_pred)
         mae = mean_absolute_error(y_true, y_pred)
         rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-        mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+        mape = (
+            np.mean(np.abs((y_true - y_pred) / np.where(y_true == 0, 1, y_true))) * 100
+        )
         total_r2.append(r2)
         total_mae.append(mae)
         total_rmse.append(rmse)
