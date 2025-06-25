@@ -182,3 +182,5 @@ def full_walkforward_pipeline(df_raw):
         print_metrics(all_actual, all_pred)
     else:
         print("履歴不足で評価不能")
+
+    return all_actual, all_pred

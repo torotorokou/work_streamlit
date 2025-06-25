@@ -22,8 +22,9 @@ def generate_weight_features(past_raw, target_items):
     )
     for item in target_items:
         if item not in df_pivot.columns:
-            df_pivot[item] = 0
-    df_pivot["全品目合計"] = df_pivot.sum(axis=1)
+            df_pivot[item] = 0  # 品目欠損補完
+    df_pivot = df_pivot.sort_index()
+
     df_feat = pd.DataFrame(index=df_pivot.index)
     for item in target_items:
         df_feat[f"{item}_前日値"] = df_pivot[item].shift(1)
@@ -62,8 +63,8 @@ def predict_stage1(X_pred, scaler, selector, trained_models, meta_model):
 
 
 # ---------- ステージ2 ----------
-def train_stage2_model(stage1_history, target_items):
-    df = pd.DataFrame(stage1_history)
+def train_stage2_model(train_history, target_items):
+    df = pd.DataFrame(train_history)
     X = df[[f"{item}_予測" for item in target_items]]
     y = df["合計_実績"]
     scaler = StandardScaler()
@@ -135,11 +136,7 @@ def full_walkforward_pipeline(df_raw, start_index=30):
 
         stage1_row = {}
         for item in target_items:
-            y_full = (
-                df_pivot[item]
-                if item in df_pivot.columns
-                else pd.Series(0, index=X_full.index)
-            )
+            y_full = df_pivot[item]
             y_train = y_full.iloc[:-1]
 
             if len(y_train) < 2:
@@ -158,90 +155,22 @@ def full_walkforward_pipeline(df_raw, start_index=30):
         )
 
         if len(stage1_history) >= 30:
-            # ★ 未来リーク完全排除：当日分の実績は学習に入れない
-            train_history = stage1_history[:-1]
+            train_history = stage1_history[:-1]  # 未来リーク排除
             if len(train_history) < 10:
-                continue  # 学習データ不足はスキップ
+                continue
 
-            df_train = pd.DataFrame(train_history)
-            X_stage2 = df_train[[f"{item}_予測" for item in target_items]]
-            y_stage2 = df_train["合計_実績"]
-            scaler2 = StandardScaler()
-            selector2 = VarianceThreshold(1e-4)
-            X_stage2_filtered = selector2.fit_transform(scaler2.fit_transform(X_stage2))
-            model2 = GradientBoostingRegressor(
-                n_estimators=150, learning_rate=0.05, max_depth=4, random_state=42
-            )
-            model2.fit(X_stage2_filtered, y_stage2)
-
+            model2, scaler2, selector2 = train_stage2_model(train_history, target_items)
             df_input = pd.DataFrame(
                 [{f"{item}_予測": stage1_row[f"{item}_予測"] for item in target_items}]
             )
             total_pred = predict_stage2(model2, scaler2, selector2, df_input)
+
             all_pred.append(total_pred)
             all_actual.append(total_actual)
 
-    return all_actual, all_pred
-
-
-# ---------- クロスバリデーション導入 ----------
-def cross_validation_pipeline(df_raw, n_splits=3):
-    df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"])
-    df_raw = df_raw.sort_values("伝票日付")
-    all_dates = pd.to_datetime(np.sort(df_raw["伝票日付"].unique()))
-    total_r2, total_mae, total_rmse, total_mape = [], [], [], []
-
-    split_points = np.linspace(30, len(all_dates) - 30, n_splits, dtype=int)
-
-    for split_start in split_points:
-        print(f"\n===== クロスバリデーション分割: {split_start}日目以降 =====")
-        all_actual, all_pred = full_walkforward_pipeline(
-            df_raw, start_index=split_start
-        )
-
-        if len(all_actual) == 0:
-            print("  -> 評価データ不足")
-            continue
-
-        y_true = np.array(all_actual)
-        y_pred = np.array(all_pred)
-        r2 = r2_score(y_true, y_pred)
-        mae = mean_absolute_error(y_true, y_pred)
-        rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-        mape = (
-            np.mean(np.abs((y_true - y_pred) / np.where(y_true == 0, 1, y_true))) * 100
-        )
-        total_r2.append(r2)
-        total_mae.append(mae)
-        total_rmse.append(rmse)
-        total_mape.append(mape)
-
-        print(
-            f"  R² = {r2:.3f}, MAE = {mae:,.0f} kg, RMSE = {rmse:,.0f} kg, MAPE = {mape:.2f}%"
-        )
-
-    if total_r2:
-        print("\n===== クロスバリデーション全体結果 =====")
-        print(f"平均 R² = {np.mean(total_r2):.3f}")
-        print(f"平均 MAE = {np.mean(total_mae):,.0f} kg")
-        print(f"平均 RMSE = {np.mean(total_rmse):,.0f} kg")
-        print(f"平均 MAPE = {np.mean(total_mape):.2f}%")
+    if all_actual:
+        print_metrics(all_actual, all_pred)
     else:
-        print("十分なデータがなくCV評価不能")
+        print("履歴不足で評価不能")
 
-
-def prepare_history_data(df_raw, history_days):
-    """
-    df_raw から最新の履歴日数だけ抽出
-    """
-    df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"])
-    df_raw = df_raw.sort_values("伝票日付")
-    all_dates = pd.to_datetime(np.sort(df_raw["伝票日付"].unique()))
-
-    if len(all_dates) < history_days:
-        print(f"履歴{history_days}日分のデータがそもそも不足")
-        return None
-
-    start_date = all_dates[-history_days]
-    df_cut = df_raw[df_raw["伝票日付"] >= start_date]
-    return df_cut
+    return all_actual, all_pred
