@@ -245,6 +245,8 @@ def full_walkforward(df_raw, holidays, df_reserve, top_n=5):
         # "非固定客予約数",
         # "固定客比率",
         "上位得意先予約数",
+        "平均気温",
+        "降水量",
     ]
 
     all_actual, all_pred, all_stage1_rows = [], [], []
