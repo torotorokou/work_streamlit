@@ -3,79 +3,20 @@ import numpy as np
 from sklearn.linear_model import ElasticNet
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.base import clone
-from sklearn.metrics import r2_score, mean_absolute_error
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import VarianceThreshold
+import matplotlib.pyplot as plt
+
+# === 特徴量作成（モジュールごとに分割） ===
+from logic.factory_manage.new_model1.feature_builder import (
+    WeightFeatureBuilder,
+    ReserveFeatureBuilder,
+)
 
 
 def get_target_items(df_raw, top_n=5):
     return df_raw["品名"].value_counts().head(top_n).index.tolist()
-
-
-def generate_reserve_features(df_reserve, top_k_clients=10):
-    df_reserve = df_reserve.copy()
-    df_reserve["予約日"] = pd.to_datetime(df_reserve["予約日"])
-
-    # 上位得意先フラグを作成
-    top_clients = df_reserve["予約得意先名"].value_counts().head(top_k_clients).index
-    df_reserve["上位得意先フラグ"] = (
-        df_reserve["予約得意先名"].isin(top_clients).astype(int)
-    )
-
-    # 台数（数値）に変換しておく（念のため）
-    df_reserve["台数"] = pd.to_numeric(df_reserve["台数"], errors="coerce").fillna(0)
-
-    # 集計処理
-    df_feat = df_reserve.groupby("予約日").agg(
-        予約件数=("予約得意先名", "count"),
-        固定客予約数=("固定客", lambda x: x.sum()),
-        非固定客予約数=("固定客", lambda x: (~x).sum()),
-        上位得意先予約数=("上位得意先フラグ", "sum"),
-        予約合計台数=("台数", "sum"),  # ←★ 追加：予約日ごとの台数合計
-        平均台数=("台数", "mean"),  # ←（任意）1件あたりの台数も欲しい場合
-    )
-    df_feat["固定客比率"] = df_feat["固定客予約数"] / df_feat["予約件数"]
-    return df_feat.fillna(0)
-
-
-def generate_weight_features(past_raw, target_items, holidays):
-    df_pivot = (
-        past_raw.groupby(["伝票日付", "品名"])["正味重量"].sum().unstack(fill_value=0)
-    )
-    for item in target_items:
-        if item not in df_pivot.columns:
-            df_pivot[item] = 0
-    df_pivot = df_pivot.sort_index()
-    df_pivot["合計"] = df_pivot[target_items].sum(axis=1)
-
-    df_feat = pd.DataFrame(index=df_pivot.index)
-    for item in target_items:
-        df_feat[f"{item}_前日値"] = df_pivot[item].shift(1)
-        df_feat[f"{item}_前週平均"] = df_pivot[item].shift(1).rolling(7).mean()
-    df_feat["合計_前日値"] = df_pivot["合計"].shift(1)
-    df_feat["合計_3日平均"] = df_pivot["合計"].shift(1).rolling(3).mean()
-    df_feat["合計_3日合計"] = df_pivot["合計"].shift(1).rolling(3).sum()
-    df_feat["合計_前週平均"] = df_pivot["合計"].shift(1).rolling(7).mean()
-
-    daily_avg = past_raw.groupby("伝票日付")["正味重量"].median()
-    df_feat["1台あたり重量_過去中央値"] = (
-        daily_avg.shift(1).rolling(60, min_periods=10).median()
-    )
-
-    df_feat["曜日"] = df_feat.index.dayofweek
-    df_feat["週番号"] = df_feat.index.isocalendar().week
-    holiday_dates = pd.to_datetime(holidays)
-    df_feat["祝日フラグ"] = df_feat.index.isin(holiday_dates).astype(int)
-    df_feat["祝日前フラグ"] = df_feat.index.map(
-        lambda d: (d + pd.Timedelta(days=1)) in holiday_dates
-    ).astype(int)
-    df_feat["祝日後フラグ"] = df_feat.index.map(
-        lambda d: (d - pd.Timedelta(days=1)) in holiday_dates
-    ).astype(int)
-
-    df_feat = df_feat.dropna()
-    df_pivot = df_pivot.loc[df_feat.index]
-    return df_feat, df_pivot
 
 
 def train_and_predict_stage1(
@@ -89,10 +30,7 @@ def train_and_predict_stage1(
     stage1_eval,
     df_pivot,
 ):
-    print("▶️ train_and_predict_stage1 開始")
-    print("📌 df_feat_today index:", df_feat_today.index)
-    print("📌 学習用特徴量サイズ:", df_past_feat.shape)
-    print("📌 学習用pivotサイズ:", df_past_pivot.shape)
+    print("\n▶️ train_and_predict_stage1 開始")
 
     results = {}
     X_train = df_past_feat[feature_list]
@@ -110,49 +48,24 @@ def train_and_predict_stage1(
             m.fit(X_train_filtered, y_train)
             trained_models.append(m)
 
-        train_meta = np.column_stack(
+        meta_input_train = np.column_stack(
             [m.predict(X_train_filtered) for m in trained_models]
         )
         meta_model = clone(meta_model_proto)
-        meta_model.fit(train_meta, y_train)
+        meta_model.fit(meta_input_train, y_train)
 
         X_target = df_feat_today[feature_list]
         X_target_scaled = scaler.transform(X_target)
         X_target_filtered = selector.transform(X_target_scaled)
-
-        meta_input = np.column_stack(
+        meta_input_target = np.column_stack(
             [m.predict(X_target_filtered) for m in trained_models]
         )
-        pred = meta_model.predict(meta_input)[0]
+        pred = meta_model.predict(meta_input_target)[0]
         results[f"{item}_予測"] = pred
 
         true_val = df_pivot.loc[df_feat_today.index[0], item]
         stage1_eval[item]["y_true"].append(true_val)
         stage1_eval[item]["y_pred"].append(pred)
-
-        print(f"✅ {item} 予測: {pred:.1f}kg / 正解: {true_val:.1f}kg")
-
-        # 特徴量重要度の出力
-        selected_columns = np.array(feature_list)[selector.get_support()]
-
-        # ElasticNetの係数（絶対値順）
-        if hasattr(trained_models[0], "coef_"):
-            elastic_coef = trained_models[0].coef_
-            print(f"🔍 ElasticNet 係数 ({item}, 絶対値順):")
-            for name, val in sorted(
-                zip(selected_columns, elastic_coef),
-                key=lambda x: -abs(x[1]),  # ←絶対値で降順ソート
-            ):
-                print(f"   {name:<25} : {val:.4f}")
-
-        # RandomForestの特徴量重要度（高い順）
-        if hasattr(trained_models[1], "feature_importances_"):
-            rf_importances = trained_models[1].feature_importances_
-            print(f"🔍 RandomForest 重要度 ({item}, 上位10件):")
-            for name, val in sorted(
-                zip(selected_columns, rf_importances), key=lambda x: -x[1]
-            )[:10]:
-                print(f"   {name:<25} : {val:.4f}")
 
     return results
 
@@ -160,9 +73,8 @@ def train_and_predict_stage1(
 def train_and_predict_stage2(
     all_stage1_rows, stage1_results, df_feat_today, target_items
 ):
-    print("▶️ train_and_predict_stage2 開始")
+    print("\n▶️ train_and_predict_stage2 開始")
     df_hist = pd.DataFrame(all_stage1_rows[:-1])
-    print("📌 df_hist サイズ:", df_hist.shape)
 
     X_train = df_hist.drop(columns=["合計"])
     y_train = df_hist["合計"]
@@ -187,21 +99,9 @@ def train_and_predict_stage2(
 
     X_target_scaled = scaler.transform(X_target)
     X_target_filtered = selector.transform(X_target_scaled)
-
     total_pred = gbdt.predict(X_target_filtered)[0]
     print(f"✅ 合計予測: {total_pred:.1f}kg")
-
-    # GBDT特徴量重要度
-    X_cols = X_train.columns[selector.get_support()]
-    gbdt_importance = gbdt.feature_importances_
-    print("🔍 GBDT 特徴量重要度 (上位10):")
-    for name, val in sorted(zip(X_cols, gbdt_importance), key=lambda x: -x[1])[:10]:
-        print(f"   {name:<25} : {val:.4f}")
-
     return total_pred
-
-
-from sklearn.metrics import mean_squared_error
 
 
 def evaluate_stage1(stage1_eval, target_items):
@@ -222,12 +122,16 @@ def full_walkforward(
     df_raw, holidays, df_reserve, min_stage1_days, min_stage2_days, top_n=5
 ):
     print("▶️ full_walkforward 開始")
-    print("📌 入力データ件数:", len(df_raw))
 
     df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"])
     df_raw = df_raw.sort_values("伝票日付")
     target_items = get_target_items(df_raw, top_n)
-    df_feat, df_pivot = generate_weight_features(df_raw, target_items, holidays)
+
+    builder = WeightFeatureBuilder(df_raw, target_items, holidays)
+    df_feat, df_pivot = builder.build()
+
+    reserve_builder = ReserveFeatureBuilder(df_reserve)
+    df_reserve_feat_all = reserve_builder.build()
 
     base_models = [
         ("elastic", ElasticNet(alpha=0.1, l1_ratio=0.5, max_iter=10000, tol=1e-2)),
@@ -240,7 +144,6 @@ def full_walkforward(
         *[f"{item}_前週平均" for item in target_items],
         "合計_前日値",
         "合計_3日平均",
-        # "合計_3日合計",
         "合計_前週平均",
         "曜日",
         "週番号",
@@ -248,11 +151,11 @@ def full_walkforward(
         "祝日フラグ",
         "祝日前フラグ",
         "祝日後フラグ",
+        "連休前フラグ",
+        "連休後フラグ",
         "予約件数",
         "予約合計台数",
         "固定客予約数",
-        # "非固定客予約数",
-        # "固定客比率",
         "上位得意先予約数",
     ]
 
@@ -267,18 +170,13 @@ def full_walkforward(
         df_past_feat = df_feat[df_feat.index < target_date].tail(600)
         df_past_pivot = df_pivot.loc[df_past_feat.index]
 
-        df_reserve_filtered = df_reserve[
-            pd.to_datetime(df_reserve["予約日"]) <= target_date
-        ]
-        df_reserve_feat_all = generate_reserve_features(df_reserve_filtered)
-
+        df_reserve_today = df_reserve_feat_all[df_reserve_feat_all.index <= target_date]
         df_past_feat = df_past_feat.merge(
-            df_reserve_feat_all, left_index=True, right_index=True, how="left"
+            df_reserve_today, left_index=True, right_index=True, how="left"
         ).fillna(0)
-
         df_feat_today = df_feat.loc[[target_date]].copy()
         df_feat_today = df_feat_today.merge(
-            df_reserve_feat_all, left_index=True, right_index=True, how="left"
+            df_reserve_today, left_index=True, right_index=True, how="left"
         ).fillna(0)
 
         print(f"\n=== {target_date.strftime('%Y-%m-%d')} を予測中 ===")
@@ -291,7 +189,7 @@ def full_walkforward(
             feature_list,
             target_items,
             stage1_eval,
-            df_pivot,  # ✅ 追加
+            df_pivot,
         )
 
         row = {f"{item}_予測": stage1_result[f"{item}_予測"] for item in target_items}
@@ -325,10 +223,6 @@ def full_walkforward(
     return all_actual, all_pred
 
 
-import matplotlib.pyplot as plt
-
-
-# 重要度可視化
 def plot_feature_importances(names, importances, title="Feature Importance", top_k=15):
     sorted_idx = np.argsort(importances)[-top_k:]
     plt.figure(figsize=(10, 6))
