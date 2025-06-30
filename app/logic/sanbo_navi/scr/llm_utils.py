@@ -7,7 +7,6 @@ from logic.sanbo_navi.scr.prompts import (
 # --- GPT/LLM 呼び出し クラス版 ---
 from abc import ABC, abstractmethod
 
-
 # --- 抽象基底クラス ---
 class LLMClientBase(ABC):
     def __init__(self, client):
@@ -34,57 +33,47 @@ class OpenAIClient(LLMClientBase):
         )
         return response.choices[0].message.content.strip()
 
-
-# --- Anthropic 用クラス ---
-class AnthropicClient(LLMClientBase):
-    def __init__(self, client, model_name="claude-3-opus-20240229"):
-        super().__init__(client)
-        self.model_name = model_name
-
-    def call(self, system_prompt, user_prompt):
-        response = self.client.messages.create(
-            model=self.model_name,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_prompt}],
-        )
-        return response.content.strip()
-
-
-# --- Huggingface 用クラス ---
-class HuggingfaceClient(LLMClientBase):
-    def call(self, system_prompt, user_prompt):
-        result = self.client(
-            f"{system_prompt}\n\n{user_prompt}", max_length=512, do_sample=True
-        )
-        return result[0]["generated_text"].strip()
-
-
-# --- カテゴリ推定 ---
-def suggest_category(query_input, llm_client: LLMClientBase):
-    prompt = build_category_suggestion_prompt(query_input)
-    system_prompt = (
-        "あなたは日本の産業廃棄物処理のカテゴリ分類に詳しい専門アシスタントです。"
-    )
-    return llm_client.call(system_prompt, prompt)
+    # --- タグ抽出用の簡易プロンプト ---
+    def extract_tags(self, query: str) -> list:
+        tag_extraction_prompt = f"次の質問に関連するタグ候補を最大5個、箇条書きで挙げてください: {query}"
+        raw = self.call("あなたは廃棄物処理の専門AIです。タグ候補を抽出してください。", tag_extraction_prompt)
+        tags = [line.strip("- ・* ").strip() for line in raw.split("\n") if line.strip()]
+        return tags[:5]
 
 
 # --- 回答生成 ---
-def generate_answer(query, selected_category, vectorstore, llm_client: LLMClientBase):
-    docs = vectorstore.max_marginal_relevance_search(query, k=5, fetch_k=30)
+def generate_answer(query, selected_category, vectorstore, llm_client: OpenAIClient):
+    # ステップ1: ドキュメント検索（MMR）
+    docs = vectorstore.max_marginal_relevance_search(query, k=10, fetch_k=30)
 
-    if selected_category:
-        docs = [
-            doc for doc in docs if selected_category in doc.metadata.get("category", [])
-        ]
+    # ステップ2: タグ抽出（安全に）
+    try:
+        candidate_tags = llm_client.extract_tags(query)
+    except Exception:
+        candidate_tags = []
 
-    context = "\n".join([doc.page_content for doc in docs])
-    sources = [
-        (doc.metadata.get("source", "不明"), doc.metadata.get("page", "不明"))
-        for doc in docs
-    ]
+    # ステップ3: スコア付け（カテゴリ・タグに一致するほど優先）
+    def score(doc):
+        score = 0
+        category_list = doc.metadata.get("category", [])
+        tag_list = doc.metadata.get("tag", [])
 
-    prompt = build_answer_prompt(context, query)
-    system_prompt = "あなたは日本の産業廃棄物処理文書をもとに回答する専門AIです。"
+        if selected_category in category_list:
+            score += 2
+        score += sum(1 for tag in candidate_tags if tag in tag_list)
 
-    answer = llm_client.call(system_prompt, prompt)
+        return score
+
+    scored_docs = sorted(docs, key=score, reverse=True)
+    top_docs = scored_docs[:5]
+
+    # ステップ4: コンテキスト生成
+    context = "\n".join([doc.page_content for doc in top_docs])
+    sources = [(doc.metadata.get("source", "不明"), doc.metadata.get("page", "不明")) for doc in top_docs]
+
+    # ステップ5: プロンプト構築＋LLM呼び出し
+    system_prompt = "あなたは日本の産業廃棄物処理に関する専門的な情報提供AIです。以下の文書を参考に、できるだけ正確に答えてください。"
+    user_prompt = f"以下の文書情報を参考に質問に答えてください:\n{context}\n\n質問:{query}"
+
+    answer = llm_client.call(system_prompt, user_prompt)
     return answer, sources
