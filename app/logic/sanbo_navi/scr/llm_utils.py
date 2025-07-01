@@ -7,6 +7,7 @@ from logic.sanbo_navi.scr.prompts import (
 # --- GPT/LLM 呼び出し クラス版 ---
 from abc import ABC, abstractmethod
 
+
 # --- 抽象基底クラス ---
 class LLMClientBase(ABC):
     def __init__(self, client):
@@ -35,9 +36,16 @@ class OpenAIClient(LLMClientBase):
 
     # --- タグ抽出用の簡易プロンプト ---
     def extract_tags(self, query: str) -> list:
-        tag_extraction_prompt = f"次の質問に関連するタグ候補を最大5個、箇条書きで挙げてください: {query}"
-        raw = self.call("あなたは廃棄物処理の専門AIです。タグ候補を抽出してください。", tag_extraction_prompt)
-        tags = [line.strip("- ・* ").strip() for line in raw.split("\n") if line.strip()]
+        tag_extraction_prompt = (
+            f"次の質問に関連するタグ候補を最大5個、箇条書きで挙げてください: {query}"
+        )
+        raw = self.call(
+            "あなたは廃棄物処理の専門AIです。タグ候補を抽出してください。",
+            tag_extraction_prompt,
+        )
+        tags = [
+            line.strip("- ・* ").strip() for line in raw.split("\n") if line.strip()
+        ]
         return tags[:5]
 
 
@@ -69,11 +77,16 @@ def generate_answer(query, selected_category, vectorstore, llm_client: OpenAICli
 
     # ステップ4: コンテキスト生成
     context = "\n".join([doc.page_content for doc in top_docs])
-    sources = [(doc.metadata.get("source", "不明"), doc.metadata.get("page", "不明")) for doc in top_docs]
+    sources = [
+        (doc.metadata.get("source", "不明"), doc.metadata.get("page", "不明"))
+        for doc in top_docs
+    ]
 
     # ステップ5: プロンプト構築＋LLM呼び出し
     system_prompt = "あなたは日本の産業廃棄物処理に関する専門的な情報提供AIです。以下の文書を参考に、できるだけ正確に答えてください。"
-    user_prompt = f"以下の文書情報を参考に質問に答えてください:\n{context}\n\n質問:{query}"
+    user_prompt = (
+        f"以下の文書情報を参考に質問に答えてください:\n{context}\n\n質問:{query}"
+    )
 
     answer = llm_client.call(system_prompt, user_prompt)
     return answer, sources

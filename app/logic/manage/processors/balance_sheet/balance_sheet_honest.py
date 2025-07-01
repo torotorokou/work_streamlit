@@ -38,6 +38,11 @@ def calculate_honest_sales_by_unit(df_receive: pd.DataFrame) -> tuple[int, int]:
         target_col="金額",
     )
 
+    # オネストm3 が空なら０を代入
+    # condition = (summary_m3["項目"] == "オネストm3") & (summary_m3["金額"].isna())
+    # if summary_m3[condition].empty:
+    #     summary_m3["金額"] = 0
+
     # --- ③ 「伝票区分名」のみで金額を集計（kg） ---
     summary_kg = summary_apply(
         master_df,
@@ -49,11 +54,15 @@ def calculate_honest_sales_by_unit(df_receive: pd.DataFrame) -> tuple[int, int]:
 
     # --- ④ m3 売上金額を取得 ---
     honest_row_m3 = summary_m3[summary_m3["項目"] == "オネストm3"]
-    honest_m3_value = honest_row_m3["金額"].values[0] if not honest_row_m3.empty else 0
+    honest_m3_value = (
+        honest_row_m3["金額"].fillna(0).values[0] if not honest_row_m3.empty else 0
+    )
 
     # --- ⑤ kg 売上金額を取得 ---
     honest_row_kg = summary_kg[summary_kg["項目"] == "オネストkg"]
-    honest_kg_value = honest_row_kg["金額"].values[0] if not honest_row_kg.empty else 0
+    honest_kg_value = (
+        honest_row_kg["金額"].fillna(0).values[0] if not honest_row_kg.empty else 0
+    )
 
     # kg - m3 の差分を計算（kg純粋）
     honest_kg_total = honest_kg_value - honest_m3_value
