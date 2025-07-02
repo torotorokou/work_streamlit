@@ -7,24 +7,18 @@ from typing import List, Dict, Any
 
 from logic.sanbo_navi.scr.view import load_pdf_first_page, render_pdf_pages
 from logic.sanbo_navi.scr.loader import (
-    load_config,
-    load_json_data,
-    extract_categories_and_titles,
-    load_question_templates,
+    load_config, load_json_data, extract_categories_and_titles, load_question_templates,
 )
 from logic.sanbo_navi.scr.ai_loader import OpenAIConfig, load_ai
 from logic.sanbo_navi.scr.llm_utils import OpenAIClient, generate_answer
 from logic.sanbo_navi.scr.utils import load_vectorstore
 from components.custom_button import centered_button
 
-
 # --- メイン処理 ---
 def controller_education_gpt_page():
     FAISS_PATH, PDF_PATH, JSON_PATH = load_config()
     json_data = load_json_data(JSON_PATH)
-    templates = (
-        load_question_templates()
-    )  # YAML構造: category -> [{q: str, tag: List[str]}]
+    templates = load_question_templates()  # YAML構造: category -> [{q: str, tag: List[str]}]
     categories = list(templates.keys())
 
     client = load_ai(OpenAIConfig)
@@ -44,33 +38,22 @@ def controller_education_gpt_page():
 
     # --- 該当カテゴリ内タグの抽出（文字列のみで整形） ---
     # --- 該当カテゴリ内タグの抽出（文字列のみで整形） ---
-    all_tags = sorted(
-        set(
-            tag.strip(" []'\"")
-            for t in category_template
-            for tag in t.get("tag", [])
-            if isinstance(tag, str)
-        )
-    )
+    all_tags = sorted(set(
+        tag.strip(" []'\"")
+        for t in category_template
+        for tag in t.get("tag", [])
+        if isinstance(tag, str)
+    ))
 
-    selected_tags = st.multiselect(
-        "次に、関心のあるトピック（タグ）を選択してください", all_tags
-    )
+    selected_tags = st.multiselect("次に、関心のあるトピック（タグ）を選択してください", all_tags)
 
     # --- タグに一致する質問テンプレートのみ表示 ---
-    filtered_questions = (
-        [
-            t["q"]
-            for t in category_template
-            if any(tag.strip(" []'\"") in selected_tags for tag in t.get("tag", []))
-        ]
-        if selected_tags
-        else []
-    )
+    filtered_questions = [
+        t["title"] for t in category_template
+        if any(tag.strip(" []'\"") in selected_tags for tag in t.get("tag", []))
+    ] if selected_tags else []
     subcategory_options = ["自由入力"] + filtered_questions
-    sub_category = st.selectbox(
-        "質問テンプレートを選択（または自由入力）", options=subcategory_options
-    )
+    sub_category = st.selectbox("質問テンプレートを選択（または自由入力）", options=subcategory_options)
 
     # --- クエリ構築 ---
     if sub_category == "自由入力":
@@ -81,9 +64,7 @@ def controller_education_gpt_page():
 
     if centered_button("\u27a1\ufe0f 送信") and query:
         with st.spinner("\U0001F916 回答生成中..."):
-            answer, sources = generate_answer(
-                query, main_category, vectorstore, llm_client
-            )
+            answer, sources = generate_answer(query, main_category, vectorstore, llm_client)
             st.session_state.last_response = answer
             st.session_state.sources = sources
 
@@ -95,12 +76,8 @@ def controller_education_gpt_page():
     if "sources" in st.session_state:
         sources = st.session_state.sources
         pages = {str(page) for _, page in sources}
-        st.markdown(
-            "\U0001F4C4 **出典ページ:** "
-            + ", ".join([f"Page {p}" for p in sorted(pages)])
-        )
+        st.markdown("\U0001F4C4 **出典ページ:** " + ", ".join([f"Page {p}" for p in sorted(pages)]))
         render_pdf_pages(PDF_PATH, pages)
-
 
 if __name__ == "__main__":
     controller_education_gpt_page()
