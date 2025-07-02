@@ -22,8 +22,8 @@ def generate_reserve_features(df_reserve, top_k_clients=10):
         df_reserve["予約得意先名"].isin(top_clients).astype(int)
     )
 
-    # 台数（数値）に変換しておく（念のため）
-    df_reserve["台数"] = pd.to_numeric(df_reserve["台数"], errors="coerce").fillna(0)
+    # 予約台数（数値）に変換しておく（念のため）
+    df_reserve["予約台数"] = pd.to_numeric(df_reserve["予約台数"], errors="coerce").fillna(0)
 
     # 集計処理
     df_feat = df_reserve.groupby("予約日").agg(
@@ -31,8 +31,8 @@ def generate_reserve_features(df_reserve, top_k_clients=10):
         固定客予約数=("固定客", lambda x: x.sum()),
         非固定客予約数=("固定客", lambda x: (~x).sum()),
         上位得意先予約数=("上位得意先フラグ", "sum"),
-        合計台数=("台数", "sum"),  # ←★ 追加：予約日ごとの台数合計
-        平均台数=("台数", "mean"),  # ←（任意）1件あたりの台数も欲しい場合
+        予約台数=("予約台数", "sum"),  # ←★ 追加：予約日ごとの予約台数合計
+        平均予約台数=("予約台数", "mean"),  # ←（任意）1件あたりの予約台数も欲しい場合
     )
     df_feat["固定客比率"] = df_feat["固定客予約数"] / df_feat["予約件数"]
     return df_feat.fillna(0)
@@ -240,7 +240,7 @@ def full_walkforward(df_raw, holidays, df_reserve, top_n=5):
         "祝日前フラグ",
         "祝日後フラグ",
         "予約件数",
-        "合計台数",
+        "予約台数",
         "固定客予約数",
         # "非固定客予約数",
         # "固定客比率",

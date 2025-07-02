@@ -16,6 +16,16 @@ from logic.factory_manage.new_model1.feature_builder import (
 
 
 def get_target_items(df_raw, top_n=5):
+    """
+    データフレームから上位の品目を取得します。
+
+    Args:
+        df_raw (pd.DataFrame): 元のデータフレーム。
+        top_n (int): 取得する品目の数。
+
+    Returns:
+        list: 上位の品目リスト。
+    """
     return df_raw["品名"].value_counts().head(top_n).index.tolist()
 
 
@@ -30,6 +40,23 @@ def train_and_predict_stage1(
     stage1_eval,
     df_pivot,
 ):
+    """
+    ステージ1のモデルを訓練し、予測を行います。
+
+    Args:
+        df_feat_today (pd.DataFrame): 今日の特徴量データ。
+        df_past_feat (pd.DataFrame): 過去の特徴量データ。
+        df_past_pivot (pd.DataFrame): 過去のピボットデータ。
+        base_models (list): 基本モデルのリスト。
+        meta_model_proto (object): メタモデルのプロトタイプ。
+        feature_list (list): 使用する特徴量のリスト。
+        target_items (list): 予測対象の品目リスト。
+        stage1_eval (dict): ステージ1の評価結果を格納する辞書。
+        df_pivot (pd.DataFrame): ピボットデータ。
+
+    Returns:
+        dict: 品目ごとの予測結果。
+    """
     print("\n▶️ train_and_predict_stage1 開始")
 
     results = {}
@@ -73,6 +100,18 @@ def train_and_predict_stage1(
 def train_and_predict_stage2(
     all_stage1_rows, stage1_results, df_feat_today, target_items
 ):
+    """
+    ステージ2のモデルを訓練し、予測を行います。
+
+    Args:
+        all_stage1_rows (list): ステージ1の全行データ。
+        stage1_results (dict): ステージ1の予測結果。
+        df_feat_today (pd.DataFrame): 今日の特徴量データ。
+        target_items (list): 予測対象の品目リスト。
+
+    Returns:
+        tuple: 合計予測値、特徴量名、重要度。
+    """
     print("\n▶️ train_and_predict_stage2 開始")
     df_hist = pd.DataFrame(all_stage1_rows[:-1])
 
@@ -89,6 +128,11 @@ def train_and_predict_stage2(
     )
     gbdt.fit(X_train_filtered, y_train)
 
+    # ←★ 特徴量名の抽出（selector を通過したものだけ）
+    feature_names = np.array(X_train.columns)[selector.get_support()]
+    importances = gbdt.feature_importances_
+
+    # ターゲットデータの準備
     X_target = {
         f"{item}_予測": [stage1_results[f"{item}_予測"]] for item in target_items
     }
@@ -100,11 +144,23 @@ def train_and_predict_stage2(
     X_target_scaled = scaler.transform(X_target)
     X_target_filtered = selector.transform(X_target_scaled)
     total_pred = gbdt.predict(X_target_filtered)[0]
+
     print(f"✅ 合計予測: {total_pred:.1f}kg")
-    return total_pred
+
+    return total_pred, feature_names, importances
 
 
 def evaluate_stage1(stage1_eval, target_items):
+    """
+    ステージ1の評価結果を計算し、表示します。
+
+    Args:
+        stage1_eval (dict): ステージ1の評価結果。
+        target_items (list): 予測対象の品目リスト。
+
+    Returns:
+        None
+    """
     print("\n===== ステージ1評価結果 =====")
     for item in target_items:
         y_true = np.array(stage1_eval[item]["y_true"])
@@ -118,9 +174,53 @@ def evaluate_stage1(stage1_eval, target_items):
         )
 
 
+def evaluate_stage1_feature_importance_as_table(records, top_k=15):
+    """
+    ステージ1の特徴量重要度をテーブル形式で表示します。
+
+    Args:
+        records (list): 特徴量重要度の記録。
+        top_k (int): 表示する上位の件数。
+
+    Returns:
+        pd.DataFrame: 特徴量重要度のデータフレーム。
+    """
+    df = pd.DataFrame(records)
+
+    # モデル・品目・特徴量ごとに平均を取る（複数日分あれば）
+    df_summary = (
+        df.groupby(["品目", "モデル", "特徴量"])["重要度"]
+        .mean()
+        .reset_index()
+        .sort_values("重要度", ascending=False)
+    )
+
+    print("\n===== ステージ1 特徴量重要度ランキング =====")
+    print(df_summary.head(top_k).to_string(index=False))
+
+    return df_summary
+
+
 def full_walkforward(
     df_raw, holidays, df_reserve, min_stage1_days, min_stage2_days, top_n=5
 ):
+    """
+    ウォークフォワード法を実行します。
+
+    Args:
+        df_raw (pd.DataFrame): 元のデータフレーム。
+        holidays (list): 祝日のリスト。
+        df_reserve (pd.DataFrame): 予約データ。
+        df_raw (pd.DataFrame): 元のデータフレーム。
+        holidays (list): 祝日のリスト。
+        df_reserve (pd.DataFrame): 予約データ。
+        min_stage1_days (int): ステージ1の最小日数。
+        min_stage2_days (int): ステージ2の最小日数。
+        top_n (int): 上位の品目数。
+
+    Returns:
+        tuple: 実際の値と予測値のリスト。
+    """
     print("▶️ full_walkforward 開始")
 
     df_raw["伝票日付"] = pd.to_datetime(df_raw["伝票日付"])
@@ -151,6 +251,7 @@ def full_walkforward(
         "祝日フラグ",
         "祝日前フラグ",
         "祝日後フラグ",
+        "第2日曜フラグ",
         "連休前フラグ",
         "連休後フラグ",
         "予約件数",
@@ -160,6 +261,7 @@ def full_walkforward(
     ]
 
     all_actual, all_pred, all_stage1_rows = [], [], []
+    stage1_feat_importances = []
     stage1_eval = {item: {"y_true": [], "y_pred": []} for item in target_items}
     dates = df_feat.index
 
@@ -220,10 +322,24 @@ def full_walkforward(
         print("評価できるデータが不足しています")
 
     evaluate_stage1(stage1_eval, target_items)
+    # ステージ2評価の後に
+    evaluate_stage1_feature_importance_as_table(stage1_feat_importances, top_k=20)
     return all_actual, all_pred
 
 
 def plot_feature_importances(names, importances, title="Feature Importance", top_k=15):
+    """
+    特徴量重要度をプロットします。
+
+    Args:
+        names (list): 特徴量名のリスト。
+        importances (list): 特徴量の重要度。
+        title (str): プロットのタイトル。
+        top_k (int): 表示する上位の件数。
+
+    Returns:
+        None
+    """
     sorted_idx = np.argsort(importances)[-top_k:]
     plt.figure(figsize=(10, 6))
     plt.barh(range(len(sorted_idx)), np.array(importances)[sorted_idx], align="center")
@@ -232,3 +348,25 @@ def plot_feature_importances(names, importances, title="Feature Importance", top
     plt.xlabel("Importance")
     plt.tight_layout()
     plt.show()
+
+
+def evaluate_feature_importance_as_table(feature_names, importances, top_k=15):
+    """
+    特徴量重要度をテーブル形式で表示します。
+
+    Args:
+        feature_names (list): 特徴量名のリスト。
+        importances (list): 特徴量の重要度。
+        top_k (int): 表示する上位の件数。
+
+    Returns:
+        pd.DataFrame: 特徴量重要度のデータフレーム。
+    """
+    df_importance = pd.DataFrame(
+        {"特徴量": feature_names, "重要度": importances}
+    ).sort_values("重要度", ascending=False)
+
+    top_df = df_importance.head(top_k)
+    print("\n===== 特徴量重要度ランキング =====")
+    print(top_df.to_string(index=False))
+    return top_df

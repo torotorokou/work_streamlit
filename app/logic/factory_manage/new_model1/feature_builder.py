@@ -4,7 +4,26 @@ import requests
 
 
 class WeatherFeatureBuilder:
+    """
+    天気関連の特徴量を生成するクラス。
+
+    Attributes:
+        start_date (str): データ取得開始日。
+        end_date (str): データ取得終了日。
+        lat (float): 緯度。
+        lon (float): 経度。
+    """
+
     def __init__(self, start_date, end_date, lat=35.6895, lon=139.6917):
+        """
+        WeatherFeatureBuilderの初期化。
+
+        Args:
+            start_date (str): データ取得開始日。
+            end_date (str): データ取得終了日。
+            lat (float): 緯度。
+            lon (float): 経度。
+        """
         self.url = "https://archive-api.open-meteo.com/v1/archive"
         self.params = {
             "latitude": lat,
@@ -16,6 +35,12 @@ class WeatherFeatureBuilder:
         }
 
     def fetch(self):
+        """
+        天気データをAPIから取得し、データフレームに変換します。
+
+        Returns:
+            pd.DataFrame: 天気データを含むデータフレーム。
+        """
         res = requests.get(self.url, params=self.params)
         data = res.json()
 
@@ -55,7 +80,26 @@ class WeatherFeatureBuilder:
 
 
 class WeightFeatureBuilder:
+    """
+    重量関連の特徴量を生成するクラス。
+
+    Attributes:
+        past_raw (pd.DataFrame): 過去のデータ。
+        target_items (list): 対象品目のリスト。
+        holidays (list): 祝日のリスト。
+        weather_features (pd.DataFrame, optional): 天気関連の特徴量。
+    """
+
     def __init__(self, past_raw, target_items, holidays, weather_features=None):
+        """
+        WeightFeatureBuilderの初期化。
+
+        Args:
+            past_raw (pd.DataFrame): 過去のデータ。
+            target_items (list): 対象品目のリスト。
+            holidays (list): 祝日のリスト。
+            weather_features (pd.DataFrame, optional): 天気関連の特徴量。
+        """
         self.past_raw = past_raw
         self.target_items = target_items
         self.holidays = holidays
@@ -64,6 +108,12 @@ class WeightFeatureBuilder:
         )
 
     def build(self):
+        """
+        重量関連の特徴量を生成します。
+
+        Returns:
+            tuple: 特徴量データフレームとピボットデータフレーム。
+        """
         df_pivot = create_weight_pivot(self.past_raw, self.target_items)
         df_feat = add_stat_features(df_pivot, self.target_items, self.past_raw)
         df_feat = add_calendar_features(df_feat, self.holidays)
@@ -79,11 +129,32 @@ class WeightFeatureBuilder:
 
 
 class ReserveFeatureBuilder:
+    """
+    予約関連の特徴量を生成するクラス。
+
+    Attributes:
+        df_reserve (pd.DataFrame): 予約データ。
+        top_k_clients (int): 上位得意先の数。
+    """
+
     def __init__(self, df_reserve, top_k_clients=10):
+        """
+        ReserveFeatureBuilderの初期化。
+
+        Args:
+            df_reserve (pd.DataFrame): 予約データ。
+            top_k_clients (int): 上位得意先の数。
+        """
         self.df_reserve = df_reserve.copy()
         self.top_k_clients = top_k_clients
 
     def build(self):
+        """
+        予約関連の特徴量を生成します。
+
+        Returns:
+            pd.DataFrame: 予約関連の特徴量を含むデータフレーム。
+        """
         self.df_reserve["予約日"] = pd.to_datetime(self.df_reserve["予約日"])
         self.df_reserve["予約台数"] = pd.to_numeric(
             self.df_reserve["予約台数"], errors="coerce"
@@ -112,6 +183,16 @@ class ReserveFeatureBuilder:
 
 
 def create_weight_pivot(past_raw, target_items):
+    """
+    重量データをピボット形式に変換します。
+
+    Args:
+        past_raw (pd.DataFrame): 過去のデータ。
+        target_items (list): 対象品目のリスト。
+
+    Returns:
+        pd.DataFrame: ピボット形式の重量データ。
+    """
     df_pivot = (
         past_raw.groupby(["伝票日付", "品名"])["正味重量"].sum().unstack(fill_value=0)
     )
@@ -124,6 +205,17 @@ def create_weight_pivot(past_raw, target_items):
 
 
 def add_stat_features(df_pivot, target_items, past_raw):
+    """
+    統計関連の特徴量を追加します。
+
+    Args:
+        df_pivot (pd.DataFrame): ピボット形式の重量データ。
+        target_items (list): 対象品目のリスト。
+        past_raw (pd.DataFrame): 過去のデータ。
+
+    Returns:
+        pd.DataFrame: 統計関連の特徴量を含むデータフレーム。
+    """
     df_feat = pd.DataFrame(index=df_pivot.index)
 
     for item in target_items:
@@ -143,7 +235,38 @@ def add_stat_features(df_pivot, target_items, past_raw):
     return df_feat
 
 
+def is_second_sunday(date: pd.Timestamp) -> bool:
+    """
+    指定された日付が第2日曜日かどうかを判定します。
+
+    Args:
+        date (pd.Timestamp): 判定する日付。
+
+    Returns:
+        bool: 第2日曜日の場合はTrue、それ以外はFalse。
+    """
+    if date.weekday() != 6:  # Sunday
+        return False
+    first_day = date.replace(day=1)
+    sundays = [
+        d
+        for d in pd.date_range(start=first_day, end=first_day + pd.DateOffset(days=14))
+        if d.weekday() == 6
+    ]
+    return date == sundays[1] if len(sundays) >= 2 else False
+
+
 def add_calendar_features(df_feat, holidays):
+    """
+    カレンダー関連の特徴量を追加します。
+
+    Args:
+        df_feat (pd.DataFrame): 特徴量データフレーム。
+        holidays (list): 祝日のリスト。
+
+    Returns:
+        pd.DataFrame: カレンダー関連の特徴量を含むデータフレーム。
+    """
     df_feat["曜日"] = df_feat.index.dayofweek
     df_feat["週番号"] = df_feat.index.isocalendar().week
 
@@ -165,7 +288,7 @@ def add_calendar_features(df_feat, holidays):
 
     long_holiday_ranges = [
         (start, end)
-        for start, end in zip(start_of_sequence, end_of_sequence)
+        for start, end in zip(start_of_sequence, end_of_sequence, strict=False)
         if (end - start).days + 1 >= 2
     ]
 
@@ -176,5 +299,8 @@ def add_calendar_features(df_feat, holidays):
 
     df_feat["連休前フラグ"] = df_feat.index.isin(long_holiday_before).astype(int)
     df_feat["連休後フラグ"] = df_feat.index.isin(long_holiday_after).astype(int)
+
+    # --- 第2日曜日フラグの追加 ---
+    df_feat["第2日曜フラグ"] = df_feat.index.map(is_second_sunday).astype(int)
 
     return df_feat
