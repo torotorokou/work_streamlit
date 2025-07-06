@@ -1,0 +1,31 @@
+# --- Core Framework ---
+fastapi
+uvicorn
+
+# --- Data validation & env ---
+pydantic
+python-dotenv
+
+# --- AI & LLM ---
+openai
+langchain
+langchain-openai
+
+# --- Vector store & embeddings ---
+faiss-cpu      # or faiss-gpu if you want GPU support
+
+# --- PDF & YAML processing ---
+PyYAML
+pdf2image
+
+# --- Caching and front-end ---
+streamlit
+
+# --- Misc utilities ---
+httpx          # (used internally by OpenAI / LangChain)
+tqdm           # (for progress logging, optional but helpful)
+
+# --- Image processing backend for pdf2image ---
+Pillow         # required by pdf2image
+
+langchain-community
