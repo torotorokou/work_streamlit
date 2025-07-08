@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from scr.api.models import QueryRequest, QueryResponse
-from scr import ai_loader, loader
+from sanbo_navi.scr.api.models import QueryRequest, QueryResponse
+from sanbo_navi.scr import ai_loader, loader
 
 router = APIRouter()
 

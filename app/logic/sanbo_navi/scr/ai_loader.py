@@ -1,6 +1,6 @@
-from scr.llm_utils import generate_answer
-from scr.loader import get_resource_paths, load_json_data
-from scr.utils import load_faiss_vectorstore
+from sanbo_navi.scr.llm_utils import generate_answer
+from sanbo_navi.scr.loader import get_resource_paths, load_json_data
+from sanbo_navi.scr.utils import load_faiss_vectorstore
 from typing import List, Optional
 
 def get_answer(query: str, category: str, tags: Optional[List[str]] = None):

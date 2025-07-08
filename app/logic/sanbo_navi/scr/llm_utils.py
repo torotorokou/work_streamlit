@@ -1,6 +1,6 @@
 from typing import List, Tuple, Optional
-from scr.prompts import build_prompt
-from scr.utils import search_documents_with_category
+from sanbo_navi.scr.prompts import build_prompt
+from sanbo_navi.scr.utils import search_documents_with_category
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
