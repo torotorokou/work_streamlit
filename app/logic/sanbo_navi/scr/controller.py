@@ -1,24 +1,28 @@
-# --- ライブラリ読み込み ---
 import streamlit as st
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain.schema import Document
-from typing import List, Dict, Any
 
-from logic.sanbo_navi.scr.view import load_pdf_first_page, render_pdf_pages
+from logic.sanbo_navi.scr.view import (
+    load_pdf_first_page,
+    render_pdf_first_page,
+    render_pdf_pages,
+)
 from logic.sanbo_navi.scr.loader import (
-    load_config, load_json_data, extract_categories_and_titles, load_question_templates,
+    load_config,
+    load_json_data,
+    extract_categories_and_titles,
+    load_question_templates,
 )
 from logic.sanbo_navi.scr.ai_loader import OpenAIConfig, load_ai
 from logic.sanbo_navi.scr.llm_utils import OpenAIClient, generate_answer
 from logic.sanbo_navi.scr.utils import load_vectorstore
 from components.custom_button import centered_button
 
-# --- メイン処理 ---
+
 def controller_education_gpt_page():
     FAISS_PATH, PDF_PATH, JSON_PATH = load_config()
     json_data = load_json_data(JSON_PATH)
-    templates = load_question_templates()  # YAML構造: category -> [{q: str, tag: List[str]}]
+    templates = load_question_templates()
     categories = list(templates.keys())
 
     client = load_ai(OpenAIConfig)
@@ -30,14 +34,11 @@ def controller_education_gpt_page():
 
     with st.expander("\U0001F4C4 PDFプレビュー"):
         pdf_first_page = load_pdf_first_page(PDF_PATH)
-        st.image(pdf_first_page[0], caption="Page 1", use_container_width=True)
+        render_pdf_first_page(pdf_first_page[0])
 
-    # --- カテゴリ選択 ---
     main_category = st.selectbox("まずカテゴリを選択してください", categories)
     category_template = templates.get(main_category, [])
 
-    # --- 該当カテゴリ内タグの抽出（文字列のみで整形） ---
-    # --- 該当カテゴリ内タグの抽出（文字列のみで整形） ---
     all_tags = sorted(set(
         tag.strip(" []'\"")
         for t in category_template
@@ -47,7 +48,6 @@ def controller_education_gpt_page():
 
     selected_tags = st.multiselect("次に、関心のあるトピック（タグ）を選択してください", all_tags)
 
-    # --- タグに一致する質問テンプレートのみ表示 ---
     filtered_questions = [
         t["title"] for t in category_template
         if any(tag.strip(" []'\"") in selected_tags for tag in t.get("tag", []))
@@ -55,7 +55,6 @@ def controller_education_gpt_page():
     subcategory_options = ["自由入力"] + filtered_questions
     sub_category = st.selectbox("質問テンプレートを選択（または自由入力）", options=subcategory_options)
 
-    # --- クエリ構築 ---
     if sub_category == "自由入力":
         user_input = st.text_area("質問内容を入力してください", height=100)
         query = user_input.strip()
@@ -68,16 +67,15 @@ def controller_education_gpt_page():
             st.session_state.last_response = answer
             st.session_state.sources = sources
 
-    # --- 回答表示 ---
     if "last_response" in st.session_state:
         st.success("\u2705 回答")
         st.markdown(st.session_state.last_response)
 
     if "sources" in st.session_state:
-        sources = st.session_state.sources
-        pages = {str(page) for _, page in sources}
+        pages = {str(page) for _, page in st.session_state.sources}
         st.markdown("\U0001F4C4 **出典ページ:** " + ", ".join([f"Page {p}" for p in sorted(pages)]))
         render_pdf_pages(PDF_PATH, pages)
+
 
 if __name__ == "__main__":
     controller_education_gpt_page()
