@@ -4,7 +4,7 @@ import yaml
 from pathlib import Path
 
 def get_resource_paths() -> dict:
-    base_path = Path(__file__).resolve().parents[2] / "sanbo_navi"
+    base_path = Path("/app")  # Dockerコンテナ内のルート
     return {
         "PDF_PATH": base_path / "local_data" / "master" / "SOLVEST.pdf",
         "JSON_PATH": base_path / "local_data" / "master" / "structured_SOLVEST_output_with_tags.json",
@@ -12,7 +12,6 @@ def get_resource_paths() -> dict:
         "ENV_PATH": base_path / "config" / ".env",
         "YAML_PATH": base_path / "local_data" / "master" / "category_question_templates_with_tags.yaml",
     }
-
 
 def load_json_data(json_path):
     with open(json_path, encoding="utf-8") as f:
