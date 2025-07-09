@@ -1,0 +1,15 @@
+services:
+  ragapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+      - ../../../../config:/app/config
+      - ../../../../local_data:/app/local_data
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+    env_file:
+      - ./config/.env

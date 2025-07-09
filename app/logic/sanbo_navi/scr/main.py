@@ -15,7 +15,7 @@ if py_path:
 # --- FastAPI 本体
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sanbo_navi.scr.api import endpoints
+from scr.api import endpoints
 
 app = FastAPI()
 
