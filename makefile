@@ -67,6 +67,24 @@ staging_rebuild:
 	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml up -d"
 
 
+# ステージング再ビルド（キャッシュ無効化）Linux用
+staging_rebuild_linux:
+	@echo "Starting full staging rebuild with --no-cache... (Linux)"
+	@echo "Reloading .env_file/.env.staging and rebuilding Docker image..."
+
+	set -a; \
+	. .env_file/.env.staging; \
+	set +a; \
+	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml build --no-cache \
+		--build-arg GITHUB_TOKEN=$$GITHUB_TOKEN \
+		--build-arg REPO_TAG=$$REPO_TAG \
+		--build-arg REPO_URL=$$REPO_URL \
+		--build-arg STAGE_ENV=staging \
+		--build-arg ENV_FILE=.env_file/.env.staging; \
+	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml down -v || echo 'down failed (ignored)'; \
+	docker-compose -p sanbou_staging -f docker/docker-compose.prod.yml up -d
+
+
 # ステージング再ビルド（キャッシュ無効化）
 another_staging_rebuild:
 	@echo "Starting full another_staging rebuild with --no-cache..."
