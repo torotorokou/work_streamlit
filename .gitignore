@@ -54,3 +54,5 @@ venv/
 # pre-commit自動生成（使用時はコメント解除）
 # ===========================
 # .pre-commit-config.yaml
+app/logic/sanbo_navi/local_data/maste/SOLVEST.pdf
+app/logic/sanbo_navi/local_data/master/SOLVEST.pdf
