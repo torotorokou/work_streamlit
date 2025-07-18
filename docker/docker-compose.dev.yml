@@ -1,26 +1,26 @@
 services:
-  app:
-    container_name: sanbou_dev
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.dev
-    ports:
-      - '8504:8504'
-    volumes:
-      - ../:/work
-      - ~/.ssh:/root/.ssh:ro
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/work/app
-      - APP_ENV=dev
-    env_file:
-      - ../app/logic/sanbo_navi/config/.env 
-    working_dir: /work
-    command:
-      - streamlit
-      - run
-      - app/app.py
-      - --server.port=8503
-      - --server.address=0.0.0.0
-      - --server.headless=true
-      - --server.enableCORS=false
+    app:
+        container_name: sanbou_dev
+        build:
+            context: ..
+            dockerfile: docker/Dockerfile.dev
+        ports:
+            - '8504:8504'
+        volumes:
+            - ../:/work
+            - ~/.ssh:/root/.ssh:ro
+        environment:
+            - PYTHONUNBUFFERED=1
+            - PYTHONPATH=/work/app
+            - APP_ENV=dev
+        # env_file:
+        #    - ../app/logic/sanbo_navi/config/.env
+        working_dir: /work
+        command:
+            - streamlit
+            - run
+            - app/app.py
+            - --server.port=8503
+            - --server.address=0.0.0.0
+            - --server.headless=true
+            - --server.enableCORS=false
