@@ -46,39 +46,6 @@ venv/
 # 自動生成・中間ファイル・出力
 # ===========================
 *.log
-*.zip
-*.tar
-*.whl
-*.xls
-*~
-*.swp
-*.csv
-
-# 大容量ファイル対策
-*.ipynb
-*.csv
-*.pkl
-*.zip
-
-# ===========================
-# データ関連
-# ===========================
-app/data/*
-!app/data/master/
-!app/data/master/**/*.csv
-!app/data/template/
-!app/data/template/**/*.csv
-
-# ===========================
-# 参謀NAVI関連
-# ===========================
-app/logic/sanbo_navi/local_data/
-app/logic/sanbo_navi/local_data/master/SOLVEST.pdf
-app/logic/sanbo_navi/config/
-
-# ===========================
-# DB・パーケットファイル（必要に応じてコメント解除）
-# ===========================
 *.sqlite3
 *.db
 *.parquet
