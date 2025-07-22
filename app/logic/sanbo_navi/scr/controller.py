@@ -15,12 +15,14 @@ from logic.sanbo_navi.scr.loader import (
 )
 from logic.sanbo_navi.scr.ai_loader import OpenAIConfig, load_ai
 from logic.sanbo_navi.scr.llm_utils import OpenAIClient, generate_answer
+from logic.sanbo_navi.scr.solvest_loader import get_solvest_answer
 from logic.sanbo_navi.scr.utils import load_vectorstore
 from components.custom_button import centered_button
+from logic.sanbo_navi.scr.solvest_pptx_loader import render_pptx_slide_textonly
 
 
 def controller_education_gpt_page():
-    FAISS_PATH, PDF_PATH, JSON_PATH = load_config()
+    FAISS_PATH, PDF_PATH, PDF_PATH_PLAN, JSON_PATH = load_config()
     json_data = load_json_data(JSON_PATH)
     templates = load_question_templates()
     categories = list(templates.keys())
@@ -29,12 +31,16 @@ def controller_education_gpt_page():
     llm_client = OpenAIClient(client)
     vectorstore = load_vectorstore(api_key=client.api_key, FAISS_PATH=FAISS_PATH)
 
-    st.title("\U0001F4D8 教育GPTアシスタント")
+    st.title("📘 教育GPTアシスタント")
     st.markdown("SOLVESTについて質問できます。")
 
-    with st.expander("\U0001F4C4 PDFプレビュー"):
-        pdf_first_page = load_pdf_first_page(PDF_PATH)
-        render_pdf_first_page(pdf_first_page[0])
+    with st.expander("📄 PDFプレビュー"):
+        if "事業計画" not in categories:
+            pdf_first_page = load_pdf_first_page(PDF_PATH)
+            render_pdf_first_page(pdf_first_page[0])
+        else:
+            pdf_first_page = load_pdf_first_page(PDF_PATH_PLAN)
+            render_pdf_first_page(pdf_first_page[0])
 
     main_category = st.selectbox("まずカテゴリを選択してください", categories)
     category_template = templates.get(main_category, [])
@@ -61,20 +67,29 @@ def controller_education_gpt_page():
     else:
         query = sub_category
 
-    if centered_button("\u27a1\ufe0f 送信") and query:
-        with st.spinner("\U0001F916 回答生成中..."):
-            answer, sources = generate_answer(query, main_category, vectorstore, llm_client)
-            st.session_state.last_response = answer
-            st.session_state.sources = sources
+    if centered_button("➡️ 送信") and query:
+        with st.spinner("🤖 回答生成中..."):
+            if main_category == "事業計画":
+                result = get_solvest_answer(query)
+                st.session_state.last_response = result["answer"]
+                st.session_state.sources = result["sources"]
+            else:
+                answer, sources = generate_answer(query, main_category, vectorstore, llm_client)
+                st.session_state.last_response = answer
+                st.session_state.sources = sources
 
     if "last_response" in st.session_state:
-        st.success("\u2705 回答")
+        st.success("✅ 回答")
         st.markdown(st.session_state.last_response)
 
     if "sources" in st.session_state:
-        pages = {str(page) for _, page in st.session_state.sources}
-        st.markdown("\U0001F4C4 **出典ページ:** " + ", ".join([f"Page {p}" for p in sorted(pages)]))
-        render_pdf_pages(PDF_PATH, pages)
+        pages = {str(item["page"]) for item in st.session_state.sources if "page" in item}
+        st.markdown("📄 **出典ページ:** " + ", ".join([f"Page {p}" for p in sorted(pages)]))
+
+        if main_category == "事業計画":
+            render_pdf_pages(PDF_PATH_PLAN, pages)
+        else:
+            render_pdf_pages(PDF_PATH, pages)
 
 
 if __name__ == "__main__":
