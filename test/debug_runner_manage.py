@@ -67,7 +67,7 @@ def run_debug_process(template_key) -> pd.DataFrame:
 
 def debug():
     # --- テンプレート設定の取得 ---
-    template_key = "balance_sheet"
+    template_key = "factory_report"  # デバッグ用のテンプレートキーを指定
     logger = app_logger()
     dfs_after = run_debug_process(template_key)
 
