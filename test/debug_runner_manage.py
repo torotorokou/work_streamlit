@@ -1,7 +1,4 @@
 import os
-
-os.chdir("/work/app")
-
 import pandas as pd
 from utils.logger import app_logger
 from utils.config_loader import get_template_config
@@ -13,6 +10,8 @@ from logic.manage.balance_sheet import process as process_balance_sheet
 from logic.manage.management_sheet import process as process_manage_sheet
 from logic.manage.block_unit_price import process as process_block_unit_price
 import streamlit as st
+
+os.chdir("/work/app")
 
 # Streamlitのセッション状態を初期化
 if "process_mini_step" not in st.session_state:
