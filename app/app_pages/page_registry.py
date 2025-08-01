@@ -9,7 +9,7 @@ from app_pages.home.home import HomePage
 from app_pages.util_pages.utilpage import UtilPage
 from app_pages.manage.page import ManageWorkPage
 from app_pages.factory_manage.page import FactoryManageWorkPage
-from app_pages.sanbo_navi.page import SanboNaviPage
+# from app_pages.sanbo_navi.page import SanboNaviPage  # 一時的にコメントアウト（FAISSエラー回避）
 
 TOPPAGE_INSTANCES = {
     # --- ホームページ ---
@@ -21,5 +21,5 @@ TOPPAGE_INSTANCES = {
     # --- 工場管理ページ ---
     "factory_manage_work_controller": FactoryManageWorkPage(),
     # --- Sanboナビページ ---
-    "sanbo_navi": SanboNaviPage(),
+    # "sanbo_navi": SanboNaviPage(),  # 一時的にコメントアウト（FAISSエラー回避）
 }
